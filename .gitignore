@@ -43,3 +43,17 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Android build outputs
+android/app/build/
+android/build/
+build/
+*.apk
+*.aab
+
+# Gradle cache
+.gradle/
+*.gradle
+
+# Local properties (contains SDK paths)
+android/local.properties
