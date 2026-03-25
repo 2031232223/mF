@@ -9,30 +9,46 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    
     steps:
       - uses: actions/checkout@v4
       
       - name: Setup Java
         uses: actions/setup-java@v4
-        with: { distribution: 'zulu', java-version: '17' }
+        with:
+          distribution: 'zulu'
+          java-version: '17'
       
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
-        with: { flutter-version: '3.19.0', channel: 'stable', cache: true }
+        with:
+          flutter-version: '3.19.0'
+          channel: 'stable'
       
-      - name: Install deps (ignore warnings)
-        run: flutter pub get || true
-      
-      - name: Build APK (no tree-shake, ignore warnings)
+      - name: Enable KVM
         run: |
-          flutter build apk --release --split-per-abi \
-            --no-tree-shake-icons \
-            --dart-define=DART_OBFUSCATION=false \
-            --suppress-analytics || true
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      
+      - name: Install dependencies
+        run: flutter pub get
+      
+      - name: Build APK
+        run: flutter build apk --release --split-per-abi
+      
+      - name: List APK files
+        run: |
+          echo "=== APK files ==="
+          find build -name "*.apk" -type f
+          ls -la build/app/outputs/flutter-apk/ || true
       
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: nova-aden-apk
-          path: build/app/outputs/flutter-apk/app-*.apk
+          path: |
+            build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+            build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
           retention-days: 7
+          if-no-files-found: warn
