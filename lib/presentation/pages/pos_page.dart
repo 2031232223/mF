@@ -189,7 +189,7 @@ class _PosPageState extends State<PosPage> {
                   ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<Customer>(
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: OutlineInputBorder(),
                       contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
@@ -299,11 +299,11 @@ class _PosPageState extends State<PosPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: nombreController, decoration: const InputDecoration(labelText: 'Nombre *', border: OutlineInputBorder())),
+              TextField(controller: nombreController, decoration: InputDecoration(labelText: 'Nombre *', border: OutlineInputBorder())),
               const SizedBox(height: 8),
-              TextField(controller: ciController, decoration: const InputDecoration(labelText: 'Carnet de Identidad *', border: OutlineInputBorder())),
+              TextField(controller: ciController, decoration: InputDecoration(labelText: 'Carnet de Identidad *', border: OutlineInputBorder())),
               const SizedBox(height: 8),
-              TextField(controller: telefonoController, decoration: const InputDecoration(labelText: 'Teléfono *', border: OutlineInputBorder())),
+              TextField(controller: telefonoController, decoration: InputDecoration(labelText: 'Teléfono *', border: OutlineInputBorder())),
             ],
           ),
         ),
@@ -363,7 +363,7 @@ class _PosPageState extends State<PosPage> {
                   padding: const EdgeInsets.all(16),
                   child: TextField(
                     controller: _searchController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: 'Buscar producto...',
                       prefixIcon: Icon(Icons.search),
                       border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),

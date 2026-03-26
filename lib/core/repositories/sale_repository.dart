@@ -1,70 +1,57 @@
 import 'package:sqflite/sqflite.dart';
 import '../database/database_helper.dart';
 import '../models/sale.dart';
-import '../models/product.dart';
-import './product_repository.dart';
 
 class SaleRepository {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
-  final ProductRepository _productRepo = ProductRepository();
   Future<Database> get _db async => await _dbHelper.database;
 
-  // RF 13-16: Crear venta con líneas
   Future<int> createSale(int? clienteId, List<SaleLine> lines) async {
     final db = await _db;
-    double total = 0.0;
-    for (var l in lines) {
-      total = total + l.subtotal;
-    }
-    
-    final ventaId = await db.insert('ventas', {
-      'cliente_id': clienteId,
-      'fecha': DateTime.now().toIso8601String(),
-      'total': total,
-      'estado': 'pagado',
-    });
-
-    for (var line in lines) {
-      await db.insert('ventas_detalle', {
-        'venta_id': ventaId,
-        'producto_id': line.productoId,
-        'cantidad': line.cantidad,
-        'precioUnitario': line.precioUnitario,
-        'subtotal': line.subtotal,
+    return await db.transaction((txn) async {
+      // Insertar venta
+      final ventaId = await txn.insert('ventas', {
+        'cliente_id': clienteId,
+        'fecha': DateTime.now().toIso8601String(),
+        'total': lines.fold(0.0, (s, l) => s + l.subtotal),
       });
-
-      // Actualizar stock del producto
-      final producto = await _productRepo.getProductById(line.productoId);
-      if (producto != null) {
-        await _productRepo.updateProduct(producto.id!, Product(
-          nombre: producto.nombre,
-          codigo: producto.codigo,
-          costo: producto.costo,
-          precioVenta: producto.precioVenta,
-          stockActual: producto.stockActual - line.cantidad,
-          stockMinimo: producto.stockMinimo,
-          unidadMedida: producto.unidadMedida,
-          categoria: producto.categoria,
-        ));
+      
+      // Insertar líneas
+      for (final line in lines) {
+        await txn.insert('venta_detalles', {
+          'venta_id': ventaId,
+          'producto_id': line.productoId,
+          'cantidad': line.cantidad,
+          'precio_unitario': line.precioUnitario,
+          'subtotal': line.subtotal,
+        });
+        
+        // Actualizar stock del producto
+        await txn.rawUpdate(
+          'UPDATE productos SET stock_actual = stock_actual - ? WHERE id = ?',
+          [line.cantidad, line.productoId],
+        );
       }
-    }
-    return ventaId;
+      return ventaId;
+    });
   }
 
-  // RF 11: Listar ventas con filtros
-  Future<List<Map<String, dynamic>>> getSales({DateTime? desde, DateTime? hasta, int? clienteId}) async {
+  Future<List<Sale>> getAllSales() async {
     final db = await _db;
-    String where = '1=1';
-    List<dynamic> args = [];
-    if (desde != null) { where += ' AND fecha >= ?'; args.add(desde.toIso8601String()); }
-    if (hasta != null) { where += ' AND fecha <= ?'; args.add(hasta.toIso8601String()); }
-    if (clienteId != null) { where += ' AND cliente_id = ?'; args.add(clienteId); }
-    return await db.query('ventas', where: where, whereArgs: args, orderBy: 'fecha DESC');
+    final results = await db.query('ventas', orderBy: 'fecha DESC');
+    return results.map((m) => Sale.fromMap(m)).toList();
   }
 
-  Future<List<SaleLine>> getSaleLines(int ventaId) async {
+  Future<Sale?> getSaleById(int id) async {
     final db = await _db;
-    final results = await db.query('ventas_detalle', where: 'venta_id = ?', whereArgs: [ventaId]);
-    return results.map((map) => SaleLine.fromMap(map)).toList();
+    final results = await db.query('ventas', where: 'id = ?', whereArgs: [id]);
+    if (results.isEmpty) return null;
+    return Sale.fromMap(results.first);
+  }
+
+  Future<double> getTotalIngresos() async {
+    final db = await _db;
+    final result = await db.rawQuery('SELECT COALESCE(SUM(total), 0) as total FROM ventas');
+    return (result.first['total'] as num?)?.toDouble() ?? 0.0;
   }
 }

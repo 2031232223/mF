@@ -40,7 +40,6 @@ class _HomePageState extends State<HomePage> {
       _totalProducts = products.length;
       _alertasStock = products.where((p) => p.stockActual <= p.stockMinimo).length;
       
-      // Ventas de hoy (simplificado - todas las ventas)
       final sales = await _saleRepo.getAllSales();
       _ventasHoy = sales.length;
       _ingresos = sales.fold(0.0, (sum, s) => sum + s.total);
@@ -57,10 +56,7 @@ class _HomePageState extends State<HomePage> {
         title: const Text(AppConstants.appName),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadStats,
-          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadStats),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsPage())),
@@ -75,7 +71,6 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Dashboard Stats
               _loading
                   ? const Center(child: CircularProgressIndicator())
                   : GridView.count(
@@ -95,7 +90,6 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(height: 24),
               const Text('Módulos', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
-              // Módulos
               GridView.count(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
