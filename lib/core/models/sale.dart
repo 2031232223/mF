@@ -3,15 +3,8 @@ class Sale {
   final int? clienteId;
   final String fecha;
   final double total;
-  final String estado;
 
-  Sale({
-    this.id,
-    this.clienteId,
-    required this.fecha,
-    required this.total,
-    this.estado = 'pagado',
-  });
+  Sale({this.id, this.clienteId, required this.fecha, required this.total});
 
   Map<String, dynamic> toMap() {
     return {
@@ -19,17 +12,15 @@ class Sale {
       'cliente_id': clienteId,
       'fecha': fecha,
       'total': total,
-      'estado': estado,
     };
   }
 
   factory Sale.fromMap(Map<String, dynamic> map) {
     return Sale(
-      id: map['id'],
-      clienteId: map['cliente_id'],
-      fecha: map['fecha'] ?? '',
-      total: (map['total'] ?? 0).toDouble(),
-      estado: map['estado'] ?? 'pagado',
+      id: map['id'] as int?,
+      clienteId: map['cliente_id'] as int?,
+      fecha: map['fecha'] as String,
+      total: (map['total'] as num).toDouble(),
     );
   }
 }
@@ -57,38 +48,19 @@ class SaleLine {
       'venta_id': ventaId,
       'producto_id': productoId,
       'cantidad': cantidad,
-      'precioUnitario': precioUnitario,
+      'precio_unitario': precioUnitario,
       'subtotal': subtotal,
     };
   }
 
   factory SaleLine.fromMap(Map<String, dynamic> map) {
     return SaleLine(
-      id: map['id'],
-      ventaId: map['venta_id'] ?? 0,
-      productoId: map['producto_id'] ?? 0,
-      cantidad: map['cantidad'] ?? 0,
-      precioUnitario: (map['precioUnitario'] ?? 0).toDouble(),
-      subtotal: (map['subtotal'] ?? 0).toDouble(),
+      id: map['id'] as int?,
+      ventaId: map['venta_id'] as int,
+      productoId: map['producto_id'] as int,
+      cantidad: map['cantidad'] as int,
+      precioUnitario: (map['precio_unitario'] as num).toDouble(),
+      subtotal: (map['subtotal'] as num).toDouble(),
     );
   }
-}
-
-// Carrito de venta (temporal, no se guarda en BD)
-class CartItem {
-  final int productoId;
-  final String nombre;
-  final double precio;
-  int cantidad;
-  final int stockDisponible;
-
-  CartItem({
-    required this.productoId,
-    required this.nombre,
-    required this.precio,
-    required this.cantidad,
-    required this.stockDisponible,
-  });
-
-  double get subtotal => precio * cantidad;
 }

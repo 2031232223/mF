@@ -8,22 +8,29 @@ class SaleRepository {
 
   Future<int> createSale(int? clienteId, List<SaleLine> lines) async {
     final db = await _db;
+    
+    // Calcular total con casting explícito a double
+    double total = 0.0;
+    for (final line in lines) {
+      total += (line.subtotal as num).toDouble();
+    }
+    
     return await db.transaction((txn) async {
       // Insertar venta
       final ventaId = await txn.insert('ventas', {
         'cliente_id': clienteId,
         'fecha': DateTime.now().toIso8601String(),
-        'total': lines.fold(0.0, (s, l) => s + l.subtotal),
+        'total': total,
       });
       
-      // Insertar líneas
+      // Insertar líneas y actualizar stock
       for (final line in lines) {
         await txn.insert('venta_detalles', {
           'venta_id': ventaId,
           'producto_id': line.productoId,
           'cantidad': line.cantidad,
           'precio_unitario': line.precioUnitario,
-          'subtotal': line.subtotal,
+          'subtotal': (line.subtotal as num).toDouble(),
         });
         
         // Actualizar stock del producto
@@ -52,6 +59,8 @@ class SaleRepository {
   Future<double> getTotalIngresos() async {
     final db = await _db;
     final result = await db.rawQuery('SELECT COALESCE(SUM(total), 0) as total FROM ventas');
-    return (result.first['total'] as num?)?.toDouble() ?? 0.0;
+    final value = result.first['total'];
+    if (value == null) return 0.0;
+    return (value as num).toDouble();
   }
 }
