@@ -21,7 +21,7 @@ class _PurchasePageState extends State<PurchasePage> {
   bool _isLoading = true;
   final TextEditingController _searchController = TextEditingController();
   
-  // Líneas de compra - solo IDs y cantidades
+  // Carrito: productId -> cantidad
   final Map<int, int> _cart = {};
 
   @override
@@ -59,12 +59,12 @@ class _PurchasePageState extends State<PurchasePage> {
     setState(() => _cart.remove(productId));
   }
 
-  // Calcular total estimado (precioVenta * cantidad)
+  // Calcular total basado en el COSTO (lo que pagaste)
   double get _total {
     double sum = 0.0;
     for (final entry in _cart.entries) {
       final product = _products.firstWhere((p) => p.id == entry.key, orElse: () => _products[0]);
-      sum += product.precioVenta * entry.value;
+      sum += (product.costo ?? 0.0) * entry.value;
     }
     return sum;
   }
@@ -83,8 +83,7 @@ class _PurchasePageState extends State<PurchasePage> {
       return;
     }
 
-    // Aquí iría la lógica real de compra
-    // Por ahora, solo mostramos confirmación
+    // Confirmación de compra
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('✅ Compra registrada: \$${_total.toStringAsFixed(2)}'), backgroundColor: Colors.green),
@@ -209,7 +208,7 @@ class _PurchasePageState extends State<PurchasePage> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                // Lista de productos
+                // Lista de productos - Mostrar COSTO (lo que pagaste)
                 Expanded(
                   child: ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -225,7 +224,8 @@ class _PurchasePageState extends State<PurchasePage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text('Stock: ${p.stockActual}'),
-                              Text('Precio: \$${p.precioVenta.toStringAsFixed(2)}'),
+                              Text('💰 Costo: \$${(p.costo ?? 0.0).toStringAsFixed(2)}', style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+                              Text('🏷️ Venta: \$${p.precioVenta.toStringAsFixed(2)}', style: const TextStyle(color: Colors.green)),
                             ],
                           ),
                           trailing: ElevatedButton(
@@ -247,7 +247,7 @@ class _PurchasePageState extends State<PurchasePage> {
                     ),
                     child: Column(
                       children: [
-                        const Text('Productos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        const Text('Productos a Comprar', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                         const SizedBox(height: 8),
                         ConstrainedBox(
                           constraints: BoxConstraints(maxHeight: 150),
@@ -261,7 +261,7 @@ class _PurchasePageState extends State<PurchasePage> {
                                 margin: const EdgeInsets.only(bottom: 4),
                                 child: ListTile(
                                   title: Text(product.nombre),
-                                  subtitle: Text('\$${product.precioVenta.toStringAsFixed(2)} c/u'),
+                                  subtitle: Text('💰 Costo: \$${(product.costo ?? 0.0).toStringAsFixed(2)} c/u'),
                                   trailing: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
@@ -277,7 +277,7 @@ class _PurchasePageState extends State<PurchasePage> {
                           ),
                         ),
                         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                          const Text('Total:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          const Text('💵 Total a Pagar:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                           Text('\$${_total.toStringAsFixed(2)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green)),
                         ]),
                         const SizedBox(height: 12),
@@ -287,7 +287,7 @@ class _PurchasePageState extends State<PurchasePage> {
                           child: ElevatedButton.icon(
                             onPressed: _confirmPurchase,
                             icon: const Icon(Icons.check_circle),
-                            label: const Text('CONFIRMAR', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                            label: const Text('CONFIRMAR COMPRA', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                             style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
                           ),
                         ),

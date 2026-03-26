@@ -54,7 +54,7 @@ class _WelcomePageState extends State<WelcomePage> with SingleTickerProviderStat
                 const SizedBox(height: 30),
                 const Text(AppConstants.appName, style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 2)),
                 const SizedBox(height: 10),
-                const Text('Sistema de Gestión Comercial', style: TextStyle(fontSize: 16, color: Colors.white70)),
+                const Text('Administrador de Negocios', style: TextStyle(fontSize: 16, color: Colors.white70)),
                 const SizedBox(height: 40),
                 const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
               ]),

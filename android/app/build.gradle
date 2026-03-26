@@ -30,15 +30,29 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.example.nova_aden"
+        applicationId "com.novaaden.app"
         minSdk 26
         targetSdk 34
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+        multiDexEnabled true
+    }
+
+    signingConfigs {
+        release {
+            // Para GitHub Actions - se configura con secrets
+            storeFile file(System.getenv("KEYSTORE_PATH") ?: "release-key.jks")
+            storePassword System.getenv("KEYSTORE_PASSWORD")
+            keyAlias System.getenv("KEY_ALIAS")
+            keyPassword System.getenv("KEY_PASSWORD")
+        }
     }
 
     buildTypes {
         release {
+            signingConfig signingConfigs.release
+        }
+        debug {
             signingConfig signingConfigs.debug
         }
     }
