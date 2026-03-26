@@ -3,8 +3,21 @@ class Sale {
   final int? clienteId;
   final String fecha;
   final double total;
+  final double montoPagado;
+  final double montoPendiente;
+  final String? notasCredito;
+  final bool esFiado;
 
-  Sale({this.id, this.clienteId, required this.fecha, required this.total});
+  Sale({
+    this.id,
+    this.clienteId,
+    required this.fecha,
+    required this.total,
+    this.montoPagado = 0.0,
+    this.montoPendiente = 0.0,
+    this.notasCredito,
+    this.esFiado = false,
+  });
 
   Map<String, dynamic> toMap() {
     return {
@@ -12,6 +25,10 @@ class Sale {
       'cliente_id': clienteId,
       'fecha': fecha,
       'total': total,
+      'monto_pagado': montoPagado,
+      'monto_pendiente': montoPendiente,
+      'notas_credito': notasCredito,
+      'es_fiado': esFiado ? 1 : 0,
     };
   }
 
@@ -21,6 +38,10 @@ class Sale {
       clienteId: map['cliente_id'] as int?,
       fecha: map['fecha'] as String,
       total: (map['total'] as num).toDouble(),
+      montoPagado: (map['monto_pagado'] as num?)?.toDouble() ?? 0.0,
+      montoPendiente: (map['monto_pendiente'] as num?)?.toDouble() ?? 0.0,
+      notasCredito: map['notas_credito'] as String?,
+      esFiado: (map['es_fiado'] as int?) == 1,
     );
   }
 }

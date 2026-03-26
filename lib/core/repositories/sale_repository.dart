@@ -6,21 +6,18 @@ class SaleRepository {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
   Future<Database> get _db async => await _dbHelper.database;
 
-  Future<int> createSale(int? clienteId, List<SaleLine> lines) async {
+  Future<int> createSale(int? clienteId, List<SaleLine> lines, double total, double paidAmount, double pendingAmount, String? notes) async {
     final db = await _db;
-    
-    // Calcular total con casting explícito a double
-    double total = 0.0;
-    for (final line in lines) {
-      total += (line.subtotal as num).toDouble();
-    }
-    
     return await db.transaction((txn) async {
-      // Insertar venta
+      // Insertar venta con datos de pago
       final ventaId = await txn.insert('ventas', {
         'cliente_id': clienteId,
         'fecha': DateTime.now().toIso8601String(),
         'total': total,
+        'monto_pagado': paidAmount,
+        'monto_pendiente': pendingAmount,
+        'notas_credito': notes,
+        'es_fiado': pendingAmount > 0 ? 1 : 0,
       });
       
       // Insertar líneas y actualizar stock
@@ -32,8 +29,6 @@ class SaleRepository {
           'precio_unitario': line.precioUnitario,
           'subtotal': (line.subtotal as num).toDouble(),
         });
-        
-        // Actualizar stock del producto
         await txn.rawUpdate(
           'UPDATE productos SET stock_actual = stock_actual - ? WHERE id = ?',
           [line.cantidad, line.productoId],
@@ -46,6 +41,22 @@ class SaleRepository {
   Future<List<Sale>> getAllSales() async {
     final db = await _db;
     final results = await db.query('ventas', orderBy: 'fecha DESC');
+    return results.map((m) => Sale.fromMap(m)).toList();
+  }
+
+  // RF 20: Listar ventas del día
+  Future<List<Sale>> getTodaySales() async {
+    final db = await _db;
+    final today = DateTime.now();
+    final startOfDay = DateTime(today.year, today.month, today.day).toIso8601String();
+    final endOfDay = DateTime(today.year, today.month, today.day, 23, 59, 59).toIso8601String();
+    
+    final results = await db.query(
+      'ventas',
+      where: 'fecha >= ? AND fecha <= ?',
+      whereArgs: [startOfDay, endOfDay],
+      orderBy: 'fecha DESC',
+    );
     return results.map((m) => Sale.fromMap(m)).toList();
   }
 

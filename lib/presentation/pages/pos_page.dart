@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 import '../../core/models/product.dart';
 import '../../core/models/customer.dart';
 import '../../core/models/sale.dart';
@@ -24,6 +26,16 @@ class _PosPageState extends State<PosPage> {
   Customer? _selectedCustomer;
   bool _isLoading = true;
   final TextEditingController _searchController = TextEditingController();
+  
+  // RF 17: Descuento global
+  double _discountPercent = 0.0;
+  bool _applyDiscount = false;
+  
+  // RF 18: Pago parcial/fiado
+  double _amountPaid = 0.0;
+  PaymentType _paymentType = PaymentType.cash;
+  bool _isCredit = false;
+  String _creditNotes = '';
 
   @override
   void initState() {
@@ -45,7 +57,6 @@ class _PosPageState extends State<PosPage> {
       );
       return;
     }
-
     setState(() {
       final existing = _cart.indexWhere((c) => c.productoId == product.id);
       if (existing >= 0) {
@@ -64,16 +75,17 @@ class _PosPageState extends State<PosPage> {
     });
   }
 
+  // RF 16: Eliminar producto del carrito
+  void _removeFromCart(int index) {
+    setState(() => _cart.removeAt(index));
+  }
+
   void _increaseQuantity(int index) {
     if (index >= 0 && index < _cart.length) {
       final item = _cart[index];
       final product = _products.firstWhere((p) => p.id == item.productoId);
       if (item.cantidad < product.stockActual) {
         setState(() => item.cantidad++);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('⚠️ Stock máximo'), backgroundColor: Colors.orange),
-        );
       }
     }
   }
@@ -82,19 +94,85 @@ class _PosPageState extends State<PosPage> {
     if (index >= 0 && index < _cart.length) {
       setState(() {
         _cart[index].cantidad--;
-        if (_cart[index].cantidad <= 0) {
-          _cart.removeAt(index);
-        }
+        if (_cart[index].cantidad <= 0) _cart.removeAt(index);
       });
     }
   }
 
-  void _removeFromCart(int index) {
-    setState(() => _cart.removeAt(index));
-  }
+  void _clearCart() => setState(() => _cart.clear());
 
-  void _clearCart() {
-    setState(() => _cart.clear());
+  // RF 17: Calcular total con descuento
+  double get _subtotal => _cart.fold(0.0, (sum, c) => sum + (c.subtotal as num).toDouble());
+  double get _discountAmount => _applyDiscount ? _subtotal * (_discountPercent / 100) : 0.0;
+  double get _total => _subtotal - _discountAmount;
+
+  // RF 18: Calcular cambio o pendiente
+  double get _change => _amountPaid - _total;
+  double get _pending => _isCredit ? _total - _amountPaid : 0.0;
+
+  // RF 19: Generar ticket
+  Future<void> _generateTicket(Sale sale) async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/ticket_${sale.id}_${DateTime.now().millisecondsSinceEpoch}.txt');
+      
+      final ticket = '''
+════════════════════════════════
+        NOVA ADEN
+   Administrador de Negocios
+════════════════════════════════
+Fecha: ${sale.fecha}
+Ticket #: ${sale.id}
+Cliente: ${_selectedCustomer?.nombre ?? 'General'}
+────────────────────────────────
+${_cart.map((c) => '${c.nombre} x${c.cantidad}\n   \$${c.precio.toStringAsFixed(2)} c/u = \$${c.subtotal.toStringAsFixed(2)}').join('\n')}
+────────────────────────────────
+Subtotal: \$${_subtotal.toStringAsFixed(2)}
+${_applyDiscount ? 'Descuento (${_discountPercent}%): -\$${_discountAmount.toStringAsFixed(2)}\n' : ''}
+TOTAL: \$${_total.toStringAsFixed(2)}
+────────────────────────────────
+Pago: \$${_amountPaid.toStringAsFixed(2)}
+${_isCredit ? 'Pendiente (Fiado): \$${_pending.toStringAsFixed(2)}\n' : 'Cambio: \$${_change.toStringAsFixed(2)}\n'}
+════════════════════════════════
+   ¡Gracias por su compra!
+════════════════════════════════
+''';
+      await file.writeAsString(ticket);
+      
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('🧾 Ticket Generado'),
+            content: SingleChildScrollView(
+              child: Text(ticket, style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cerrar'),
+              ),
+              ElevatedButton.icon(
+                onPressed: () {
+                  // Aquí se podría integrar con impresora Bluetooth
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('🖨️  Enviando a impresora...'), backgroundColor: Colors.blue),
+                  );
+                },
+                icon: const Icon(Icons.print),
+                label: const Text('Imprimir'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('❌ Error ticket: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   Future<void> _completeSale() async {
@@ -104,25 +182,51 @@ class _PosPageState extends State<PosPage> {
       );
       return;
     }
-
-    final lines = _cart.map((c) => SaleLine(
-      ventaId: 0,
-      productoId: c.productoId,
-      cantidad: c.cantidad,
-      precioUnitario: c.precio,
-      subtotal: c.subtotal,
-    )).toList();
+    // RF 18: Validar pago mínimo
+    if (!_isCredit && _amountPaid < _total) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('⚠️ Pago insuficiente'), backgroundColor: Colors.orange),
+      );
+      return;
+    }
 
     try {
-      await _saleRepo.createSale(_selectedCustomer?.id, lines);
+      final lines = _cart.map((c) => SaleLine(
+        ventaId: 0,
+        productoId: c.productoId,
+        cantidad: c.cantidad,
+        precioUnitario: c.precio,
+        subtotal: c.subtotal,
+      )).toList();
+
+      final saleId = await _saleRepo.createSale(
+        _selectedCustomer?.id,
+        lines,
+        _total,
+        _isCredit ? _amountPaid : _total, // paidAmount
+        _isCredit ? _pending : 0.0, // pendingAmount
+        _creditNotes,
+      );
+
+      final sale = Sale(id: saleId, clienteId: _selectedCustomer?.id, fecha: DateTime.now().toIso8601String(), total: _total);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('✅ Venta: \$${_total.toStringAsFixed(2)}'), backgroundColor: Colors.green),
         );
+        // RF 19: Generar ticket después de venta exitosa
+        await _generateTicket(sale);
       }
+      
       _clearCart();
+      _discountPercent = 0.0;
+      _applyDiscount = false;
+      _amountPaid = 0.0;
+      _isCredit = false;
+      _creditNotes = '';
       _loadData();
-      if (mounted) Navigator.pop(context);
+      if (mounted && Navigator.canPop(context)) Navigator.pop(context);
+      
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -132,17 +236,15 @@ class _PosPageState extends State<PosPage> {
     }
   }
 
-  double get _total => _cart.fold(0.0, (sum, c) => sum + (c.subtotal as num).toDouble());
-
   void _showCartBottomSheet() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setModalState) => DraggableScrollableSheet(
-          initialChildSize: 0.7,
-          minChildSize: 0.5,
-          maxChildSize: 0.9,
+          initialChildSize: 0.85,
+          minChildSize: 0.6,
+          maxChildSize: 0.95,
           expand: false,
           builder: (context, scrollController) => Column(
             children: [
@@ -152,107 +254,215 @@ class _PosPageState extends State<PosPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('🛒 Carrito', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                    const Text('🛒 Carrito de Venta', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
                     IconButton(icon: const Icon(Icons.close, color: Colors.white), onPressed: () => Navigator.pop(ctx)),
                   ],
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Cliente:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    DropdownButtonFormField<Customer>(
-                      decoration: const InputDecoration(border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
-                      items: [
-                        const DropdownMenuItem(value: null, child: Text('Cliente General')),
-                        ..._customers.map((c) => DropdownMenuItem(value: c, child: Text(c.nombre))),
-                      ],
-                      value: _selectedCustomer,
-                      onChanged: (v) => setModalState(() => _selectedCustomer = v),
-                    ),
-                    const SizedBox(height: 12),
-                    TextButton.icon(
-                      onPressed: _showCustomerDialog,
-                      icon: const Icon(Icons.person_add),
-                      label: const Text('Nuevo Cliente'),
-                    ),
-                  ],
-                ),
-              ),
               Expanded(
-                child: _cart.isEmpty
-                    ? const Center(child: Text('Carrito vacío', style: TextStyle(fontSize: 16, color: Colors.grey)))
-                    : ListView.builder(
-                        controller: scrollController,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: _cart.length,
-                        itemBuilder: (ctx, i) {
-                          final c = _cart[i];
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: Colors.blue,
-                                child: Text('${c.cantidad}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                child: SingleChildScrollView(
+                  controller: scrollController,
+                  child: Column(
+                    children: [
+                      // Selector de cliente
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Cliente:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                TextButton.icon(
+                                  onPressed: _showCustomerDialog,
+                                  icon: const Icon(Icons.person_add),
+                                  label: const Text('Nuevo'),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            DropdownButtonFormField<Customer>(
+                              decoration: const InputDecoration(border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+                              items: [
+                                const DropdownMenuItem(value: null, child: Text('Cliente General')),
+                                ..._customers.map((c) => DropdownMenuItem(value: c, child: Text(c.nombre))),
+                              ],
+                              value: _selectedCustomer,
+                              onChanged: (v) => setModalState(() => _selectedCustomer = v),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Lista de productos en carrito
+                      if (_cart.isNotEmpty)
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: _cart.length,
+                          itemBuilder: (ctx, i) {
+                            final c = _cart[i];
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              child: ListTile(
+                                leading: CircleAvatar(backgroundColor: Colors.blue, child: Text('${c.cantidad}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                                title: Text(c.nombre, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                subtitle: Text('\$${c.precio.toStringAsFixed(2)} c/u'),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(icon: const Icon(Icons.remove_circle, color: Colors.red, size: 28), onPressed: () { _decreaseQuantity(i); setModalState(() {}); }),
+                                    Text('${c.cantidad}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                    IconButton(icon: const Icon(Icons.add_circle, color: Colors.green, size: 28), onPressed: () { _increaseQuantity(i); setModalState(() {}); }),
+                                    // RF 16: Botón eliminar
+                                    IconButton(icon: const Icon(Icons.delete_forever, color: Colors.red), onPressed: () { _removeFromCart(i); setModalState(() {}); }),
+                                  ],
+                                ),
                               ),
-                              title: Text(c.nombre, style: const TextStyle(fontWeight: FontWeight.bold)),
-                              subtitle: Text('\$${c.precio.toStringAsFixed(2)} c/u'),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.remove_circle, color: Colors.red, size: 28),
-                                    onPressed: () {
-                                      _decreaseQuantity(i);
-                                      setModalState(() {});
-                                    },
+                            );
+                          },
+                        )
+                      else
+                        const Padding(padding: EdgeInsets.all(32), child: Center(child: Text('Carrito vacío', style: TextStyle(fontSize: 16, color: Colors.grey)))),
+                      
+                      // RF 17: Descuento global
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('💲 Descuento Global', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                    Switch(
+                                      value: _applyDiscount,
+                                      onChanged: (v) => setModalState(() => _applyDiscount = v),
+                                    ),
+                                  ],
+                                ),
+                                if (_applyDiscount) ...[
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    children: [
+                                      const Text('Porcentaje: '),
+                                      Expanded(
+                                        child: Slider(
+                                          value: _discountPercent,
+                                          min: 0,
+                                          max: 50,
+                                          divisions: 10,
+                                          label: '${_discountPercent.toInt()}%',
+                                          onChanged: (v) => setModalState(() => _discountPercent = v),
+                                        ),
+                                      ),
+                                      Text('${_discountPercent.toInt()}%', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                    ],
                                   ),
-                                  Text('${c.cantidad}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                                  IconButton(
-                                    icon: const Icon(Icons.add_circle, color: Colors.green, size: 28),
-                                    onPressed: () {
-                                      _increaseQuantity(i);
-                                      setModalState(() {});
-                                    },
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete, color: Colors.red),
-                                    onPressed: () {
-                                      _removeFromCart(i);
-                                      setModalState(() {});
-                                    },
+                                  Text('Ahorro: -\$${_discountAmount.toStringAsFixed(2)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      
+                      // RF 18: Tipo de pago y monto
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('💳 Método de Pago', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: DropdownButtonFormField<PaymentType>(
+                                        decoration: const InputDecoration(border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+                                        value: _paymentType,
+                                        items: const [
+                                          DropdownMenuItem(value: PaymentType.cash, child: Text('💵 Efectivo')),
+                                          DropdownMenuItem(value: PaymentType.transfer, child: Text('📱 Transferencia')),
+                                          DropdownMenuItem(value: PaymentType.card, child: Text('💳 Tarjeta')),
+                                        ],
+                                        onChanged: (v) => setModalState(() => _paymentType = v!),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Text('Fiado: '),
+                                        Switch(
+                                          value: _isCredit,
+                                          onChanged: (v) => setModalState(() => _isCredit = v),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    const Text('Monto Pagado: \$'),
+                                    Expanded(
+                                      child: TextFormField(
+                                        keyboardType: TextInputType.numberWithOptions(decimal: true),
+                                        decoration: const InputDecoration(border: OutlineInputBorder(), hintText: '0.00'),
+                                        onChanged: (v) => setModalState(() => _amountPaid = double.tryParse(v) ?? 0.0),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                if (_isCredit) ...[
+                                  const SizedBox(height: 12),
+                                  TextField(
+                                    decoration: const InputDecoration(labelText: 'Notas de crédito (opcional)', border: OutlineInputBorder()),
+                                    maxLines: 2,
+                                    onChanged: (v) => _creditNotes = v,
                                   ),
                                 ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      
+                      // Totales
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(color: Colors.grey[100], boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4, offset: const Offset(0, -2))]),
+                        child: Column(
+                          children: [
+                            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Subtotal:'), Text('\$${_subtotal.toStringAsFixed(2)}')]),
+                            if (_applyDiscount) Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('Descuento (${_discountPercent.toInt()}%):'), Text('-\$${_discountAmount.toStringAsFixed(2)}', style: const TextStyle(color: Colors.green))]),
+                            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('TOTAL:', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)), Text('\$${_total.toStringAsFixed(2)}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.green))]),
+                            if (_isCredit) Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Pendiente:'), Text('\$${_pending.toStringAsFixed(2)}', style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold))]),
+                            if (!_isCredit && _amountPaid > 0) Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Cambio:'), Text('\$${_change.toStringAsFixed(2)}', style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold))]),
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 50,
+                              child: ElevatedButton.icon(
+                                onPressed: _cart.isEmpty ? null : _completeSale,
+                                icon: const Icon(Icons.check_circle, size: 24),
+                                label: const Text('CONFIRMAR VENTA', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
                               ),
                             ),
-                          );
-                        },
+                          ],
+                        ),
                       ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: Colors.grey[100], boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4, offset: const Offset(0, -2))]),
-                child: Column(
-                  children: [
-                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      const Text('Total:', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                      Text('\$${_total.toStringAsFixed(2)}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.green)),
-                    ]),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton.icon(
-                        onPressed: _cart.isEmpty ? null : _completeSale,
-                        icon: const Icon(Icons.check_circle, size: 24),
-                        label: const Text('CONFIRMAR VENTA', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -346,6 +556,7 @@ class _PosPageState extends State<PosPage> {
   }
 }
 
+// Clases auxiliares
 class CartItem {
   final int productoId;
   final String nombre;
@@ -355,3 +566,5 @@ class CartItem {
   CartItem({required this.productoId, required this.nombre, required this.precio, required this.cantidad, required this.stockDisponible});
   double get subtotal => precio * cantidad;
 }
+
+enum PaymentType { cash, transfer, card }
