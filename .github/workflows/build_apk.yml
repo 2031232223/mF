@@ -29,25 +29,21 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build APK
-        run: flutter build apk --release --split-per-abi --no-tree-shake-icons
+      - name: Build APK Universal (Android 8.0+)
+        run: flutter build apk --release --no-tree-shake-icons
 
-      - name: Verify APK exists
+      - name: Verify APK
         run: |
-          echo "=== Checking for APK ==="
-          if [ -f "build/app/outputs/flutter-apk/app-arm64-v8a-release.apk" ]; then
-            echo "✅ APK found!"
-            ls -lh build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
-          else
-            echo "❌ APK not found - listing build directory:"
-            find build -name "*.apk" 2>/dev/null || echo "No APKs anywhere"
-            exit 1
-          fi
+          echo "=== APK Generado ==="
+          ls -lh build/app/outputs/flutter-apk/app-release.apk
+          echo "=== Android Version Compatibility ==="
+          echo "minSdk: 26 (Android 8.0 Oreo+)"
+          echo "targetSdk: 34 (Android 14)"
 
-      - name: Upload ONLY the APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: nova-aden-apk
-          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          path: build/app/outputs/flutter-apk/app-release.apk
           compression-level: 0
           overwrite: true
