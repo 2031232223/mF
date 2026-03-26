@@ -8,46 +8,11 @@ import './reports_page.dart';
 import './settings_page.dart';
 import './supplier_page.dart';
 import './customer_page.dart';
-import '../../core/repositories/product_repository.dart';
-import '../../core/repositories/sale_repository.dart';
+import './inventory_adjustment_page.dart';
+import './waste_page.dart';
 
-class HomePage extends StatefulWidget {
+class HomePage extends StatelessWidget {
   const HomePage({super.key});
-
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  final ProductRepository _productRepo = ProductRepository();
-  final SaleRepository _saleRepo = SaleRepository();
-  int _totalProducts = 0;
-  int _ventasHoy = 0;
-  int _alertasStock = 0;
-  double _ingresos = 0.0;
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadStats();
-  }
-
-  Future<void> _loadStats() async {
-    setState(() => _loading = true);
-    try {
-      final products = await _productRepo.getAllProducts();
-      _totalProducts = products.length;
-      _alertasStock = products.where((p) => p.stockActual <= p.stockMinimo).length;
-      
-      final sales = await _saleRepo.getAllSales();
-      _ventasHoy = sales.length;
-      _ingresos = sales.fold(0.0, (sum, s) => sum + s.total);
-    } catch (e) {
-      print('Error loading stats: $e');
-    }
-    setState(() => _loading = false);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,87 +21,47 @@ class _HomePageState extends State<HomePage> {
         title: const Text(AppConstants.appName),
         centerTitle: true,
         actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadStats),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsPage())),
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: _loadStats,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _loading
-                  ? const Center(child: CircularProgressIndicator())
-                  : GridView.count(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: 1.3,
-                      children: [
-                        _statCard('Productos', '$_totalProducts', Icons.inventory_2, Colors.blue),
-                        _statCard('Ventas Hoy', '$_ventasHoy', Icons.shopping_cart, Colors.green),
-                        _statCard('Alertas Stock', '$_alertasStock', Icons.warning_amber, Colors.orange),
-                        _statCard('Ingresos', '\$${_ingresos.toStringAsFixed(2)}', Icons.attach_money, Colors.purple),
-                      ],
-                    ),
-              const SizedBox(height: 24),
-              const Text('Módulos', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16),
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                childAspectRatio: 1.1,
-                children: [
-                  _moduleCard(context, 'Inventario', Icons.inventory_2, Colors.blue, const ProductListPage()),
-                  _moduleCard(context, 'Punto de Venta', Icons.point_of_sale, Colors.green, const PosPage()),
-                  _moduleCard(context, 'Compras', Icons.shopping_bag, Colors.orange, const PurchasePage()),
-                  _moduleCard(context, 'Ventas', Icons.receipt_long, Colors.teal, const SalesListPage()),
-                  _moduleCard(context, 'Proveedores', Icons.business, Colors.brown, const SupplierPage()),
-                  _moduleCard(context, 'Clientes', Icons.people, Colors.pink, const CustomerPage()),
-                  _moduleCard(context, 'Ajustes Inv.', Icons.edit, Colors.indigo, const InventoryAdjustmentPage()),
-                _moduleCard(context, 'Mermas', Icons.warning_amber, Colors.red, const WastePage()),
-                _moduleCard(context, 'Reportes', Icons.bar_chart, Colors.purple, const ReportsPage()),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _statCard(String title, String value, IconData icon, Color color) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Container(
-        padding: const EdgeInsets.all(12),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 32, color: color),
-            const SizedBox(height: 8),
-            Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
-            const SizedBox(height: 4),
-            Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 12)),
+            const Text('Nova ADEN', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 24),
+            const Text('Módulos', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 16,
+              childAspectRatio: 1.1,
+              children: [
+                _btn(context, 'Inventario', Icons.inventory_2, Colors.blue, const ProductListPage()),
+                _btn(context, 'Punto de Venta', Icons.point_of_sale, Colors.green, const PosPage()),
+                _btn(context, 'Compras', Icons.shopping_bag, Colors.orange, const PurchasePage()),
+                _btn(context, 'Ventas', Icons.receipt_long, Colors.teal, const SalesListPage()),
+                _btn(context, 'Proveedores', Icons.business, Colors.brown, const SupplierPage()),
+                _btn(context, 'Clientes', Icons.people, Colors.pink, const CustomerPage()),
+                _btn(context, 'Ajustes Inv.', Icons.edit, Colors.indigo, const InventoryAdjustmentPage()),
+                _btn(context, 'Mermas', Icons.warning_amber, Colors.red, const WastePage()),
+                _btn(context, 'Reportes', Icons.bar_chart, Colors.purple, const ReportsPage()),
+              ],
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _moduleCard(BuildContext ctx, String title, IconData icon, Color color, Widget page) {
+  Widget _btn(BuildContext ctx, String t, IconData i, Color c, Widget page) {
     return InkWell(
       onTap: () => Navigator.push(ctx, MaterialPageRoute(builder: (_) => page)),
       borderRadius: BorderRadius.circular(12),
@@ -145,9 +70,9 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 48, color: color),
+            Icon(i, size: 48, color: c),
             const SizedBox(height: 8),
-            Text(title, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text(t, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold)),
           ],
         ),
       ),
