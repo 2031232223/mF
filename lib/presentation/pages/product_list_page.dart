@@ -188,6 +188,17 @@ class _ProductListPageState extends State<ProductListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        actions: [
+          IconButton(icon: const Icon(Icons.download), onPressed: () async {
+            try {
+              final products = await ProductRepository().getAllProducts();
+              final path = await CsvExporter.exportProducts(products.map((p) => p.toMap()).toList());
+              if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("✅ Exportado: $path"), backgroundColor: Colors.green, duration: const Duration(seconds: 5)));
+            } catch (e) {
+              if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("❌ $e"), backgroundColor: Colors.red));
+            }
+          }, tooltip: "Exportar a CSV"),
+        ],
         title: const Text('Productos'),
         centerTitle: true,
         actions: [

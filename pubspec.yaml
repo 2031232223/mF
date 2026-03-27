@@ -7,6 +7,7 @@ environment:
   sdk: '>=3.2.0 <4.0.0'
 
 dependencies:
+  permission_handler: ^11.0.1
   path_provider: ^2.1.1
   flutter:
     sdk: flutter
@@ -17,6 +18,7 @@ dependencies:
   csv: ^5.1.1
 
 dev_dependencies:
+  permission_handler: ^11.0.1
   path_provider: ^2.1.1
   flutter_test:
     sdk: flutter
