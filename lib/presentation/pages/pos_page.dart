@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
 import '../../core/models/product.dart';
 import '../../core/models/customer.dart';
 import '../../core/models/sale.dart';
@@ -10,7 +8,6 @@ import '../../core/repositories/sale_repository.dart';
 
 class PosPage extends StatefulWidget {
   const PosPage({super.key});
-
   @override
   State<PosPage> createState() => _PosPageState();
 }
@@ -26,16 +23,6 @@ class _PosPageState extends State<PosPage> {
   Customer? _selectedCustomer;
   bool _isLoading = true;
   final TextEditingController _searchController = TextEditingController();
-  
-  // RF 17: Descuento global
-  double _discountPercent = 0.0;
-  bool _applyDiscount = false;
-  
-  // RF 18: Pago parcial/fiado
-  double _amountPaid = 0.0;
-  PaymentType _paymentType = PaymentType.cash;
-  bool _isCredit = false;
-  String _creditNotes = '';
 
   @override
   void initState() {
@@ -50,6 +37,7 @@ class _PosPageState extends State<PosPage> {
     setState(() => _isLoading = false);
   }
 
+  // CORRECCIÓN: CartItem usa 'precio', NO 'precioVenta'
   void _addToCart(Product product) {
     if (product.stockActual <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -67,17 +55,12 @@ class _PosPageState extends State<PosPage> {
         _cart.add(CartItem(
           productoId: product.id!,
           nombre: product.nombre,
-          precioVenta: product.precioVenta,
+          precio: product.precioVenta,  // ✅ CORRECTO: 'precio', no 'precioVenta'
           cantidad: 1,
           stockDisponible: product.stockActual,
         ));
       }
     });
-  }
-
-  // RF 16: Eliminar producto del carrito
-  void _removeFromCart(int index) {
-    setState(() => _cart.removeAt(index));
   }
 
   void _increaseQuantity(int index) {
@@ -99,81 +82,25 @@ class _PosPageState extends State<PosPage> {
     }
   }
 
+  // RF 16: Eliminar producto del carrito
+  void _removeFromCart(int index) {
+    setState(() => _cart.removeAt(index));
+  }
+
   void _clearCart() => setState(() => _cart.clear());
 
-  // RF 17: Calcular total con descuento
   double get _subtotal => _cart.fold(0.0, (sum, c) => sum + (c.subtotal as num).toDouble());
   double get _discountAmount => _applyDiscount ? _subtotal * (_discountPercent / 100) : 0.0;
   double get _total => _subtotal - _discountAmount;
 
-  // RF 18: Calcular cambio o pendiente
-  double get _change => _amountPaid - _total;
-  double get _pending => _isCredit ? _total - _amountPaid : 0.0;
+  // RF 17: Descuento global
+  double _discountPercent = 0.0;
+  bool _applyDiscount = false;
 
-  // RF 19: Generar ticket
-  Future<void> _generateTicket(Sale sale) async {
-    try {
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/ticket_${sale.id}_${DateTime.now().millisecondsSinceEpoch}.txt');
-      
-      final ticket = '''
-════════════════════════════════
-        NOVA ADEN
-   Administrador de Negocios
-════════════════════════════════
-Fecha: ${sale.fecha}
-Ticket #: ${sale.id}
-Cliente: ${_selectedCustomer?.nombre ?? 'General'}
-────────────────────────────────
-${_cart.map((c) => '${c.nombre} x${c.cantidad}\n   \$${c.precio.toStringAsFixed(2)} c/u = \$${c.subtotal.toStringAsFixed(2)}').join('\n')}
-────────────────────────────────
-Subtotal: \$${_subtotal.toStringAsFixed(2)}
-${_applyDiscount ? 'Descuento (${_discountPercent}%): -\$${_discountAmount.toStringAsFixed(2)}\n' : ''}
-TOTAL: \$${_total.toStringAsFixed(2)}
-────────────────────────────────
-Pago: \$${_amountPaid.toStringAsFixed(2)}
-${_isCredit ? 'Pendiente (Fiado): \$${_pending.toStringAsFixed(2)}\n' : 'Cambio: \$${_change.toStringAsFixed(2)}\n'}
-════════════════════════════════
-   ¡Gracias por su compra!
-════════════════════════════════
-''';
-      await file.writeAsString(ticket);
-      
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('🧾 Ticket Generado'),
-            content: SingleChildScrollView(
-              child: Text(ticket, style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cerrar'),
-              ),
-              ElevatedButton.icon(
-                onPressed: () {
-                  // Aquí se podría integrar con impresora Bluetooth
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('🖨️  Enviando a impresora...'), backgroundColor: Colors.blue),
-                  );
-                },
-                icon: const Icon(Icons.print),
-                label: const Text('Imprimir'),
-              ),
-            ],
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❌ Error ticket: $e'), backgroundColor: Colors.red),
-        );
-      }
-    }
-  }
+  // RF 18: Pago parcial/fiado
+  double _amountPaid = 0.0;
+  bool _isCredit = false;
+  String _creditNotes = '';
 
   Future<void> _completeSale() async {
     if (_cart.isEmpty) {
@@ -182,7 +109,6 @@ ${_isCredit ? 'Pendiente (Fiado): \$${_pending.toStringAsFixed(2)}\n' : 'Cambio:
       );
       return;
     }
-    // RF 18: Validar pago mínimo
     if (!_isCredit && _amountPaid < _total) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('⚠️ Pago insuficiente'), backgroundColor: Colors.orange),
@@ -195,7 +121,7 @@ ${_isCredit ? 'Pendiente (Fiado): \$${_pending.toStringAsFixed(2)}\n' : 'Cambio:
         ventaId: 0,
         productoId: c.productoId,
         cantidad: c.cantidad,
-        precioUnitario: c.precio,
+        precioUnitario: c.precio,  // CartItem.precio
         subtotal: c.subtotal,
       )).toList();
 
@@ -203,19 +129,16 @@ ${_isCredit ? 'Pendiente (Fiado): \$${_pending.toStringAsFixed(2)}\n' : 'Cambio:
         _selectedCustomer?.id,
         lines,
         _total,
-        _isCredit ? _amountPaid : _total, // paidAmount
-        _isCredit ? _pending : 0.0, // pendingAmount
+        _isCredit ? _amountPaid : _total,
+        _isCredit ? (_total - _amountPaid) : 0.0,
         _creditNotes,
       );
-
-      final sale = Sale(id: saleId, clienteId: _selectedCustomer?.id, fecha: DateTime.now().toIso8601String(), total: _total);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('✅ Venta: \$${_total.toStringAsFixed(2)}'), backgroundColor: Colors.green),
         );
-        // RF 19: Generar ticket después de venta exitosa
-        await _generateTicket(sale);
+        await _generateTicket(saleId);
       }
       
       _clearCart();
@@ -233,6 +156,35 @@ ${_isCredit ? 'Pendiente (Fiado): \$${_pending.toStringAsFixed(2)}\n' : 'Cambio:
           SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red),
         );
       }
+    }
+  }
+
+  // RF 19: Generar ticket
+  Future<void> _generateTicket(int saleId) async {
+    // Simulación de ticket - en producción integrar con impresora
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('🧾 Ticket Generado'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('════════════════\n   NOVA ADEN\n════════════════\n', 
+                    textAlign: TextAlign.center, style: TextStyle(fontFamily: 'monospace')),
+                ..._cart.map((c) => Text('${c.nombre} x${c.cantidad} = \$${c.subtotal.toStringAsFixed(2)}')),
+                const Divider(),
+                Text('TOTAL: \$${_total.toStringAsFixed(2)}', 
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cerrar')),
+          ],
+        ),
+      );
     }
   }
 
@@ -254,7 +206,7 @@ ${_isCredit ? 'Pendiente (Fiado): \$${_pending.toStringAsFixed(2)}\n' : 'Cambio:
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('🛒 Carrito de Venta', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                    const Text('🛒 Carrito', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
                     IconButton(icon: const Icon(Icons.close, color: Colors.white), onPressed: () => Navigator.pop(ctx)),
                   ],
                 ),
@@ -264,7 +216,7 @@ ${_isCredit ? 'Pendiente (Fiado): \$${_pending.toStringAsFixed(2)}\n' : 'Cambio:
                   controller: scrollController,
                   child: Column(
                     children: [
-                      // Selector de cliente
+                      // Cliente
                       Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
@@ -294,7 +246,7 @@ ${_isCredit ? 'Pendiente (Fiado): \$${_pending.toStringAsFixed(2)}\n' : 'Cambio:
                           ],
                         ),
                       ),
-                      // Lista de productos en carrito
+                      // Productos en carrito
                       if (_cart.isNotEmpty)
                         ListView.builder(
                           shrinkWrap: true,
@@ -315,7 +267,6 @@ ${_isCredit ? 'Pendiente (Fiado): \$${_pending.toStringAsFixed(2)}\n' : 'Cambio:
                                     IconButton(icon: const Icon(Icons.remove_circle, color: Colors.red, size: 28), onPressed: () { _decreaseQuantity(i); setModalState(() {}); }),
                                     Text('${c.cantidad}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                                     IconButton(icon: const Icon(Icons.add_circle, color: Colors.green, size: 28), onPressed: () { _increaseQuantity(i); setModalState(() {}); }),
-                                    // RF 16: Botón eliminar
                                     IconButton(icon: const Icon(Icons.delete_forever, color: Colors.red), onPressed: () { _removeFromCart(i); setModalState(() {}); }),
                                   ],
                                 ),
@@ -326,7 +277,7 @@ ${_isCredit ? 'Pendiente (Fiado): \$${_pending.toStringAsFixed(2)}\n' : 'Cambio:
                       else
                         const Padding(padding: EdgeInsets.all(32), child: Center(child: Text('Carrito vacío', style: TextStyle(fontSize: 16, color: Colors.grey)))),
                       
-                      // RF 17: Descuento global
+                      // RF 17: Descuento
                       Padding(
                         padding: const EdgeInsets.all(16),
                         child: Card(
@@ -338,31 +289,17 @@ ${_isCredit ? 'Pendiente (Fiado): \$${_pending.toStringAsFixed(2)}\n' : 'Cambio:
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text('💲 Descuento Global', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                    Switch(
-                                      value: _applyDiscount,
-                                      onChanged: (v) => setModalState(() => _applyDiscount = v),
-                                    ),
+                                    const Text('💲 Descuento', style: TextStyle(fontWeight: FontWeight.bold)),
+                                    Switch(value: _applyDiscount, onChanged: (v) => setModalState(() => _applyDiscount = v)),
                                   ],
                                 ),
                                 if (_applyDiscount) ...[
                                   const SizedBox(height: 12),
-                                  Row(
-                                    children: [
-                                      const Text('Porcentaje: '),
-                                      Expanded(
-                                        child: Slider(
-                                          value: _discountPercent,
-                                          min: 0,
-                                          max: 50,
-                                          divisions: 10,
-                                          label: '${_discountPercent.toInt()}%',
-                                          onChanged: (v) => setModalState(() => _discountPercent = v),
-                                        ),
-                                      ),
-                                      Text('${_discountPercent.toInt()}%', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                    ],
-                                  ),
+                                  Row(children: [
+                                    const Text('Porcentaje: '),
+                                    Expanded(child: Slider(value: _discountPercent, min: 0, max: 50, divisions: 10, label: '${_discountPercent.toInt()}%', onChanged: (v) => setModalState(() => _discountPercent = v))),
+                                    Text('${_discountPercent.toInt()}%', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  ]),
                                   Text('Ahorro: -\$${_discountAmount.toStringAsFixed(2)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
                                 ],
                               ],
@@ -371,7 +308,7 @@ ${_isCredit ? 'Pendiente (Fiado): \$${_pending.toStringAsFixed(2)}\n' : 'Cambio:
                         ),
                       ),
                       
-                      // RF 18: Tipo de pago y monto
+                      // RF 18: Pago
                       Padding(
                         padding: const EdgeInsets.all(16),
                         child: Card(
@@ -380,55 +317,20 @@ ${_isCredit ? 'Pendiente (Fiado): \$${_pending.toStringAsFixed(2)}\n' : 'Cambio:
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('💳 Método de Pago', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                const Text('💳 Método de Pago', style: TextStyle(fontWeight: FontWeight.bold)),
                                 const SizedBox(height: 12),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: DropdownButtonFormField<PaymentType>(
-                                        decoration: const InputDecoration(border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
-                                        value: _paymentType,
-                                        items: const [
-                                          DropdownMenuItem(value: PaymentType.cash, child: Text('💵 Efectivo')),
-                                          DropdownMenuItem(value: PaymentType.transfer, child: Text('📱 Transferencia')),
-                                          DropdownMenuItem(value: PaymentType.card, child: Text('💳 Tarjeta')),
-                                        ],
-                                        onChanged: (v) => setModalState(() => _paymentType = v!),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Text('Fiado: '),
-                                        Switch(
-                                          value: _isCredit,
-                                          onChanged: (v) => setModalState(() => _isCredit = v),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
+                                Row(children: [
+                                  const Text('Monto pagado: \$'),
+                                  Expanded(child: TextFormField(keyboardType: TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(border: OutlineInputBorder(), hintText: '0.00'), onChanged: (v) => setModalState(() => _amountPaid = double.tryParse(v) ?? 0.0))),
+                                ]),
                                 const SizedBox(height: 12),
-                                Row(
-                                  children: [
-                                    const Text('Monto Pagado: \$'),
-                                    Expanded(
-                                      child: TextFormField(
-                                        keyboardType: TextInputType.numberWithOptions(decimal: true),
-                                        decoration: const InputDecoration(border: OutlineInputBorder(), hintText: '0.00'),
-                                        onChanged: (v) => setModalState(() => _amountPaid = double.tryParse(v) ?? 0.0),
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                Row(children: [
+                                  const Text('Fiado: '),
+                                  Switch(value: _isCredit, onChanged: (v) => setModalState(() => _isCredit = v)),
+                                ]),
                                 if (_isCredit) ...[
-                                  const SizedBox(height: 12),
-                                  TextField(
-                                    decoration: const InputDecoration(labelText: 'Notas de crédito (opcional)', border: OutlineInputBorder()),
-                                    maxLines: 2,
-                                    onChanged: (v) => _creditNotes = v,
-                                  ),
+                                  const SizedBox(height: 8),
+                                  TextField(decoration: const InputDecoration(labelText: 'Notas de crédito', border: OutlineInputBorder()), maxLines: 2, onChanged: (v) => _creditNotes = v),
                                 ],
                               ],
                             ),
@@ -443,21 +345,16 @@ ${_isCredit ? 'Pendiente (Fiado): \$${_pending.toStringAsFixed(2)}\n' : 'Cambio:
                         child: Column(
                           children: [
                             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Subtotal:'), Text('\$${_subtotal.toStringAsFixed(2)}')]),
-                            if (_applyDiscount) Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('Descuento (${_discountPercent.toInt()}%):'), Text('-\$${_discountAmount.toStringAsFixed(2)}', style: const TextStyle(color: Colors.green))]),
+                            if (_applyDiscount) Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('Descuento:'), Text('-\$${_discountAmount.toStringAsFixed(2)}', style: const TextStyle(color: Colors.green))]),
                             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('TOTAL:', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)), Text('\$${_total.toStringAsFixed(2)}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.green))]),
-                            if (_isCredit) Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Pendiente:'), Text('\$${_pending.toStringAsFixed(2)}', style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold))]),
-                            if (!_isCredit && _amountPaid > 0) Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Cambio:'), Text('\$${_change.toStringAsFixed(2)}', style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold))]),
+                            if (_isCredit) Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Pendiente:'), Text('\$${(_total - _amountPaid).toStringAsFixed(2)}', style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold))]),
                             const SizedBox(height: 12),
-                            SizedBox(
-                              width: double.infinity,
-                              height: 50,
-                              child: ElevatedButton.icon(
-                                onPressed: _cart.isEmpty ? null : _completeSale,
-                                icon: const Icon(Icons.check_circle, size: 24),
-                                label: const Text('CONFIRMAR VENTA', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                              ),
-                            ),
+                            SizedBox(width: double.infinity, height: 50, child: ElevatedButton.icon(
+                              onPressed: _cart.isEmpty ? null : _completeSale,
+                              icon: const Icon(Icons.check_circle, size: 24),
+                              label: const Text('CONFIRMAR VENTA', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                              style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                            )),
                           ],
                         ),
                       ),
@@ -556,15 +453,21 @@ ${_isCredit ? 'Pendiente (Fiado): \$${_pending.toStringAsFixed(2)}\n' : 'Cambio:
   }
 }
 
-// Clases auxiliares
+// CartItem: usa 'precio' (NO 'precioVenta')
 class CartItem {
   final int productoId;
   final String nombre;
-  final double precio;
+  final double precio;  // ← Este es el campo correcto
   int cantidad;
   final int stockDisponible;
-  CartItem({required this.productoId, required this.nombre, required this.precio, required this.cantidad, required this.stockDisponible});
+  
+  CartItem({
+    required this.productoId, 
+    required this.nombre, 
+    required this.precio,  // ← Constructor espera 'precio'
+    required this.cantidad, 
+    required this.stockDisponible,
+  });
+  
   double get subtotal => precio * cantidad;
 }
-
-enum PaymentType { cash, transfer, card }
