@@ -15,7 +15,9 @@ import '../../core/repositories/product_repository.dart';
 import '../../core/repositories/sale_repository.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final Function()? onToggleTheme;
+  const HomePage({super.key, this.onToggleTheme});
+
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -47,13 +49,26 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text(AppConstants.appName),
         centerTitle: true,
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadStats),
-          IconButton(icon: const Icon(Icons.settings), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsPage()))),
+          IconButton(
+            icon: const Icon(Icons.settings), 
+            onPressed: () => Navigator.push(
+              context, 
+              MaterialPageRoute(
+                builder: (_) => SettingsPage(
+                  onToggleTheme: widget.onToggleTheme,
+                  isDark: isDark,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
       body: RefreshIndicator(
@@ -87,7 +102,7 @@ class _HomePageState extends State<HomePage> {
                 _moduleCard(context, 'Clientes', Icons.people, Colors.pink, const CustomerPage()),
                 _moduleCard(context, 'Ajustes Inv.', Icons.edit, Colors.indigo, const InventoryAdjustmentPage()),
                 _moduleCard(context, 'Mermas', Icons.warning_amber, Colors.red, const WastePage()),
-                _moduleCard(context, 'Precios Masivo', Icons.price_change, Colors.cyan, const BulkPricePage()),
+                _moduleCard(context, 'Precios Masivo', Icons.percent, Colors.cyan, const BulkPricePage()),
                 _moduleCard(context, 'Reportes', Icons.bar_chart, Colors.purple, const ReportsPage()),
               ],
             ),

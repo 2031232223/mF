@@ -3,7 +3,8 @@ import '../../core/constants/app_constants.dart';
 import 'home_page.dart';
 
 class WelcomePage extends StatefulWidget {
-  const WelcomePage({super.key});
+  final Function()? onToggleTheme;
+  const WelcomePage({super.key, this.onToggleTheme});
 
   @override
   State<WelcomePage> createState() => _WelcomePageState();
@@ -27,7 +28,7 @@ class _WelcomePageState extends State<WelcomePage> with SingleTickerProviderStat
   Future<void> _navigateToHome() async {
     await Future.delayed(const Duration(seconds: 3));
     if (mounted) {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomePage()));
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomePage(onToggleTheme: widget.onToggleTheme)));
     }
   }
 
