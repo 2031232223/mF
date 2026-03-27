@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/models/product.dart';
 import '../../core/repositories/product_repository.dart';
 import '../../core/utils/csv_exporter.dart';
+import './product_form_page.dart';
 
 class ProductListPage extends StatefulWidget {
   const ProductListPage({super.key});
@@ -24,6 +25,42 @@ class _ProductListPageState extends State<ProductListPage> {
     setState(() => _loading = false);
   }
 
+  Future<void> _exportCsv() async {
+    try {
+      final products = await _repo.getAllProducts();
+      final path = await CsvExporter.exportProducts(products.map((p) => p.toMap()).toList());
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('✅ Exportado: ${path.split('/').last}'), backgroundColor: Colors.green, duration: const Duration(seconds: 5)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('❌ $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteProduct(int id) async {
+    try {
+      await _repo.deleteProduct(id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('✅ Producto eliminado'), backgroundColor: Colors.green),
+        );
+        _load();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('❌ $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -33,30 +70,20 @@ class _ProductListPageState extends State<ProductListPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.download),
-            onPressed: () async {
-              try {
-                final products = await _repo.getAllProducts();
-                final path = await CsvExporter.exportProducts(products.map((p) => p.toMap()).toList());
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('✅ Exportado: ${path.split('/').last}'), backgroundColor: Colors.green, duration: const Duration(seconds: 5)),
-                  );
-                }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('❌ $e'), backgroundColor: Colors.red),
-                  );
-                }
-              }
-            },
+            onPressed: _exportCsv,
             tooltip: 'Exportar a CSV',
           ),
           IconButton(icon: const Icon(Icons.refresh), onPressed: _load),
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showProductForm(),
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ProductFormPage()),
+          );
+          if (result == true) _load();
+        },
         child: const Icon(Icons.add),
       ),
       body: _loading ? const Center(child: CircularProgressIndicator()) : Column(children: [
@@ -71,14 +98,24 @@ class _ProductListPageState extends State<ProductListPage> {
           itemBuilder: (ctx, i) {
             final p = _products.where((prod) => prod.nombre.toLowerCase().contains(_search.text.toLowerCase())).toList()[i];
             return Card(margin: const EdgeInsets.only(bottom: 8), child: ListTile(
-              leading: CircleAvatar(backgroundColor: p.stockActual > 0 ? Colors.blue : Colors.grey, child: Icon(Icons.inventory_2, color: Colors.white)),
+              leading: CircleAvatar(
+                backgroundColor: p.stockActual > 0 ? (p.esStockCritico ? Colors.orange : Colors.blue) : Colors.grey,
+                child: Icon(p.esFavorito ? Icons.star : Icons.inventory_2, color: Colors.white),
+              ),
               title: Text(p.nombre, style: const TextStyle(fontWeight: FontWeight.bold)),
               subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Stock: ${p.stockActual} ${p.stockActual <= p.stockMinimo ? '⚠️ Bajo' : ''}'),
+                if (p.categoria != null) Text('📁 ${p.categoria}'),
+                Text('Stock: ${p.stockActual} ${p.esStockCritico ? '⚠️ Crítico' : ''}'),
                 Text('\$${p.precioVenta.toStringAsFixed(2)}'),
               ]),
               trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-                IconButton(icon: const Icon(Icons.edit), onPressed: () => _showProductForm(product: p)),
+                IconButton(icon: const Icon(Icons.edit), onPressed: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => ProductFormPage(product: p)),
+                  );
+                  if (result == true) _load();
+                }),
                 IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => _deleteProduct(p.id!)),
               ]),
             ));
@@ -88,20 +125,9 @@ class _ProductListPageState extends State<ProductListPage> {
     );
   }
 
-  void _showProductForm({Product? product}) {
-    // Implementar formulario de producto (simplificado)
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('🚧 Formulario de producto en desarrollo')));
-  }
-
-  Future<void> _deleteProduct(int id) async {
-    try {
-      await _repo.deleteProduct(id);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Producto eliminado'), backgroundColor: Colors.green));
-        _load();
-      }
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ $e'), backgroundColor: Colors.red));
-    }
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
   }
 }
