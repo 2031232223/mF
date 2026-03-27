@@ -17,96 +17,152 @@ class DatabaseHelper {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'nova_aden.db');
 
-    return await openDatabase(path, version: 1, onCreate: _onCreate);
+    return await openDatabase(
+      path,
+      version: 2, // Incrementado para migración
+      onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
+    );
   }
 
   Future<void> _onCreate(Database db, int version) async {
-    // Productos (RF 1-5)
+    // Tabla productos con TODOS los campos nuevos
     await db.execute('''
-      CREATE TABLE productos(
+      CREATE TABLE productos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nombre TEXT NOT NULL,
         codigo TEXT NOT NULL,
-        costo REAL NOT NULL,
-        precioVenta REAL NOT NULL,
-        stockActual INTEGER NOT NULL,
-        stockMinimo INTEGER NOT NULL,
-        unidadMedida TEXT NOT NULL,
-        categoria TEXT
+        costo REAL,
+        precio_venta REAL NOT NULL,
+        stock_actual INTEGER NOT NULL,
+        stock_minimo INTEGER NOT NULL,
+        categoria TEXT,
+        es_favorito INTEGER DEFAULT 0,
+        stock_critico INTEGER
       )
     ''');
 
-    // Proveedores (RF 7)
+    // Tabla clientes
     await db.execute('''
-      CREATE TABLE proveedores(
+      CREATE TABLE clientes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nombre TEXT NOT NULL,
-        telefono TEXT,
-        email TEXT,
-        direccion TEXT
-      )
-    ''');
-
-    // Clientes (NEW - Para ventas)
-    await db.execute('''
-      CREATE TABLE clientes(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT NOT NULL,
-        carnetIdentidad TEXT NOT NULL,
+        carnet_identidad TEXT NOT NULL,
         telefono TEXT NOT NULL,
-        email TEXT,
-        direccion TEXT
+        es_habitual INTEGER DEFAULT 0,
+        fecha_registro TEXT
       )
     ''');
 
-    // Compras (RF 6-11)
+    // Tabla proveedores
     await db.execute('''
-      CREATE TABLE compras(
+      CREATE TABLE proveedores (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT NOT NULL,
+        contacto TEXT,
+        telefono TEXT
+      )
+    ''');
+
+    // Tabla compras
+    await db.execute('''
+      CREATE TABLE compras (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         proveedor_id INTEGER,
         fecha TEXT NOT NULL,
-        total REAL NOT NULL,
-        estado TEXT DEFAULT 'pendiente',
-        FOREIGN KEY (proveedor_id) REFERENCES proveedores(id)
+        total REAL NOT NULL
       )
     ''');
 
+    // Tabla compra_detalles
     await db.execute('''
-      CREATE TABLE compras_detalle(
+      CREATE TABLE compra_detalles (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         compra_id INTEGER NOT NULL,
         producto_id INTEGER NOT NULL,
         cantidad INTEGER NOT NULL,
-        costoUnitario REAL NOT NULL,
-        subtotal REAL NOT NULL,
-        FOREIGN KEY (compra_id) REFERENCES compras(id),
-        FOREIGN KEY (producto_id) REFERENCES productos(id)
+        costo_unitario REAL NOT NULL,
+        subtotal REAL NOT NULL
       )
     ''');
 
-    // Ventas (RF 12-16)
+    // Tabla ventas
     await db.execute('''
-      CREATE TABLE ventas(
+      CREATE TABLE ventas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         cliente_id INTEGER,
         fecha TEXT NOT NULL,
         total REAL NOT NULL,
-        estado TEXT DEFAULT 'pagado',
-        FOREIGN KEY (cliente_id) REFERENCES clientes(id)
+        monto_pagado REAL DEFAULT 0,
+        monto_pendiente REAL DEFAULT 0,
+        notas_credito TEXT,
+        es_fiado INTEGER DEFAULT 0
       )
     ''');
 
+    // Tabla venta_detalles
     await db.execute('''
-      CREATE TABLE ventas_detalle(
+      CREATE TABLE venta_detalles (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         venta_id INTEGER NOT NULL,
         producto_id INTEGER NOT NULL,
         cantidad INTEGER NOT NULL,
-        precioUnitario REAL NOT NULL,
-        subtotal REAL NOT NULL,
-        FOREIGN KEY (venta_id) REFERENCES ventas(id),
-        FOREIGN KEY (producto_id) REFERENCES productos(id)
+        precio_unitario REAL NOT NULL,
+        subtotal REAL NOT NULL
       )
     ''');
+
+    // Tabla ajustes_inventario
+    await db.execute('''
+      CREATE TABLE ajustes_inventario (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        producto_id INTEGER NOT NULL,
+        producto_nombre TEXT NOT NULL,
+        tipo TEXT NOT NULL,
+        cantidad INTEGER NOT NULL,
+        costo_unitario REAL NOT NULL,
+        motivo TEXT,
+        fecha TEXT NOT NULL,
+        notas TEXT
+      )
+    ''');
+
+    // Tabla mermas
+    await db.execute('''
+      CREATE TABLE mermas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        producto_id INTEGER NOT NULL,
+        producto_nombre TEXT NOT NULL,
+        cantidad INTEGER NOT NULL,
+        costo_unitario REAL NOT NULL,
+        motivo TEXT,
+        fecha TEXT NOT NULL,
+        notas TEXT
+      )
+    ''');
+  }
+
+  // Migración para bases de datos existentes
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Agregar columnas nuevas a productos (si no existen)
+      try {
+        await db.execute('ALTER TABLE productos ADD COLUMN categoria TEXT');
+      } catch (_) {}
+      try {
+        await db.execute('ALTER TABLE productos ADD COLUMN es_favorito INTEGER DEFAULT 0');
+      } catch (_) {}
+      try {
+        await db.execute('ALTER TABLE productos ADD COLUMN stock_critico INTEGER');
+      } catch (_) {}
+      
+      // Agregar columnas a clientes
+      try {
+        await db.execute('ALTER TABLE clientes ADD COLUMN es_habitual INTEGER DEFAULT 0');
+      } catch (_) {}
+      try {
+        await db.execute('ALTER TABLE clientes ADD COLUMN fecha_registro TEXT');
+      } catch (_) {}
+    }
   }
 }
