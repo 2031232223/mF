@@ -69,25 +69,6 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
         child: SafeArea(
           child: Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.white24 : Colors.black12,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: IconButton(
-                        icon: Icon(widget.isDark ? Icons.light_mode : Icons.dark_mode, color: Colors.white),
-                        onPressed: () => widget.onToggleTheme(!widget.isDark),
-                        tooltip: widget.isDark ? 'Modo claro' : 'Modo oscuro',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
               Expanded(
                 child: Center(
                   child: AnimatedBuilder(
@@ -130,7 +111,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              'Sistema de Gestión Comercial',
+                              AppConstants.appDescription,
                               style: TextStyle(
                                 fontSize: 16,
                                 color: Colors.white.withOpacity(0.9),
@@ -179,7 +160,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '© 2024 Nova ADEN. Todos los derechos reservados.',
+                      '© 2026 Nova ADEN. Todos los derechos reservados.',
                       style: TextStyle(
                         fontSize: 10,
                         color: Colors.white.withOpacity(0.5),

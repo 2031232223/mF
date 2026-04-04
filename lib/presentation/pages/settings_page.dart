@@ -15,7 +15,6 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   bool _notifications = true;
   bool _autoBackup = true;
-  String _language = 'Español';
 
   @override
   Widget build(BuildContext context) {
@@ -28,10 +27,10 @@ class _SettingsPageState extends State<SettingsPage> {
         padding: const EdgeInsets.all(16),
         children: [
           _buildSectionTitle('Apariencia'),
-          _buildSwitchTile(
-            icon: widget.isDark ? Icons.light_mode : Icons.dark_mode,
-            title: widget.isDark ? 'Modo Claro' : 'Modo Oscuro',
-            subtitle: 'Cambiar tema de la aplicación',
+          SwitchListTile(
+            secondary: Icon(widget.isDark ? Icons.light_mode : Icons.dark_mode, color: Theme.of(context).colorScheme.primary),
+            title: const Text('Modo Oscuro', style: TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: const Text('Cambiar tema de la aplicación'),
             value: widget.isDark,
             onChanged: (value) {
               if (widget.onToggleTheme != null) {
@@ -53,17 +52,17 @@ class _SettingsPageState extends State<SettingsPage> {
             subtitle: 'Crear o restaurar copias',
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BackupPage())),
           ),
-          _buildSwitchTile(
-            icon: Icons.notifications,
-            title: 'Notificaciones',
-            subtitle: 'Alertas de stock bajo',
+          SwitchListTile(
+            secondary: const Icon(Icons.notifications, color: Colors.green),
+            title: const Text('Notificaciones', style: TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: const Text('Alertas de stock bajo'),
             value: _notifications,
             onChanged: (value) => setState(() => _notifications = value),
           ),
-          _buildSwitchTile(
-            icon: Icons.backup_table,
-            title: 'Respaldo Automático',
-            subtitle: 'Diario a las 23:59',
+          SwitchListTile(
+            secondary: const Icon(Icons.backup_table, color: Colors.orange),
+            title: const Text('Respaldo Automático', style: TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: const Text('Diario a las 23:59'),
             value: _autoBackup,
             onChanged: (value) => setState(() => _autoBackup = value),
           ),
@@ -111,24 +110,6 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildSwitchTile({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return Card(
-      child: SwitchListTile(
-        secondary: Icon(icon, color: Theme.of(context).colorScheme.primary),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(subtitle),
-        value: value,
-        onChanged: onChanged,
-      ),
-    );
-  }
-
   void _showAboutDialog() {
     showDialog(
       context: context,
@@ -140,11 +121,11 @@ class _SettingsPageState extends State<SettingsPage> {
           children: [
             const Text('Versión: 1.0.0'),
             const SizedBox(height: 8),
-            const Text('Sistema de Gestión Comercial'),
+            const Text('Administrador de Negocio'),
             const SizedBox(height: 8),
             const Text('Desarrollado con Flutter & Dart'),
             const SizedBox(height: 16),
-            const Text('© 2024 Todos los derechos reservados.'),
+            const Text('© 2026 Todos los derechos reservados.'),
           ],
         ),
         actions: [

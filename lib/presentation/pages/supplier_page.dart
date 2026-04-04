@@ -47,7 +47,7 @@ class _SupplierPageState extends State<SupplierPage> {
 
   void _showSupplierForm({Supplier? supplier}) {
     final nombreCtrl = TextEditingController(text: supplier?.nombre ?? '');
-    final contactoCtrl = TextEditingController(text: supplier?.contacto ?? '');
+    final carnetCtrl = TextEditingController(text: supplier?.contacto ?? '');
     final telefonoCtrl = TextEditingController(text: supplier?.telefono ?? '');
 
     showModalBottomSheet(
@@ -85,8 +85,8 @@ class _SupplierPageState extends State<SupplierPage> {
               ),
               const SizedBox(height: 12),
               TextField(
-                controller: contactoCtrl,
-                decoration: const InputDecoration(labelText: 'Contacto', border: OutlineInputBorder()),
+                controller: carnetCtrl,
+                decoration: const InputDecoration(labelText: 'Carnet de Identidad', border: OutlineInputBorder()),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -109,7 +109,7 @@ class _SupplierPageState extends State<SupplierPage> {
                       final newSupplier = Supplier(
                         id: supplier?.id,
                         nombre: nombreCtrl.text.trim(),
-                        contacto: contactoCtrl.text.trim(),
+                        contacto: carnetCtrl.text.trim(),
                         telefono: telefonoCtrl.text.trim(),
                       );
                       if (supplier == null) {

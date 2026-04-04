@@ -1,3 +1,5 @@
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_constants.dart';
@@ -30,6 +32,13 @@ class _ReportsPageState extends State<ReportsPage> {
         appBar: AppBar(
           title: const Text('Reportes'),
           centerTitle: true,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.download),
+              onPressed: () => _showExportOptions(),
+              tooltip: 'Exportar',
+            ),
+          ],
           bottom: const TabBar(
             tabs: [
               Tab(text: '📈 Ventas'),
@@ -47,6 +56,159 @@ class _ReportsPageState extends State<ReportsPage> {
         ),
       ),
     );
+  }
+
+  void _showExportOptions() {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('📥 Exportar Datos', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            _exportOption(
+              icon: Icons.inventory,
+              title: 'Catálogo de Productos',
+              subtitle: 'Exportar todos los productos a CSV',
+              onTap: () async {
+                Navigator.pop(ctx);
+                await _exportProductsCsv();
+              },
+            ),
+            const SizedBox(height: 12),
+            _exportOption(
+              icon: Icons.receipt_long,
+              title: 'Ventas del Día',
+              subtitle: 'Exportar ventas de hoy a CSV',
+              onTap: () async {
+                Navigator.pop(ctx);
+                await _exportSalesCsv();
+              },
+            ),
+            const SizedBox(height: 12),
+            _exportOption(
+              icon: Icons.assessment,
+              title: 'Top 10 Productos',
+              subtitle: 'Exportar productos más vendidos',
+              onTap: () async {
+                Navigator.pop(ctx);
+                await _exportTop10Csv();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _exportOption({required IconData icon, required String title, required String subtitle, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.blue.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.blue.withOpacity(0.3)),
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(backgroundColor: Colors.blue, child: Icon(icon, color: Colors.white)),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text(subtitle, style: TextStyle(color: Colors.grey[700], fontSize: 12)),
+                ],
+              ),
+            ),
+            Icon(Icons.download, color: Colors.blue),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _exportProductsCsv() async {
+    try {
+      final products = await _productRepo.getAllProducts();
+      final csvContent = 'ID,Nombre,Código,Costo,Precio Venta,Stock,Categoría\n' +
+          products.map((p) => '${p.id},"${p.nombre}","${p.codigo}",${p.costo},${p.precioVenta},${p.stockActual},"${p.categoria ?? ''}"').join('\n');
+      
+      // Guardar archivo
+      final directory = await getApplicationDocumentsDirectory();
+      final filePath = '${directory.path}/productos_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.csv';
+      final file = File(filePath);
+      await file.writeAsString(csvContent);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('✅ Exportado: productos.csv'), backgroundColor: Colors.green),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<void> _exportSalesCsv() async {
+    try {
+      final sales = await _saleRepo.getTodaySales();
+      final csvContent = 'ID,Fecha,Total,Cliente,Monto Pagado,Monto Pendiente\n' +
+          sales.map((s) => '${s.id},${s.fecha},${s.total},"${s.clienteId ?? 'General'}",${s.montoPagado},${s.montoPendiente}').join('\n');
+      
+      final directory = await getApplicationDocumentsDirectory();
+      final filePath = '${directory.path}/ventas_${DateFormat('yyyyMMdd').format(DateTime.now())}.csv';
+      final file = File(filePath);
+      await file.writeAsString(csvContent);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('✅ Exportado: ventas_hoy.csv'), backgroundColor: Colors.green),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<void> _exportTop10Csv() async {
+    try {
+      final top10 = await _saleRepo.getTop10Products();
+      final csvContent = 'Producto,ID,Total Vendido\n' +
+          top10.map((p) => '"${p['nombre']}",${p['id']},${p['total_vendido']}').join('\n');
+      
+      final directory = await getApplicationDocumentsDirectory();
+      final filePath = '${directory.path}/top10_productos_${DateFormat('yyyyMMdd').format(DateTime.now())}.csv';
+      final file = File(filePath);
+      await file.writeAsString(csvContent);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('✅ Exportado: top10_productos.csv'), backgroundColor: Colors.green),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   Widget _buildSalesTab() {
@@ -111,21 +273,67 @@ class _ReportsPageState extends State<ReportsPage> {
           ),
           const SizedBox(height: 12),
           _reportCard(
-            '🏆 Productos Más Vendidos',
-            'Top 10 productos',
+            '🏆 Top 10 Productos',
+            'Productos más vendidos',
             Icons.emoji_events,
             Colors.orange,
-            () async {
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('🚧 En desarrollo')),
-                );
-              }
-            },
+            () async => _showTop10Products(),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _showTop10Products() async {
+    try {
+      final top10 = await _saleRepo.getTop10Products();
+      if (!mounted) return;
+      
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('🏆 Top 10 Productos Más Vendidos'),
+          content: SizedBox(
+            width: double.maxFinite,
+            height: 400,
+            child: top10.isEmpty
+                ? const Center(child: Text('Sin ventas registradas'))
+                : ListView.builder(
+                    itemCount: top10.length,
+                    itemBuilder: (ctx, i) {
+                      final product = top10[i];
+                      return ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: i < 3 ? Colors.amber : Colors.blue,
+                          child: Text('${i + 1}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        ),
+                        title: Text(product['nombre'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                        subtitle: Text('${product['total_vendido']} unidades vendidas'),
+                        trailing: Icon(Icons.trending_up, color: i < 3 ? Colors.amber : Colors.blue),
+                      );
+                    },
+                  ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar')),
+            ElevatedButton.icon(
+              onPressed: () async {
+                Navigator.pop(context);
+                await _exportTop10Csv();
+              },
+              icon: const Icon(Icons.download),
+              label: const Text('Exportar CSV'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   Widget _buildInventoryTab() {
@@ -259,13 +467,7 @@ class _ReportsPageState extends State<ReportsPage> {
             'Descargar en CSV',
             Icons.download,
             Colors.blue,
-            () async {
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('🚧 Función en desarrollo')),
-                );
-              }
-            },
+            () => _showExportOptions(),
           ),
         ],
       ),

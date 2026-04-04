@@ -100,7 +100,7 @@ class _CurrencySettingsPageState extends State<CurrencySettingsPage> {
               child: ElevatedButton.icon(
                 onPressed: _saveSettings,
                 icon: const Icon(Icons.save),
-                label: const Text('GUARDAR CONFIGURACIÓN', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                label: const Text('Guardar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
               ),
             ),

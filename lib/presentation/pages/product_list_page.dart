@@ -81,6 +81,8 @@ class _ProductListPageState extends State<ProductListPage> {
     bool esFavorito = product?.esFavorito ?? false;
     double precioSugerido = 0.0;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -102,17 +104,47 @@ class _ProductListPageState extends State<ProductListPage> {
                   children: [
                     Text(
                       product == null ? '➕ Nuevo Producto' : '✏️ Editar Producto',
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
                     ),
-                    IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                    IconButton(icon: Icon(Icons.close, color: isDark ? Colors.white : Colors.black87), onPressed: () => Navigator.pop(ctx)),
                   ],
                 ),
                 const Divider(),
-                TextField(controller: nombreCtrl, decoration: const InputDecoration(labelText: 'Nombre *', border: OutlineInputBorder())),
+                TextField(
+                  controller: nombreCtrl,
+                  style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+                  decoration: InputDecoration(
+                    labelText: 'Nombre *',
+                    labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+                    border: const OutlineInputBorder(),
+                    filled: true,
+                    fillColor: isDark ? Colors.grey[800] : Colors.grey[100],
+                  ),
+                ),
                 const SizedBox(height: 12),
-                TextField(controller: codigoCtrl, decoration: const InputDecoration(labelText: 'Código *', border: OutlineInputBorder())),
+                TextField(
+                  controller: codigoCtrl,
+                  style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+                  decoration: InputDecoration(
+                    labelText: 'Código *',
+                    labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+                    border: const OutlineInputBorder(),
+                    filled: true,
+                    fillColor: isDark ? Colors.grey[800] : Colors.grey[100],
+                  ),
+                ),
                 const SizedBox(height: 12),
-                TextField(controller: categoriaCtrl, decoration: const InputDecoration(labelText: 'Categoría (opcional)', border: OutlineInputBorder())),
+                TextField(
+                  controller: categoriaCtrl,
+                  style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+                  decoration: InputDecoration(
+                    labelText: 'Categoría (opcional)',
+                    labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+                    border: const OutlineInputBorder(),
+                    filled: true,
+                    fillColor: isDark ? Colors.grey[800] : Colors.grey[100],
+                  ),
+                ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -120,7 +152,14 @@ class _ProductListPageState extends State<ProductListPage> {
                       child: TextField(
                         controller: costoCtrl,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'Costo', border: OutlineInputBorder()),
+                        style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+                        decoration: InputDecoration(
+                          labelText: 'Costo',
+                          labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+                          border: const OutlineInputBorder(),
+                          filled: true,
+                          fillColor: isDark ? Colors.grey[800] : Colors.grey[100],
+                        ),
                         onChanged: (v) {
                           final costo = double.tryParse(v) ?? 0.0;
                           final margen = double.tryParse(margenCtrl.text) ?? 30.0;
@@ -134,14 +173,21 @@ class _ProductListPageState extends State<ProductListPage> {
                       child: TextField(
                         controller: precioCtrl,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'Precio Venta *', border: OutlineInputBorder()),
+                        style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+                        decoration: InputDecoration(
+                          labelText: 'Precio Venta *',
+                          labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+                          border: const OutlineInputBorder(),
+                          filled: true,
+                          fillColor: isDark ? Colors.grey[800] : Colors.grey[100],
+                        ),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Card(
-                  color: Colors.blue[50],
+                  color: isDark ? Colors.blue[900] : Colors.blue[50],
                   child: Padding(
                     padding: const EdgeInsets.all(12),
                     child: Column(
@@ -149,20 +195,25 @@ class _ProductListPageState extends State<ProductListPage> {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.lightbulb, color: Colors.orange, size: 20),
+                            Icon(Icons.lightbulb, color: Colors.orange[400], size: 20),
                             const SizedBox(width: 8),
-                            const Text('Sugerir Precio por Margen', style: TextStyle(fontWeight: FontWeight.bold)),
+                            Text('Sugerir Precio por Margen', style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
                           ],
                         ),
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            const Text('Margen %: '),
+                            Text('Margen %: ', style: TextStyle(color: isDark ? Colors.white70 : Colors.black54)),
                             Expanded(
                               child: TextField(
                                 controller: margenCtrl,
                                 keyboardType: TextInputType.number,
-                                decoration: const InputDecoration(border: OutlineInputBorder()),
+                                style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+                                decoration: InputDecoration(
+                                  border: const OutlineInputBorder(),
+                                  filled: true,
+                                  fillColor: isDark ? Colors.grey[700] : Colors.white,
+                                ),
                                 onChanged: (v) {
                                   final costo = double.tryParse(costoCtrl.text) ?? 0.0;
                                   final margen = double.tryParse(v) ?? 30.0;
@@ -178,8 +229,8 @@ class _ProductListPageState extends State<ProductListPage> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('Precio sugerido:', style: TextStyle(color: Colors.grey[700])),
-                              Text('\$${precioSugerido.toStringAsFixed(2)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                              Text('Precio sugerido:', style: TextStyle(color: isDark ? Colors.white70 : Colors.black54)),
+                              Text('\$${precioSugerido.toStringAsFixed(2)}', style: TextStyle(color: Colors.green[400], fontWeight: FontWeight.bold)),
                             ],
                           ),
                           const SizedBox(height: 8),
@@ -190,7 +241,10 @@ class _ProductListPageState extends State<ProductListPage> {
                                 precioCtrl.text = precioSugerido.toStringAsFixed(2);
                                 setModalState(() {});
                               },
-                              child: const Text('Aplicar Precio Sugerido'),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: Colors.blue[400]!),
+                              ),
+                              child: Text('Aplicar Precio Sugerido', style: TextStyle(color: isDark ? Colors.white : Colors.black87)),
                             ),
                           ),
                         ],
@@ -205,7 +259,14 @@ class _ProductListPageState extends State<ProductListPage> {
                       child: TextField(
                         controller: stockCtrl,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'Stock Actual', border: OutlineInputBorder()),
+                        style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+                        decoration: InputDecoration(
+                          labelText: 'Stock Actual',
+                          labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+                          border: const OutlineInputBorder(),
+                          filled: true,
+                          fillColor: isDark ? Colors.grey[800] : Colors.grey[100],
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -213,7 +274,14 @@ class _ProductListPageState extends State<ProductListPage> {
                       child: TextField(
                         controller: stockMinCtrl,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'Stock Mínimo', border: OutlineInputBorder()),
+                        style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+                        decoration: InputDecoration(
+                          labelText: 'Stock Mínimo',
+                          labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+                          border: const OutlineInputBorder(),
+                          filled: true,
+                          fillColor: isDark ? Colors.grey[800] : Colors.grey[100],
+                        ),
                       ),
                     ),
                   ],
@@ -222,12 +290,19 @@ class _ProductListPageState extends State<ProductListPage> {
                 TextField(
                   controller: stockCriticoCtrl,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Stock Crítico (alerta)', border: OutlineInputBorder()),
+                  style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+                  decoration: InputDecoration(
+                    labelText: 'Stock Crítico (alerta)',
+                    labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+                    border: const OutlineInputBorder(),
+                    filled: true,
+                    fillColor: isDark ? Colors.grey[800] : Colors.grey[100],
+                  ),
                 ),
                 const SizedBox(height: 16),
                 SwitchListTile(
-                  title: const Text('⭐ Marcar como favorito'),
-                  subtitle: const Text('Aparecerá en lista de favoritos'),
+                  title: Text('⭐ Marcar como favorito', style: TextStyle(color: isDark ? Colors.white : Colors.black87)),
+                  subtitle: Text('Aparecerá en lista de favoritos', style: TextStyle(color: isDark ? Colors.white60 : Colors.black54)),
                   value: esFavorito,
                   onChanged: (v) => esFavorito = v,
                 ),
@@ -391,6 +466,7 @@ class _ProductListPageState extends State<ProductListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Inventario'),
@@ -413,6 +489,7 @@ class _ProductListPageState extends State<ProductListPage> {
           FloatingActionButton(
             heroTag: 'add',
             onPressed: () => _showProductForm(),
+            backgroundColor: Colors.blue,
             child: const Icon(Icons.add),
           ),
         ],
@@ -425,12 +502,14 @@ class _ProductListPageState extends State<ProductListPage> {
                   padding: const EdgeInsets.all(16),
                   child: TextField(
                     controller: _search,
+                    style: TextStyle(color: isDark ? Colors.white : Colors.black87),
                     decoration: InputDecoration(
                       hintText: 'Buscar producto...',
-                      prefixIcon: const Icon(Icons.search),
+                      hintStyle: TextStyle(color: isDark ? Colors.white54 : Colors.grey),
+                      prefixIcon: Icon(Icons.search, color: isDark ? Colors.white54 : Colors.grey),
                       border: const OutlineInputBorder(),
                       filled: true,
-                      fillColor: Colors.grey[100],
+                      fillColor: isDark ? Colors.grey[800] : Colors.grey[100],
                     ),
                     onChanged: (v) => setState(() {}),
                   ),
@@ -448,20 +527,20 @@ class _ProductListPageState extends State<ProductListPage> {
                             backgroundColor: p.stockActual > 0 ? (p.esStockCritico ? Colors.orange : Colors.blue) : Colors.grey,
                             child: Icon(p.esFavorito ? Icons.star : Icons.inventory_2, color: Colors.white),
                           ),
-                          title: Text(p.nombre, style: const TextStyle(fontWeight: FontWeight.bold)),
+                          title: Text(p.nombre, style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              if (p.categoria != null) Text('📁 ${p.categoria}'),
-                              Text('Stock: ${p.stockActual} ${p.esStockCritico ? '⚠️ Crítico' : ''}'),
-                              Text('\$${p.precioVenta.toStringAsFixed(2)}'),
-                              if (p.margenGanancia != null) Text('Margen: ${p.margenGanancia!.toStringAsFixed(1)}%', style: TextStyle(color: Colors.green, fontSize: 12)),
+                              if (p.categoria != null) Text('📁 ${p.categoria}', style: TextStyle(color: isDark ? Colors.white60 : Colors.black54)),
+                              Text('Stock: ${p.stockActual} ${p.esStockCritico ? '⚠️ Crítico' : ''}', style: TextStyle(color: isDark ? Colors.white60 : Colors.black54)),
+                              Text('\$${p.precioVenta.toStringAsFixed(2)}', style: TextStyle(color: Colors.green[400], fontWeight: FontWeight.bold)),
+                              if (p.margenGanancia != null) Text('Margen: ${p.margenGanancia!.toStringAsFixed(1)}%', style: TextStyle(color: Colors.green[400], fontSize: 12)),
                             ],
                           ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              IconButton(icon: const Icon(Icons.edit), onPressed: () => _showProductForm(product: p)),
+                              IconButton(icon: Icon(Icons.edit, color: isDark ? Colors.white : Colors.black87), onPressed: () => _showProductForm(product: p)),
                               IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => _deleteProduct(p.id!)),
                             ],
                           ),
