@@ -11,6 +11,7 @@ class CurrencySettingsPage extends StatefulWidget {
 class _CurrencySettingsPageState extends State<CurrencySettingsPage> {
   String _currency = 'CUP';
   double _mlcRate = 120.0;
+  double _usdRate = 1.0;
 
   @override
   void initState() {
@@ -23,6 +24,7 @@ class _CurrencySettingsPageState extends State<CurrencySettingsPage> {
     setState(() {
       _currency = prefs.getString('currency') ?? 'CUP';
       _mlcRate = prefs.getDouble('mlc_rate') ?? 120.0;
+      _usdRate = prefs.getDouble('usd_rate') ?? 1.0;
     });
   }
 
@@ -30,6 +32,7 @@ class _CurrencySettingsPageState extends State<CurrencySettingsPage> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('currency', _currency);
     await prefs.setDouble('mlc_rate', _mlcRate);
+    await prefs.setDouble('usd_rate', _usdRate);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('✅ Configuración guardada'), backgroundColor: Colors.green),
@@ -58,16 +61,38 @@ class _CurrencySettingsPageState extends State<CurrencySettingsPage> {
               ],
               onChanged: (v) => setState(() => _currency = v!),
             ),
-            if (_currency == 'CUP') ...[
-              const SizedBox(height: 24),
-              const Text('Tasa de Cambio MLC', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 12),
-              TextField(
-                keyboardType: TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(labelText: 'Tasa MLC', border: OutlineInputBorder(), hintText: '120.0'),
-                onChanged: (v) => _mlcRate = double.tryParse(v) ?? 120.0,
-              ),
-            ],
+            const SizedBox(height: 24),
+            const Text('Tasas de Cambio', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                const Text('💳 MLC: 1 MLC = ', style: TextStyle(fontWeight: FontWeight.bold)),
+                Expanded(
+                  child: TextField(
+                    keyboardType: TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(border: OutlineInputBorder(), hintText: '120.0'),
+                    controller: TextEditingController(text: _mlcRate.toString()),
+                    onChanged: (v) => _mlcRate = double.tryParse(v) ?? 120.0,
+                  ),
+                ),
+                const Text(' CUP'),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                const Text('🇺🇸 USD: 1 USD = ', style: TextStyle(fontWeight: FontWeight.bold)),
+                Expanded(
+                  child: TextField(
+                    keyboardType: TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(border: OutlineInputBorder(), hintText: '1.0'),
+                    controller: TextEditingController(text: _usdRate.toString()),
+                    onChanged: (v) => _usdRate = double.tryParse(v) ?? 1.0,
+                  ),
+                ),
+                const Text(' CUP'),
+              ],
+            ),
             const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,

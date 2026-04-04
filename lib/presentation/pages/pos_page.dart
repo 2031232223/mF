@@ -11,7 +11,9 @@ import '../../core/repositories/sale_repository.dart';
 import 'paused_sales_page.dart';
 
 class PosPage extends StatefulWidget {
-  const PosPage({super.key});
+  final VoidCallback? onSaleCompleted;
+  const PosPage({super.key, this.onSaleCompleted});
+
   @override
   State<PosPage> createState() => _PosPageState();
 }
@@ -20,32 +22,36 @@ class _PosPageState extends State<PosPage> {
   final _productRepo = ProductRepository();
   final _customerRepo = CustomerRepository();
   final _saleRepo = SaleRepository();
-  
+
   List<CartItem> _cart = [];
   List<Product> _products = [];
   List<Customer> _customers = [];
   Customer? _selectedCustomer;
   bool _isLoading = true;
   final _searchController = TextEditingController();
-  
-  // Pago
+
   double _amountPaid = 0.0;
+  late TextEditingController _amountPaidController;
   String _selectedCurrency = 'CUP';
-  
-  // RF 56-58: Fiado
   bool _isCredit = false;
   String _creditNotes = '';
-  
-  // RF 17: Descuento global
   bool _applyDiscount = false;
   double _discountPercent = 0.0;
-  
   final _pauseNameController = TextEditingController();
 
   @override
-  void initState() { 
-    super.initState(); 
-    _loadData(); 
+  void initState() {
+    super.initState();
+    _amountPaidController = TextEditingController();
+    _loadData();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _pauseNameController.dispose();
+    _amountPaidController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -101,8 +107,7 @@ class _PosPageState extends State<PosPage> {
 
   void _removeFromCart(int index) => setState(() => _cart.removeAt(index));
   void _clearCart() => setState(() => _cart.clear());
-  
-  // Cálculos
+
   double get _subtotal => _cart.fold(0.0, (sum, c) => sum + c.subtotal);
   double get _discountAmount => _applyDiscount ? _subtotal * (_discountPercent / 100) : 0.0;
   double get _total => _subtotal - _discountAmount;
@@ -122,7 +127,10 @@ class _PosPageState extends State<PosPage> {
         title: const Text('⏸️ Pausar Venta'),
         content: TextField(
           controller: _pauseNameController,
-          decoration: const InputDecoration(labelText: 'Nombre (ej: Mesa 1)', border: OutlineInputBorder()),
+          decoration: const InputDecoration(
+            labelText: 'Nombre',
+            border: OutlineInputBorder(),
+          ),
           autofocus: true,
         ),
         actions: [
@@ -167,10 +175,9 @@ class _PosPageState extends State<PosPage> {
     }
   }
 
-  // RF 52: Teclado numérico con NÚMEROS VISIBLES
   void _showNumericKeypad() {
     double tempAmount = _amountPaid;
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -183,15 +190,9 @@ class _PosPageState extends State<PosPage> {
               const Text('💵 Ingresar Monto', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(12)),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text('\$ ', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
-                    Text(tempAmount.toStringAsFixed(2), style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.green)),
-                  ],
-                ),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(8)),
+                child: Text('\$${tempAmount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.green)),
               ),
               const SizedBox(height: 16),
               GridView.count(
@@ -199,62 +200,64 @@ class _PosPageState extends State<PosPage> {
                 crossAxisCount: 3,
                 mainAxisSpacing: 8,
                 crossAxisSpacing: 8,
-                childAspectRatio: 2.5,
+                childAspectRatio: 2,
                 children: [
                   for (var i = 1; i <= 9; i++)
                     ElevatedButton(
-                      onPressed: () {
+                      onPressed: () => setModalState(() {
                         tempAmount = double.parse('${(tempAmount * 100).toInt()}$i') / 100;
-                        setModalState(() {});
-                      },
-                      style: ElevatedButton.styleFrom(padding: const EdgeInsets.all(20)),
-                      child: Text('$i', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                      }),
+                      child: Text('$i', style: const TextStyle(fontSize: 24, color: Colors.black)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black,
+                        elevation: 2,
+                      ),
                     ),
                   ElevatedButton(
-                    onPressed: () {
-                      tempAmount = 0;
-                      setModalState(() {});
-                    },
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red[100], padding: const EdgeInsets.all(20)),
-                    child: const Text('C', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                    onPressed: () => setModalState(() => tempAmount = 0),
+                    child: const Text('C', style: TextStyle(fontSize: 24, color: Colors.red, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red[100]),
                   ),
                   ElevatedButton(
-                    onPressed: () {
+                    onPressed: () => setModalState(() {
                       tempAmount = double.parse('${(tempAmount * 100).toInt()}0') / 100;
-                      setModalState(() {});
-                    },
-                    style: ElevatedButton.styleFrom(padding: const EdgeInsets.all(20)),
-                    child: const Text('0', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                    }),
+                    child: const Text('0', style: TextStyle(fontSize: 24, color: Colors.black)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black,
+                      elevation: 2,
+                    ),
                   ),
                   ElevatedButton(
-                    onPressed: () {
+                    onPressed: () => setModalState(() {
                       if (tempAmount > 0) {
                         tempAmount = (tempAmount * 100).toInt() ~/ 10 / 100;
-                        setModalState(() {});
                       }
-                    },
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.orange[100], padding: const EdgeInsets.all(20)),
-                    child: const Icon(Icons.backspace, size: 28),
+                    }),
+                    child: const Icon(Icons.backspace, size: 24, color: Colors.orange),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.orange[100]),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
-                height: 55,
+                height: 50,
                 child: ElevatedButton(
                   onPressed: () {
                     setState(() {
                       _amountPaid = tempAmount;
+                      _amountPaidController.text = tempAmount > 0 ? '\$${tempAmount.toStringAsFixed(2)}' : '';
                     });
                     Navigator.pop(ctx);
                   },
+                  child: const Text('LISTO', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.all(20),
                   ),
-                  child: const Text('LISTO', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                 ),
               ),
             ],
@@ -301,19 +304,66 @@ class _PosPageState extends State<PosPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('✅ Venta: \$${_total.toStringAsFixed(2)}'), backgroundColor: Colors.green, duration: const Duration(seconds: 2)),
       );
-      
+
+      if (widget.onSaleCompleted != null) widget.onSaleCompleted!();
+
       _clearCart();
       _amountPaid = 0.0;
+      _amountPaidController.text = '';
       _isCredit = false;
       _creditNotes = '';
       _applyDiscount = false;
       _discountPercent = 0.0;
       _loadData();
-      
+
       if (Navigator.canPop(context)) Navigator.pop(context);
+
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ $e'), backgroundColor: Colors.red));
     }
+  }
+
+  void _showNewCustomerDialog(Function setModalState) {
+    final nc = TextEditingController(), cc = TextEditingController(), tc = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Registrar Cliente'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: nc, decoration: const InputDecoration(labelText: 'Nombre *', border: OutlineInputBorder())),
+              const SizedBox(height: 8),
+              TextField(controller: cc, decoration: const InputDecoration(labelText: 'Carnet *', border: OutlineInputBorder())),
+              const SizedBox(height: 8),
+              TextField(controller: tc, decoration: const InputDecoration(labelText: 'Teléfono *', border: OutlineInputBorder())),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          ElevatedButton(
+            onPressed: () async {
+              if (nc.text.isEmpty || cc.text.isEmpty || tc.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Complete todos los campos'), backgroundColor: Colors.orange));
+                return;
+              }
+              try {
+                await _customerRepo.createCustomer(Customer(nombre: nc.text.trim(), carnetIdentidad: cc.text.trim(), telefono: tc.text.trim()));
+                await _loadData();
+                setModalState(() {});
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Cliente registrado'), backgroundColor: Colors.green));
+                Navigator.pop(ctx);
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ $e'), backgroundColor: Colors.red));
+              }
+            },
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showCartBottomSheet() {
@@ -344,7 +394,6 @@ class _PosPageState extends State<PosPage> {
                   controller: scrollController,
                   child: Column(
                     children: [
-                      // Cliente
                       Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
@@ -374,8 +423,6 @@ class _PosPageState extends State<PosPage> {
                           ],
                         ),
                       ),
-                      
-                      // Productos en carrito
                       if (_cart.isEmpty)
                         const Padding(padding: EdgeInsets.all(32), child: Center(child: Text('Carrito vacío', style: TextStyle(fontSize: 16, color: Colors.grey))))
                       else
@@ -405,8 +452,6 @@ class _PosPageState extends State<PosPage> {
                             );
                           },
                         ),
-                      
-                      // RF 17: Descuento global
                       Padding(
                         padding: const EdgeInsets.all(16),
                         child: Card(
@@ -463,8 +508,6 @@ class _PosPageState extends State<PosPage> {
                           ),
                         ),
                       ),
-                      
-                      // Moneda
                       Padding(
                         padding: const EdgeInsets.all(16),
                         child: Card(
@@ -490,8 +533,6 @@ class _PosPageState extends State<PosPage> {
                           ),
                         ),
                       ),
-                      
-                      // Pago
                       Padding(
                         padding: const EdgeInsets.all(16),
                         child: Card(
@@ -513,6 +554,7 @@ class _PosPageState extends State<PosPage> {
                                           filled: _amountPaid > 0,
                                           fillColor: _amountPaid > 0 ? Colors.green[50] : null,
                                         ),
+                                        controller: _amountPaidController,
                                       ),
                                     ),
                                     const SizedBox(width: 12),
@@ -529,8 +571,6 @@ class _PosPageState extends State<PosPage> {
                           ),
                         ),
                       ),
-                      
-                      // Fiado
                       Padding(
                         padding: const EdgeInsets.all(16),
                         child: Card(
@@ -566,8 +606,6 @@ class _PosPageState extends State<PosPage> {
                           ),
                         ),
                       ),
-                      
-                      // Resumen final
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -576,26 +614,22 @@ class _PosPageState extends State<PosPage> {
                         ),
                         child: Column(
                           children: [
-                            // Subtotal
                             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                               const Text('Subtotal:', style: TextStyle(fontSize: 16)),
                               Text('\$${_subtotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 16)),
                             ]),
                             const SizedBox(height: 8),
-                            // Descuento
                             if (_applyDiscount) Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                               Text('Descuento (${_discountPercent.toInt()}%):', style: TextStyle(color: Colors.green[700])),
                               Text('-\$${_discountAmount.toStringAsFixed(2)}', style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.bold)),
                             ]),
                             const SizedBox(height: 8),
-                            // Total
                             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                               const Text('TOTAL:', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                               Text('\$${_total.toStringAsFixed(2)} ($_selectedCurrency)', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.green)),
                             ]),
                             const SizedBox(height: 12),
                             const Divider(),
-                            // Pago y cambio
                             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                               Text('Pagado:', style: TextStyle(fontSize: 16, color: Colors.grey[700])),
                               Text('\$${_amountPaid.toStringAsFixed(2)}', style: TextStyle(fontSize: 16, color: Colors.grey[700])),
@@ -619,7 +653,6 @@ class _PosPageState extends State<PosPage> {
                                 Text('\$${_pending.toStringAsFixed(2)}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orange)),
                               ]),
                             const SizedBox(height: 16),
-                            // Botón confirmar
                             SizedBox(
                               width: double.infinity,
                               height: 55,
@@ -645,49 +678,6 @@ class _PosPageState extends State<PosPage> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  void _showNewCustomerDialog(Function setModalState) {
-    final nc = TextEditingController(), cc = TextEditingController(), tc = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Registrar Cliente'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(controller: nc, decoration: const InputDecoration(labelText: 'Nombre *', border: OutlineInputBorder())),
-              const SizedBox(height: 8),
-              TextField(controller: cc, decoration: const InputDecoration(labelText: 'Carnet *', border: OutlineInputBorder())),
-              const SizedBox(height: 8),
-              TextField(controller: tc, decoration: const InputDecoration(labelText: 'Teléfono *', border: OutlineInputBorder())),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
-          ElevatedButton(
-            onPressed: () async {
-              if (nc.text.isEmpty || cc.text.isEmpty || tc.text.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Complete todos los campos'), backgroundColor: Colors.orange));
-                return;
-              }
-              try {
-                await _customerRepo.createCustomer(Customer(nombre: nc.text.trim(), carnetIdentidad: cc.text.trim(), telefono: tc.text.trim()));
-                await _loadData();
-                setModalState(() {});
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Cliente registrado'), backgroundColor: Colors.green));
-                Navigator.pop(ctx);
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ $e'), backgroundColor: Colors.red));
-              }
-            },
-            child: const Text('Guardar'),
-          ),
-        ],
       ),
     );
   }
@@ -786,13 +776,6 @@ class _PosPageState extends State<PosPage> {
               ],
             ),
     );
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    _pauseNameController.dispose();
-    super.dispose();
   }
 }
 

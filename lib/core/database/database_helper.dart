@@ -16,7 +16,6 @@ class DatabaseHelper {
   }
 
   Future<Database> _initDatabase() async {
-    // Inicializar FFI para Windows/Linux
     if (Platform.isWindows || Platform.isLinux) {
       sqfliteFfiInit();
       databaseFactory = databaseFactoryFfi;
@@ -167,6 +166,16 @@ class DatabaseHelper {
       try { await db.execute('ALTER TABLE productos ADD COLUMN margen_ganancia REAL'); } catch (_) {}
       try { await db.execute('ALTER TABLE ventas ADD COLUMN moneda TEXT DEFAULT \'CUP\''); } catch (_) {}
       try { await db.execute('ALTER TABLE ventas ADD COLUMN tasa_cambio REAL DEFAULT 1.0'); } catch (_) {}
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS proveedores (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL,
+            contacto TEXT,
+            telefono TEXT
+          )
+        ''');
+      } catch (_) {}
     }
   }
 }
