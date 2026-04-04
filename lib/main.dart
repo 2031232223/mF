@@ -55,7 +55,7 @@ class _NovaAdenAppState extends State<NovaAdenApp> {
       titleTextStyle: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
       iconTheme: IconThemeData(color: Colors.white),
     ),
-    cardTheme: CardThemeData(
+    cardTheme: CardTheme(
       color: Colors.white,
       elevation: 3,
       shadowColor: Colors.black12,
@@ -118,7 +118,7 @@ class _NovaAdenAppState extends State<NovaAdenApp> {
       titleTextStyle: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
       iconTheme: IconThemeData(color: Colors.white),
     ),
-    cardTheme: CardThemeData(
+    cardTheme: CardTheme(
       color: const Color(0xFF1E1E1E),
       elevation: 3,
       shadowColor: Colors.black26,

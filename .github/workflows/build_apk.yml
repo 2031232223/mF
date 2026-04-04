@@ -3,47 +3,35 @@ name: Build APK
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
     
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '17'
-
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.19.0'
           channel: 'stable'
-
+      
       - name: Install dependencies
         run: flutter pub get
-
-      - name: Build APK Universal (Android 8.0+)
+      
+      - name: Analyze code
+        run: flutter analyze --no-fatal-warnings
+      
+      - name: Build APK Universal
         run: flutter build apk --release --no-tree-shake-icons
-
-      - name: Verify APK
-        run: |
-          echo "=== APK Generado ==="
-          ls -lh build/app/outputs/flutter-apk/app-release.apk
-          echo "=== Android Version Compatibility ==="
-          echo "minSdk: 26 (Android 8.0 Oreo+)"
-          echo "targetSdk: 34 (Android 14)"
-
+      
       - name: Upload APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: nova-aden-apk
           path: build/app/outputs/flutter-apk/app-release.apk
-          compression-level: 0
-          overwrite: true
