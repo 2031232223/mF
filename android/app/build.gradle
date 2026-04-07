@@ -45,7 +45,7 @@ android {
 
     defaultConfig {
         applicationId "com.example.nova_aden"
-        minSdkVersion 26
+        minSdkVersion flutter.minSdkVersion
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
@@ -67,7 +67,6 @@ dependencies {
     
     configurations.all {
         resolutionStrategy {
-            force "org.jetbrains.kotlin:kotlin-stdlib:1.8.22"
             force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22"
             force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22"
         }
