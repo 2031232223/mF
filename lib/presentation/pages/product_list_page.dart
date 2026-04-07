@@ -167,7 +167,7 @@ class _ProductListPageState extends State<ProductListPage> {
                                 final cost = double.tryParse(costoCtrl.text) ?? 0;
                                 if (cost > 0) {
                                   final suggested = cost * 1.30; // Margen del 30%
-                                  precioCtrl.setText(suggested.toStringAsFixed(2));
+                                  precioCtrl.text =(suggested.toStringAsFixed(2));
                                   setModalState(() {});
                                 }
                               },
