@@ -45,7 +45,7 @@ android {
 
     defaultConfig {
         applicationId "com.example.nova_aden"
-        minSdkVersion flutter.minSdkVersion
+        minSdkVersion 21
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
