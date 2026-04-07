@@ -34,7 +34,7 @@ class ThemeProvider extends ChangeNotifier {
     brightness: Brightness.light,
     colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.light),
     appBarTheme: AppBarTheme(backgroundColor: Colors.blue[900], foregroundColor: Colors.white),
-    cardTheme: CardThemeData(color: Colors.white, elevation: 2),
+    cardTheme: CardTheme(color: Colors.white, elevation: 2),
     bottomNavigationBarTheme: BottomNavigationBarThemeData(backgroundColor: Colors.blue[900], selectedItemColor: Colors.white),
   );
 
@@ -44,7 +44,7 @@ class ThemeProvider extends ChangeNotifier {
     scaffoldBackgroundColor: const Color(0xFF121212),
     colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.dark),
     appBarTheme: AppBarTheme(backgroundColor: const Color(0xFF1A1A2E), foregroundColor: Colors.white),
-    cardTheme: CardThemeData(color: const Color(0xFF1E1E1E), elevation: 2),
+    cardTheme: CardTheme(color: const Color(0xFF1E1E1E), elevation: 2),
     bottomNavigationBarTheme: BottomNavigationBarThemeData(backgroundColor: const Color(0xFF1A1A2E), selectedItemColor: Colors.white),
   );
 }
