@@ -5,6 +5,11 @@ import '../../core/models/product.dart';
 import '../../core/repositories/product_repository.dart';
 import '../../core/utils/csv_exporter.dart';
 import 'package:file_picker/file_picker.dart';
+import 'purchase_list_page.dart';
+import 'waste_page.dart';
+import 'supplier_page.dart';
+import 'reports_page.dart';
+import 'pos_page.dart';
 
 class ProductListPage extends StatefulWidget {
   final VoidCallback? onStatsChanged;
@@ -27,8 +32,10 @@ class _ProductListPageState extends State<ProductListPage> {
     setState(() => _loading = true);
     _products = await _repo.getAllProducts();
     setState(() => _loading = false);
+    if (widget.onStatsChanged != null) widget.onStatsChanged!();
   }
 
+  // --- FUNCIONES DE GESTIÓN DE PRODUCTOS ---
   Future<void> _deleteProduct(int id) async {
     bool? confirm = await showDialog<bool>(
       context: context,
@@ -44,7 +51,6 @@ class _ProductListPageState extends State<ProductListPage> {
     if (confirm == true) {
       await _repo.deleteProduct(id);
       _load();
-      if (widget.onStatsChanged != null) widget.onStatsChanged!();
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Eliminado')));
     }
   }
@@ -59,17 +65,6 @@ class _ProductListPageState extends State<ProductListPage> {
     await _repo.updateProduct(p.id!, updated);
     _load();
     if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(p.activo ? '✅ Archivado' : '✅ Reactivado')));
-  }
-
-  Future<void> _toggleFavorite(Product p) async {
-    final updated = Product(
-      id: p.id, nombre: p.nombre, codigo: p.codigo, costo: p.costo, precioVenta: p.precioVenta,
-      stockActual: p.stockActual, stockMinimo: p.stockMinimo, categoria: p.categoria,
-      esFavorito: !p.esFavorito, stockCritico: p.stockCritico, margenGanancia: p.margenGanancia,
-      unidadMedida: p.unidadMedida, activo: p.activo, notas: p.notas,
-    );
-    await _repo.updateProduct(p.id!, updated);
-    _load();
   }
 
   Future<void> _duplicateProduct(Product p) async {
@@ -122,6 +117,7 @@ class _ProductListPageState extends State<ProductListPage> {
     }
   }
 
+  // --- FORMULARIO DE PRODUCTO (CON SUGERENCIA DE PRECIO) ---
   void _showProductForm({Product? product}) {
     final nombreCtrl = TextEditingController(text: product?.nombre ?? '');
     final codigoCtrl = TextEditingController(text: product?.codigo ?? '');
@@ -147,62 +143,103 @@ class _ProductListPageState extends State<ProductListPage> {
             Expanded(
               child: SingleChildScrollView(
                 child: Column(children: [
-                  TextField(controller: nombreCtrl, decoration: InputDecoration(labelText: 'Nombre *', border: const OutlineInputBorder(), filled: true, fillColor: Colors.grey[100])),
+                  TextField(controller: nombreCtrl, decoration: InputDecoration(labelText: 'Nombre *', border: const OutlineInputBorder(), filled: true, fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : Colors.grey[100])),
                   const SizedBox(height: 12),
-                  TextField(controller: codigoCtrl, decoration: InputDecoration(labelText: 'Código *', border: const OutlineInputBorder(), filled: true, fillColor: Colors.grey[100])),
+                  TextField(controller: codigoCtrl, decoration: InputDecoration(labelText: 'Código *', border: const OutlineInputBorder(), filled: true, fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : Colors.grey[100])),
                   const SizedBox(height: 12),
-                  TextField(controller: categoriaCtrl, decoration: InputDecoration(labelText: 'Categoría', border: const OutlineInputBorder(), filled: true, fillColor: Colors.grey[100])),
+                  TextField(controller: categoriaCtrl, decoration: InputDecoration(labelText: 'Categoría', border: const OutlineInputBorder(), filled: true, fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : Colors.grey[100])),
                   const SizedBox(height: 12),
+                  
+                  // SUGERENCIA DE PRECIO POR MARGEN
+                  Card(
+                    color: Theme.of(context).brightness == Brightness.dark ? Colors.blue[900]?.withOpacity(0.3) : Colors.blue[50],
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        const Text('💡 Sugerencia de Precio (Margen 30%)', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Costo: \$${costoCtrl.text.isNotEmpty ? costoCtrl.text : '0.00'}'),
+                            ElevatedButton(
+                              onPressed: () {
+                                final cost = double.tryParse(costoCtrl.text) ?? 0;
+                                if (cost > 0) {
+                                  final suggested = cost * 1.30; // Margen del 30%
+                                  precioCtrl.setText(suggested.toStringAsFixed(2));
+                                  setModalState(() {});
+                                }
+                              },
+                              child: const Text('Calcular'),
+                            ),
+                          ],
+                        ),
+                      ]),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
                   Row(children: [
-                    Expanded(child: TextField(controller: unidadCtrl, decoration: InputDecoration(labelText: 'Unidad Medida', border: const OutlineInputBorder(), filled: true, fillColor: Colors.grey[100]))),
+                    Expanded(child: TextField(controller: unidadCtrl, decoration: InputDecoration(labelText: 'Unidad Medida', border: const OutlineInputBorder(), filled: true, fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : Colors.grey[100]))),
                     const SizedBox(width: 12),
-                    Expanded(child: TextField(controller: stockMinCtrl, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Stock Mínimo', border: const OutlineInputBorder(), filled: true, fillColor: Colors.grey[100]))),
+                    Expanded(child: TextField(controller: stockMinCtrl, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Stock Mínimo', border: const OutlineInputBorder(), filled: true, fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : Colors.grey[100]))),
                   ]),
                   const SizedBox(height: 12),
                   Row(children: [
-                    Expanded(child: TextField(controller: costoCtrl, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Costo', border: const OutlineInputBorder(), filled: true, fillColor: Colors.grey[100]))),
+                    Expanded(child: TextField(controller: costoCtrl, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Costo', border: const OutlineInputBorder(), filled: true, fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : Colors.grey[100]))),
                     const SizedBox(width: 12),
-                    Expanded(child: TextField(controller: precioCtrl, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Precio Venta *', border: const OutlineInputBorder(), filled: true, fillColor: Colors.grey[100]))),
+                    Expanded(child: TextField(controller: precioCtrl, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Precio Venta *', border: const OutlineInputBorder(), filled: true, fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : Colors.grey[100]))),
                   ]),
                   const SizedBox(height: 12),
-                  TextField(controller: stockCtrl, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Stock Actual', border: const OutlineInputBorder(), filled: true, fillColor: Colors.grey[100])),
+                  TextField(controller: stockCtrl, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Stock Actual', border: const OutlineInputBorder(), filled: true, fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : Colors.grey[100])),
                   const SizedBox(height: 16),
-                  SizedBox(width: double.infinity, height: 50, child: ElevatedButton.icon(
-                    onPressed: () async {
-                      if (nombreCtrl.text.isEmpty || codigoCtrl.text.isEmpty || precioCtrl.text.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Complete campos obligatorios')));
-                        return;
-                      }
-                      try {
-                        final catVal = categoriaCtrl.text.trim().isNotEmpty ? categoriaCtrl.text.trim() : null;
-                        final unitVal = unidadCtrl.text.trim().isNotEmpty ? unidadCtrl.text.trim() : 'UND';
-                        final newProduct = Product(
-                          id: product?.id, nombre: nombreCtrl.text.trim(), codigo: codigoCtrl.text.trim(),
-                          costo: double.tryParse(costoCtrl.text), precioVenta: double.parse(precioCtrl.text),
-                          stockActual: int.tryParse(stockCtrl.text) ?? 0, stockMinimo: int.tryParse(stockMinCtrl.text) ?? 5,
-                          unidadMedida: unitVal, categoria: catVal, esFavorito: product?.esFavorito ?? false,
-                          activo: product?.activo ?? true, notas: notasCtrl.text.trim().isEmpty ? null : notasCtrl.text.trim(),
-                          stockCritico: product?.stockCritico ?? 0, margenGanancia: product?.margenGanancia ?? 0.0,
-                        );
-                        if (product == null) await _repo.createProduct(newProduct);
-                        else await _repo.updateProduct(product.id!, newProduct);
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(product == null ? '✅ Creado' : '✅ Actualizado'), backgroundColor: Colors.green));
-                          Navigator.pop(ctx);
-                          _load();
-                          if (widget.onStatsChanged != null) widget.onStatsChanged!();
-                        }
-                      } catch (e) {
-                        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ $e')));
-                      }
-                    },
-                    icon: const Icon(Icons.save),
-                    label: Text(product == null ? 'CREAR' : 'GUARDAR', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
-                  )),
+                  const Text('Notas adicionales:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  TextField(controller: notasCtrl, maxLines: 2, decoration: InputDecoration(border: const OutlineInputBorder(), filled: true, fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : Colors.grey[100])),
                 ]),
               ),
             ),
+            const SizedBox(height: 16),
+            SizedBox(width: double.infinity, height: 50, child: ElevatedButton.icon(
+              onPressed: () async {
+                if (nombreCtrl.text.isEmpty || codigoCtrl.text.isEmpty || precioCtrl.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Complete campos obligatorios')));
+                  return;
+                }
+                try {
+                  final catVal = categoriaCtrl.text.trim().isNotEmpty ? categoriaCtrl.text.trim() : null;
+                  final unitVal = unidadCtrl.text.trim().isNotEmpty ? unidadCtrl.text.trim() : 'UND';
+                  final newProduct = Product(
+                    id: product?.id,
+                    nombre: nombreCtrl.text.trim(),
+                    codigo: codigoCtrl.text.trim(),
+                    costo: double.tryParse(costoCtrl.text),
+                    precioVenta: double.parse(precioCtrl.text),
+                    stockActual: int.tryParse(stockCtrl.text) ?? 0,
+                    stockMinimo: int.tryParse(stockMinCtrl.text) ?? 5,
+                    unidadMedida: unitVal,
+                    categoria: catVal,
+                    esFavorito: product?.esFavorito ?? false,
+                    activo: product?.activo ?? true,
+                    notas: notasCtrl.text.trim().isEmpty ? null : notasCtrl.text.trim(),
+                    stockCritico: product?.stockCritico ?? 0,
+                    margenGanancia: product?.margenGanancia ?? 0.0,
+                  );
+                  if (product == null) await _repo.createProduct(newProduct);
+                  else await _repo.updateProduct(product.id!, newProduct);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(product == null ? '✅ Creado' : '✅ Actualizado'), backgroundColor: Colors.green));
+                    Navigator.pop(ctx);
+                    _load();
+                  }
+                } catch (e) {
+                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ $e')));
+                }
+              },
+              icon: const Icon(Icons.save),
+              label: Text(product == null ? 'CREAR' : 'GUARDAR', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
+            )),
           ]),
         ),
       ),
@@ -217,21 +254,32 @@ class _ProductListPageState extends State<ProductListPage> {
     }).toList();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Inventario'), centerTitle: true, actions: [
-        IconButton(icon: const Icon(Icons.archive), onPressed: () => setState(() => _showInactive = !_showInactive)),
-        IconButton(icon: const Icon(Icons.refresh), onPressed: _load),
-        IconButton(icon: const Icon(Icons.download), onPressed: () => CsvExporter.exportProducts(_products.map((p) => p.toMap()).toList())),
-        IconButton(icon: const Icon(Icons.upload_file), onPressed: _importProductsCsv),
-      ]),
+      appBar: AppBar(
+        title: const Text('Inventario'), 
+        centerTitle: true, 
+        actions: [
+          IconButton(icon: const Icon(Icons.archive), onPressed: () => setState(() => _showInactive = !_showInactive), tooltip: _showInactive ? 'Ocultar inactivos' : 'Mostrar inactivos'),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _load),
+          IconButton(icon: const Icon(Icons.download), onPressed: () => CsvExporter.exportProducts(_products.map((p) => p.toMap()).toList()), tooltip: 'Exportar CSV'),
+          IconButton(icon: const Icon(Icons.upload_file), onPressed: _importProductsCsv, tooltip: 'Importar CSV'),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(onPressed: () => _showProductForm(), child: const Icon(Icons.add)),
       body: _loading ? const Center(child: CircularProgressIndicator()) : Column(children: [
         Padding(padding: const EdgeInsets.all(16), child: TextField(
-          controller: _search, decoration: InputDecoration(hintText: 'Buscar...', prefixIcon: const Icon(Icons.search), border: const OutlineInputBorder(), filled: true, fillColor: Colors.grey[100]),
+          controller: _search, 
+          decoration: InputDecoration(
+            hintText: 'Buscar...', 
+            prefixIcon: const Icon(Icons.search), 
+            border: const OutlineInputBorder(), 
+            filled: true, 
+            fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : Colors.grey[100]
+          ),
           onChanged: (v) => setState(() {}),
         )),
         Expanded(
           child: filteredList.isEmpty ? Center(child: Text(_showInactive ? 'No hay productos' : 'No hay productos activos')) : ListView.builder(
-            itemCount: filteredList.length,
+            itemCount: filteredList.length, 
             itemBuilder: (ctx, i) {
               final p = filteredList[i];
               return Card(margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4), child: ListTile(

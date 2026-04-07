@@ -13,6 +13,7 @@ import 'backup_page.dart';
 import 'supplier_page.dart';
 import 'customer_page.dart';
 import 'credit_payments_page.dart';
+import 'splash_page.dart'; // Página de bienvenida
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -34,9 +35,9 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Consumer<ThemeProvider>(
       builder: (context, theme, _) => Scaffold(
-        body: _pages[_selectedIndex],
+        body: _selectedIndex == -1 ? const SplashPage() : _pages[_selectedIndex],
         bottomNavigationBar: NavigationBar(
-          selectedIndex: _selectedIndex,
+          selectedIndex: _selectedIndex >= 0 ? _selectedIndex : 0,
           onDestinationSelected: (index) => setState(() => _selectedIndex = index),
           destinations: const [
             NavigationDestination(icon: Icon(Icons.point_of_sale), label: 'POS'),
@@ -56,11 +57,16 @@ class _HomePageState extends State<HomePage> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     const Text('Nova ADEN', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                    const Text('- Administrador', style: TextStyle(color: Colors.white70, fontSize: 16)),
+                    const Text('- Administrador de Negocios', style: TextStyle(color: Colors.white70, fontSize: 16)),
                     const SizedBox(height: 8),
                     Text('v1.0.0', style: TextStyle(color: Colors.white.withOpacity(0.7))),
                   ],
                 ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.home),
+                title: const Text('Inicio / Dashboard'),
+                onTap: () { Navigator.pop(context); setState(() => _selectedIndex = -1); }, // Ir a Splash/Dashboard
               ),
               ListTile(
                 leading: const Icon(Icons.point_of_sale),
