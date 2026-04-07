@@ -72,3 +72,4 @@ dependencies {
         }
     }
 }
+// Actualizado conforme a RnF 4 Tesis: Android 8.0+ (API 26)
