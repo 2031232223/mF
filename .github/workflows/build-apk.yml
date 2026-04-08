@@ -34,10 +34,10 @@ jobs:
           cd nova_aden_app
           flutter pub get
       
-      - name: Build APK Release
+      - name: Build APK Release Universal
         run: |
           cd nova_aden_app
-          flutter build apk --release --no-tree-shake-icons --split-per-abi=false
+          flutter build apk --release --no-tree-shake-icons
       
       - name: Upload APK
         uses: actions/upload-artifact@v4
