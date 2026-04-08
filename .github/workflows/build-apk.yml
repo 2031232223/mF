@@ -1,0 +1,135 @@
+name: Build APK Release
+
+on:
+  push:
+    branches: [main, master]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build APK
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Paso 1: Checkout del código
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # Paso 2: Configurar Java (requerido para Android)
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      
+      # Paso 3: Configurar Flutter
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+          channel: 'stable'
+          cache: true
+      
+      # Paso 4: Ir al directorio del proyecto Flutter
+      - name: Navigate to Flutter project
+        run: cd nova_aden_app
+      
+      # Paso 5: Instalar dependencias
+      - name: Install dependencies
+        run: |
+          cd nova_aden_app
+          flutter pub get
+      
+      # Paso 6: Configurar Android SDK
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+      
+      # Paso 7: Aceptar licencias de Android
+      - name: Accept Android licenses
+        run: |
+          cd nova_aden_app
+          yes | flutter doctor --android-licenses || true
+      
+      # Paso 8: Limpiar proyecto
+      - name: Clean project
+        run: |
+          cd nova_aden_app
+          flutter clean
+      
+      # Paso 9: Construir APK Release Universal
+      - name: Build APK Release Universal
+        run: |
+          cd nova_aden_app
+          flutter build apk --release --no-tree-shake-icons --split-per-abi=false
+      
+      # Paso 10: Mostrar información de la APK
+      - name: Show APK info
+        run: |
+          cd nova_aden_app
+          echo "=========================================="
+          echo "📊 APK INFORMATION"
+          echo "=========================================="
+          ls -lh build/app/outputs/flutter-apk/app-release.apk
+          du -h build/app/outputs/flutter-apk/app-release.apk
+          echo "=========================================="
+      
+      # Paso 11: Subir APK como artifact del workflow
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-aden-apk
+          path: nova_aden_app/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
+      
+      # Paso 12: Crear Release en GitHub (solo para tags)
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: nova_aden_app/build/app/outputs/flutter-apk/app-release.apk
+          body: |
+            ## 🎉 Nova ADEN - Release ${{ github.ref_name }}
+            
+            ### ✅ Características Incluidas:
+            - Inventario Completo (RF 1-5)
+            - Punto de Venta POS (RF 12-22)
+            - Módulo de Compras (RF 6-11)
+            - Listado y Detalle de Ventas (RF 20-22)
+            - Control de Stock Bajo (RF 5)
+            
+            ### ⚙️ Especificaciones Técnicas:
+            - **Plataforma:** Android 8.0+ (minSdkVersion 26)
+            - **Framework:** Flutter 3.22.0
+            - **Base de Datos:** SQLite Offline
+            - **Arquitectura:** Clean Architecture
+            - **Tamaño APK:** ~20 MB
+            - **Tipo:** Universal (todas las arquitecturas)
+            
+            ### 📥 Instalación:
+            1. Descargar app-release.apk
+            2. Permitir instalación de fuentes desconocidas
+            3. Instalar y ejecutar
+            
+            ### 👨‍💻 Autor: Freddy
+            ### 🎓 Tesis: Nova ADEN - Gestión Operativa de MIPYMES y TCP
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      # Paso 13: Resumen del build
+      - name: Build Summary
+        if: always()
+        run: |
+          echo "=========================================="
+          echo "🎉 BUILD COMPLETED"
+          echo "=========================================="
+          echo "Repository: ${{ github.repository }}"
+          echo "Branch/Tag: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Workflow: ${{ github.workflow }}"
+          echo "=========================================="
