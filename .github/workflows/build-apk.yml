@@ -7,7 +7,6 @@ on:
       - 'v*'
   workflow_dispatch:
 
-# Permisos necesarios para crear releases
 permissions:
   contents: write
 
@@ -39,24 +38,15 @@ jobs:
       
       - name: Build APK Release
         working-directory: nova_aden_app
-        run: |
-          flutter build apk --release --no-tree-shake-icons
-          echo "✅ APK generada, verificando..."
-          ls -la build/app/outputs/flutter-apk/
+        run: flutter build apk --release --no-tree-shake-icons
       
-      - name: Debug APK Path
-        working-directory: nova_aden_app
-        run: |
-          echo "🔍 Buscando APK en:"
-          find build/ -name "*.apk" -type f 2>/dev/null || echo "⚠️ No se encontró APK"
-      
-      - name: Upload APK Artifact
+      - name: Find and Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: nova-aden-apk
           path: nova_aden_app/build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
-          if-no-files-found: warn
+          if-no-files-found: error
       
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
@@ -77,10 +67,9 @@ jobs:
             - Android 8.0+ (minSdk 26)
             - Flutter 3.22.0
             - SQLite Offline
-            - ~20 MB Universal APK
+            - APK Universal ~70 MB
             
             ### 👨‍💻 Freddy - Tesis Nova ADEN
           draft: false
-          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
