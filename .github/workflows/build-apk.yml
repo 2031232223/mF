@@ -33,29 +33,37 @@ jobs:
           cache: true
       
       - name: Install dependencies
-        run: |
-          cd nova_aden_app
-          flutter pub get
+        working-directory: nova_aden_app
+        run: flutter pub get
       
       - name: Build APK Release
+        working-directory: nova_aden_app
         run: |
-          cd nova_aden_app
+          echo "🔨 Building APK..."
           flutter build apk --release --no-tree-shake-icons
           echo "✅ Build completed"
+          echo "📁 Listing outputs..."
+          find build/ -name "*.apk" -type f || echo "⚠️ No APK found yet"
       
-      - name: Find APK file
-        id: find_apk
+      - name: Locate APK
+        id: locate_apk
+        working-directory: nova_aden_app
         run: |
-          APK_PATH=$(find . -name "app-release.apk" -type f | head -1)
+          echo "🔍 Searching for APK..."
+          APK_PATH=$(find . -name "app-release.apk" 2>/dev/null | head -1)
+          if [ -z "$APK_PATH" ]; then
+            echo "❌ APK not found!"
+            exit 1
+          fi
+          echo "✅ APK found at: $APK_PATH"
           echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
-          echo "🔍 APK found at: $APK_PATH"
           ls -lh "$APK_PATH"
       
-      - name: Upload APK Artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: nova-aden-apk
-          path: ${{ steps.find_apk.outputs.apk_path }}
+          path: nova_aden_app/${{ steps.locate_apk.outputs.apk_path }}
           retention-days: 30
           if-no-files-found: error
       
@@ -63,24 +71,19 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v1
         with:
-          files: ${{ steps.find_apk.outputs.apk_path }}
+          files: nova_aden_app/${{ steps.locate_apk.outputs.apk_path }}
           body: |
             ## 🎉 Nova ADEN - ${{ github.ref_name }}
             
-            ### ✅ Características:
+            ✅ **Aplicación Funcional con:**
+            - Bottom Navigation (POS, Productos, Reportes, Config)
             - Splash Screen Profesional
-            - Inventario (RF 1-5)
-            - POS con Pago (RF 12-22)
-            - Compras (RF 6-11)
-            - Stock Bajo (RF 5)
+            - Inventario Completo
+            - Punto de Venta
+            - Compras
+            - Stock Bajo
             
-            ### ⚙️ Especificaciones:
-            - Android 8.0+ (minSdk 26)
-            - Flutter 3.22.0
-            - SQLite Offline
-            - APK Universal
-            
-            ### 👨‍💻 Freddy - Tesis Nova ADEN
+            📱 **Android 8.0+ | ~70 MB**
           draft: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
