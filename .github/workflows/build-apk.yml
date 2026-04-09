@@ -19,14 +19,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Show directory structure
-        run: |
-          echo "📁 Repository structure:"
-          ls -la
-          echo ""
-          echo "📁 nova_aden_app contents:"
-          ls -la nova_aden_app/ || echo "⚠️ nova_aden_app not found"
-      
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -40,63 +32,22 @@ jobs:
           channel: 'stable'
           cache: true
       
-      - name: Flutter Doctor
-        run: flutter doctor -v
-      
       - name: Install dependencies
-        working-directory: nova_aden_app
-        run: flutter pub get
+        run: |
+          cd nova_aden_app
+          flutter pub get
       
       - name: Build APK Release
-        id: build_apk
-        working-directory: nova_aden_app
         run: |
-          echo "🔨 Starting Flutter build..."
-          flutter build apk --release --no-tree-shake-icons 2>&1 | tee build.log
-          BUILD_STATUS=${PIPESTATUS[0]}
-          echo "Build exit code: $BUILD_STATUS"
-          
-          echo ""
-          echo "📁 Checking build directory..."
-          if [ -d "build" ]; then
-            echo "✅ Build directory exists"
-            find build/ -name "*.apk" -type f 2>/dev/null || echo "⚠️ No APK in build/"
-          else
-            echo "❌ Build directory does not exist"
-          fi
-          
-          echo ""
-          echo "📁 Full directory tree:"
-          find . -name "*.apk" -type f 2>/dev/null | head -20
-          
-          if [ $BUILD_STATUS -ne 0 ]; then
-            echo "❌ Build failed!"
-            exit 1
-          fi
-          echo "✅ Build successful"
+          cd nova_aden_app
+          flutter build apk --release --no-tree-shake-icons
+          echo "✅ Build completed"
       
-      - name: Find APK anywhere
-        id: find_apk
-        run: |
-          echo "🔍 Searching entire workspace for APK..."
-          APK_PATH=$(find /home/runner/work/nova-ADEN -name "app-release.apk" -type f 2>/dev/null | head -1)
-          
-          if [ -z "$APK_PATH" ]; then
-            echo "❌ APK NOT FOUND anywhere!"
-            echo "📁 Listing all files:"
-            find /home/runner/work/nova-ADEN -name "*.apk" -type f 2>/dev/null || echo "No APK files found"
-            exit 1
-          fi
-          
-          echo "✅ APK found at: $APK_PATH"
-          echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
-          ls -lh "$APK_PATH"
-      
-      - name: Upload APK
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: nova-aden-apk
-          path: ${{ steps.find_apk.outputs.apk_path }}
+          path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
           if-no-files-found: error
       
@@ -104,11 +55,24 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v1
         with:
-          files: ${{ steps.find_apk.outputs.apk_path }}
+          files: build/app/outputs/flutter-apk/app-release.apk
           body: |
             ## 🎉 Nova ADEN - ${{ github.ref_name }}
             
-            ✅ **Aplicación con Bottom Navigation**
+            ### ✅ Características:
+            - Bottom Navigation (POS, Productos, Reportes, Config)
+            - Inventario Completo
+            - Punto de Venta
+            - Compras
+            - Stock Bajo
+            
+            ### ⚙️ Especificaciones:
+            - Android 8.0+ (minSdk 26)
+            - Flutter 3.22.0
+            - SQLite Offline
+            - ~72 MB Universal APK
+            
+            ### 👨‍💻 Freddy - Tesis Nova ADEN
           draft: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
