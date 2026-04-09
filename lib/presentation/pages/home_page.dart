@@ -3,8 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/utils/theme_provider.dart';
 import 'pos_page.dart';
 import 'product_list_page.dart';
-import 'sales_list_page.dart';
-import 'purchase_list_page.dart';
+import 'purchase_page.dart';
 import 'reports_page.dart';
 import 'settings_page.dart';
 import 'inventory_adjustments_page.dart';
@@ -13,7 +12,7 @@ import 'backup_page.dart';
 import 'supplier_page.dart';
 import 'customer_page.dart';
 import 'credit_payments_page.dart';
-import 'splash_page.dart'; // Página de bienvenida
+import 'splash_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -27,6 +26,7 @@ class _HomePageState extends State<HomePage> {
   final List<Widget> _pages = [
     const PosPage(),
     const ProductListPage(),
+    const PurchasePage(),  // ✅ AGREGADO: Módulo de Compras
     const ReportsPage(),
     const SettingsPage(),
   ];
@@ -37,11 +37,12 @@ class _HomePageState extends State<HomePage> {
       builder: (context, theme, _) => Scaffold(
         body: _selectedIndex == -1 ? const SplashPage() : _pages[_selectedIndex],
         bottomNavigationBar: NavigationBar(
-          selectedIndex: _selectedIndex >= 0 ? _selectedIndex : 0,
+          selectedIndex: _selectedIndex >= 0 && _selectedIndex < _pages.length ? _selectedIndex : 0,
           onDestinationSelected: (index) => setState(() => _selectedIndex = index),
           destinations: const [
             NavigationDestination(icon: Icon(Icons.point_of_sale), label: 'POS'),
             NavigationDestination(icon: Icon(Icons.inventory_2), label: 'Productos'),
+            NavigationDestination(icon: Icon(Icons.shopping_cart), label: 'Compras'),  // ✅ AGREGADO
             NavigationDestination(icon: Icon(Icons.analytics), label: 'Reportes'),
             NavigationDestination(icon: Icon(Icons.settings), label: 'Config'),
           ],
@@ -51,84 +52,26 @@ class _HomePageState extends State<HomePage> {
             padding: EdgeInsets.zero,
             children: [
               DrawerHeader(
-                decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary),
+                decoration: BoxDecoration(color: Theme.of(context).primaryColor),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    const Text('Nova ADEN', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                    const Text('- Administrador de Negocios', style: TextStyle(color: Colors.white70, fontSize: 16)),
-                    const SizedBox(height: 8),
-                    Text('v1.0.0', style: TextStyle(color: Colors.white.withOpacity(0.7))),
+                    const Icon(Icons.shopping_bag, size: 40, color: Colors.white),
+                    const SizedBox(height: 10),
+                    Text('Nova ADEN', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white)),
+                    Text('v2.0.0', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white70)),
                   ],
                 ),
               ),
-              ListTile(
-                leading: const Icon(Icons.home),
-                title: const Text('Inicio / Dashboard'),
-                onTap: () { Navigator.pop(context); setState(() => _selectedIndex = -1); }, // Ir a Splash/Dashboard
-              ),
-              ListTile(
-                leading: const Icon(Icons.point_of_sale),
-                title: const Text('Punto de Venta'),
-                onTap: () { Navigator.pop(context); setState(() => _selectedIndex = 0); },
-              ),
-              ListTile(
-                leading: const Icon(Icons.inventory_2),
-                title: const Text('Productos'),
-                onTap: () { Navigator.pop(context); setState(() => _selectedIndex = 1); },
-              ),
-              ListTile(
-                leading: const Icon(Icons.shopping_cart),
-                title: const Text('Compras'),
-                onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const PurchaseListPage())); },
-              ),
-              ListTile(
-                leading: const Icon(Icons.receipt_long),
-                title: const Text('Ventas'),
-                onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const SalesListPage())); },
-              ),
-              ListTile(
-                leading: const Icon(Icons.analytics),
-                title: const Text('Reportes'),
-                onTap: () { Navigator.pop(context); setState(() => _selectedIndex = 2); },
-              ),
-              ListTile(
-                leading: const Icon(Icons.swap_horiz),
-                title: const Text('Ajustes Inventario'),
-                onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const InventoryAdjustmentsPage())); },
-              ),
-              ListTile(
-                leading: const Icon(Icons.delete_sweep),
-                title: const Text('Mermas'),
-                onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const WastePage())); },
-              ),
-              ListTile(
-                leading: const Icon(Icons.store),
-                title: const Text('Proveedores'),
-                onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const SupplierPage())); },
-              ),
-              ListTile(
-                leading: const Icon(Icons.people),
-                title: const Text('Clientes'),
-                onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerPage())); },
-              ),
-              ListTile(
-                leading: const Icon(Icons.credit_card),
-                title: const Text('Fiado / Créditos'),
-                onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const CreditPaymentsPage())); },
-              ),
-              ListTile(
-                leading: const Icon(Icons.backup),
-                title: const Text('Respaldos'),
-                onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const BackupPage())); },
-              ),
+              ListTile(leading: const Icon(Icons.supervisor_account), title: const Text('Clientes'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerPage()))),
+              ListTile(leading: const Icon(Icons.store), title: const Text('Proveedores'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SupplierPage()))),
+              ListTile(leading: const Icon(Icons.account_balance_wallet), title: const Text('Pagos Fiados'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreditPaymentsPage()))),
+              ListTile(leading: const Icon(Icons.adjust), title: const Text('Ajustes Inventario'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InventoryAdjustmentsPage()))),
+              ListTile(leading: const Icon(Icons.delete_sweep), title: const Text('Mermas'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WastePage()))),
+              ListTile(leading: const Icon(Icons.cloud_upload), title: const Text('Backup'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BackupPage()))),
               const Divider(),
-              ListTile(
-                leading: const Icon(Icons.settings),
-                title: const Text('Configuración'),
-                onTap: () { Navigator.pop(context); setState(() => _selectedIndex = 3); },
-              ),
+              ListTile(leading: const Icon(Icons.help), title: const Text('Ayuda'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const Scaffold(body: Center(child: Text('Ayuda')))))),
+              ListTile(leading: const Icon(Icons.feedback), title: const Text('Feedback'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const Scaffold(body: Center(child: Text('Feedback')))))),
             ],
           ),
         ),
