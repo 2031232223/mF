@@ -33,15 +33,10 @@ jobs:
           cache: true
       
       - name: Install dependencies
-        run: |
-          cd nova_aden_app
-          flutter pub get
+        run: flutter pub get
       
       - name: Build APK Release
-        run: |
-          cd nova_aden_app
-          flutter build apk --release --no-tree-shake-icons
-          echo "✅ Build completed"
+        run: flutter build apk --release --no-tree-shake-icons
       
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
@@ -60,10 +55,10 @@ jobs:
             ## 🎉 Nova ADEN - ${{ github.ref_name }}
             
             ### ✅ Características:
-            - Bottom Navigation (POS, Productos, Reportes, Config)
+            - Bottom Navigation (POS, Productos, Compras, Reportes)
             - Inventario Completo
             - Punto de Venta
-            - Compras
+            - Módulo de Compras
             - Stock Bajo
             
             ### ⚙️ Especificaciones:
