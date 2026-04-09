@@ -35,8 +35,16 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
       
-      - name: Build APK Release
-        run: flutter build apk --release --no-tree-shake-icons
+      - name: Build APK Release (Optimized)
+        run: |
+          echo "🔨 Building optimized APK..."
+          flutter build apk --release \
+            --no-tree-shake-icons \
+            --obfuscate \
+            --split-debug-info=build/symbols
+          echo "✅ Build completed"
+          echo "📊 APK Size:"
+          ls -lh build/app/outputs/flutter-apk/app-release.apk
       
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
@@ -56,16 +64,17 @@ jobs:
             
             ### ✅ Características:
             - Bottom Navigation (POS, Productos, Compras, Reportes)
-            - Inventario Completo
-            - Punto de Venta
-            - Módulo de Compras
-            - Stock Bajo
+            - Inventario Completo (RF 1-5)
+            - Punto de Venta (RF 12-22)
+            - Módulo de Compras (RF 6-11)
+            - Stock Bajo (RF 5)
             
             ### ⚙️ Especificaciones:
             - Android 8.0+ (minSdk 26)
             - Flutter 3.22.0
             - SQLite Offline
-            - ~72 MB Universal APK
+            - **~45-50 MB** (Optimized with obfuscate)
+            - Universal APK (todas las arquitecturas)
             
             ### 👨‍💻 Freddy - Tesis Nova ADEN
           draft: false
