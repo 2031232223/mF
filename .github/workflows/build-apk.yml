@@ -2,7 +2,7 @@ name: Build APK Release
 
 on:
   push:
-    branches: [main, master]
+    branches: [main]
     tags:
       - 'v*'
   workflow_dispatch:
@@ -12,14 +12,11 @@ permissions:
 
 jobs:
   build:
-    name: Build APK
     runs-on: ubuntu-latest
-    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       
-      - name: Set up JDK 17
+      - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
@@ -35,39 +32,21 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
       
-      - name: Build APK Release
+      - name: Build APK
         run: flutter build apk --release --no-tree-shake-icons
       
-      - name: Upload APK Artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: nova-aden-apk
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
-          if-no-files-found: error
       
-      - name: Create GitHub Release
+      - name: Create Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v1
         with:
           files: build/app/outputs/flutter-apk/app-release.apk
-          body: |
-            ## 🎉 Nova ADEN - ${{ github.ref_name }}
-            
-            ### ✅ Características:
-            - Bottom Navigation (POS, Productos, Compras, Reportes)
-            - Inventario Completo
-            - Punto de Venta
-            - Módulo de Compras
-            - Stock Bajo
-            
-            ### ⚙️ Especificaciones:
-            - Android 8.0+ (minSdk 26)
-            - Flutter 3.22.0
-            - SQLite Offline
-            - ~72 MB Universal APK
-            
-            ### 👨‍💻 Freddy - Tesis Nova ADEN
-          draft: false
+          body: "Nova ADEN - APK para defensa de tesis"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
