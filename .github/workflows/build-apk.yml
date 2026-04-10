@@ -1,61 +1,36 @@
-name: Build APK Release Optimized
+name: Build APK Release
 
 on:
   push:
     branches: [main]
-    tags: ['v*']
   workflow_dispatch:
-
-permissions:
-  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    
     steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-
-      - name: ☕ Set up Java 17
+      - uses: actions/checkout@v4
+      
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: 'gradle'
 
-      - name: 🐦 Set up Flutter 3.22.0
+      - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.22.0'
           channel: 'stable'
-          cache: true
 
-      - name: 📦 Install dependencies
+      - name: Get dependencies
         run: flutter pub get
 
-      - name: 🔍 Analyze (Non-blocking)
-        run: flutter analyze --no-fatal-warnings || true
+      - name: Build APK
+        run: flutter build apk --release --no-tree-shake-icons --obfuscate --split-debug-info=build/symbols
 
-      - name: 🛠️ Build Optimized APK
-        run: |
-          flutter build apk \
-            --release \
-            --obfuscate \
-            --split-debug-info=build/symbols \
-            --no-tree-shake-icons \
-            --no-shrink
-        env:
-          GRADLE_OPTS: "-Dorg.gradle.daemon=false -Xmx4g"
-
-      - name: 📊 Show APK info
-        run: |
-          echo "📱 APK Size Report:"
-          ls -lh build/app/outputs/flutter-apk/app-release.apk
-          echo "💾 Size: $(du -h build/app/outputs/flutter-apk/app-release.apk | cut -f1)"
-
-      - name: 📤 Upload APK Artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: nova-aden-apk-universal
