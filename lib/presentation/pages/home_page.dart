@@ -28,7 +28,7 @@ class _HomePageState extends State<HomePage> {
     const ProductListPage(),
     const PurchasePage(),  // ✅ AGREGADO: Módulo de Compras
     const ReportsPage(),
-    const SettingsPage(),
+    SettingsPage(),
   ];
 
   @override

@@ -217,4 +217,7 @@ class _WastePageState extends State<WastePage> with SingleTickerProviderStateMix
       ],
     );
   }
+  // RF 61: Motivo personalizado de merma
+  TextEditingController _otroMotivoCtrl = TextEditingController();
+  bool _esOtroMotivo = false;
 }

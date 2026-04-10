@@ -92,4 +92,35 @@ class ProductRepository {
       'gananciaPotencial': ((result.first['valorVenta'] as num?)?.toDouble() ?? 0.0) - ((result.first['valorTotal'] as num?)?.toDouble() ?? 0.0),
     };
   }
+
+  // RF 62: Reporte de rotación de productos
+  Future<List<Map<String, dynamic>>> getRotacionProductos({int dias = 30}) async {
+    final db = await _db;
+    final fechaLimite = DateTime.now().subtract(Duration(days: dias));
+    return await db.rawQuery(
+      '''SELECT p.id, p.nombre, p.codigo,
+         SUM(CASE WHEN vd.cantidad > 0 THEN vd.cantidad ELSE 0 END) as vendidas,
+         p.stockActual
+         FROM productos p
+         LEFT JOIN venta_detalles vd ON p.id = vd.producto_id
+         LEFT JOIN ventas v ON vd.venta_id = v.id AND v.fecha >= ?
+         WHERE p.activo = 1
+         GROUP BY p.id, p.nombre, p.codigo, p.stockActual
+         ORDER BY vendidas DESC''',
+      [fechaLimite.toIso8601String()],
+    );
+  }
+
+  // RF 63: Reporte de margen por producto
+  Future<List<Map<String, dynamic>>> getMargenPorProducto() async {
+    final db = await _db;
+    return await db.rawQuery(
+      '''SELECT id, nombre, codigo, costo, precioVenta,
+         ((precioVenta - COALESCE(costo, 0)) / NULLIF(precioVenta, 0)) * 100 as margenPorcentaje,
+         (precioVenta - COALESCE(costo, 0)) as margenAbsoluto,
+         stockActual
+         FROM productos WHERE activo = 1
+         ORDER BY margenPorcentaje DESC''',
+    );
+  }
 }

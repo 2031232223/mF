@@ -161,4 +161,22 @@ class SaleRepository {
     );
     return (result.first['total'] as num?)?.toDouble() ?? 0.0;
   }
+
+  // RF 64: Reporte de flujo de caja
+  Future<Map<String, dynamic>> getFlujoDeCaja({DateTime? desde, DateTime? hasta}) async {
+    final db = await _db;
+    String whereClause = 'WHERE 1=1';
+    List<dynamic> args = [];
+    if (desde != null) { whereClause += ' AND fecha >= ?'; args.add(desde.toIso8601String()); }
+    if (hasta != null) { whereClause += ' AND fecha <= ?'; args.add(hasta.toIso8601String()); }
+    
+    final ingresos = await db.rawQuery('SELECT SUM(total) as total FROM ventas ', args);
+    final compras = await db.rawQuery('SELECT SUM(total) as total FROM compras ', args);
+    
+    return {
+      'ingresos': (ingresos.first['total'] as num?)?.toDouble() ?? 0.0,
+      'egresos': (compras.first['total'] as num?)?.toDouble() ?? 0.0,
+      'flujoNeto': ((ingresos.first['total'] as num?)?.toDouble() ?? 0.0) - ((compras.first['total'] as num?)?.toDouble() ?? 0.0),
+    };
+  }
 }

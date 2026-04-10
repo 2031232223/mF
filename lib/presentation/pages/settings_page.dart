@@ -8,7 +8,7 @@ import 'notes_page.dart';
 import 'help_feedback_page.dart';
 
 class SettingsPage extends StatelessWidget {
-  const SettingsPage({super.key});
+  SettingsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -179,4 +179,7 @@ class SettingsPage extends StatelessWidget {
       actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cerrar'))],
     ));
   }
+  // RF 68: Recordatorios de stock
+  bool _recordatorioStock = false;
+  int _diasRecordatorio = 7;
 }
