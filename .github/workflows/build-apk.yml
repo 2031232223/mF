@@ -28,11 +28,17 @@ jobs:
       - name: 📦 Dependencies
         run: flutter pub get
 
-      - name: 🛠️ Build Universal Release APK
+      - name: 🔑 Generate Debug Keystore
         run: |
-          # Construye UNA sola APK universal (como la Foto 9 que funcionaba)
-          # minifyEnabled en build.gradle la dejará en ~45-50MB
-          flutter build apk --release --no-tree-shake-icons
+          mkdir -p ~/.android
+          keytool -genkey -v -keystore ~/.android/debug.keystore \
+            -storepass android -alias androiddebugkey -keypass android \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US" \
+            -noprompt
+
+      - name: 🛠️ Build Universal Release APK
+        run: flutter build apk --release --no-tree-shake-icons
 
       - name: 📤 Upload APK
         uses: actions/upload-artifact@v4
