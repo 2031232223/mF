@@ -35,24 +35,14 @@ jobs:
             -keyalg RSA -keysize 2048 -validity 10000 \
             -dname "CN=Android Debug,O=Android,C=US" -noprompt
 
-      - name: Clean Build
-        run: flutter clean
-
-      - name: Build Release APK (NO OPTIMIZATIONS)
-        run: |
-          flutter build apk \
-            --release \
-            --no-tree-shake-icons
+      - name: Build Release APK
+        run: flutter build apk --release --no-tree-shake-icons
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: nova-aden-clean-release
+          name: nova-aden-clean-apk
           path: build/app/outputs/flutter-apk/app-release.apk
 
       - name: Show Info
-        run: |
-          echo "✅ APK generada:"
-          ls -lh build/app/outputs/flutter-apk/app-release.apk
-          echo ""
-          echo "📱 Esta APK debería funcionar SIN cerrarse"
+        run: ls -lh build/app/outputs/flutter-apk/app-release.apk
