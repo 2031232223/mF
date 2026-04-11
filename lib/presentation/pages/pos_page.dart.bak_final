@@ -32,8 +32,8 @@ class _PosPageState extends State<PosPage> {
   final _barcodeController = TextEditingController();
   double _amountPaid = 0.0;
   String _selectedCurrency = 'CUP';
-  double _mlcRate = 120.0;
-  double _usdRate = 1.0;
+  double _mlcRate = 0.0;
+  double _usdRate = 0.0;
   bool _isCredit = false;
   bool _applyDiscount = false;
   double _discountPercent = 0.0;
@@ -91,51 +91,7 @@ class _PosPageState extends State<PosPage> {
     }
   }
 
-  void _showBarcodeScanner() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('📷 Escanear Código de Barras'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Ingrese el código manualmente o use el escáner:', style: TextStyle(fontSize: 14)),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _barcodeController,
-              decoration: const InputDecoration(
-                labelText: 'Código de Barras',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.qr_code_scanner),
-              ),
-              autofocus: true,
-              onSubmitted: (value) {
-                if (value.isNotEmpty) _handleBarcodeScan(value);
-              },
-            ),
-            const SizedBox(height: 16),
-            // Nota: Para escáner real con cámara, se requiere mobile_scanner
-            // Aquí implementamos la versión manual que funciona en todas las plataformas
-            ElevatedButton.icon(
-              onPressed: () {
-                if (_barcodeController.text.isNotEmpty) {
-                  _handleBarcodeScan(_barcodeController.text);
-                  Navigator.pop(ctx);
-                }
-              },
-              icon: const Icon(Icons.check),
-              label: const Text('Buscar'),
-            ),
-            const SizedBox(height: 8),
-            const Text('💡 Tip: Use un lector de código de barras USB/Bluetooth para escaneo rápido', style: TextStyle(fontSize: 12, color: Colors.grey)),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
-        ],
-      ),
-    );
-  }
+  
 
   void _addToCart(Product product) {
     if (product.stockActual <= 0) {
@@ -651,7 +607,7 @@ Padding(
         ),
         centerTitle: true,
         actions: [
-          IconButton(icon: const Icon(Icons.qr_code_scanner), onPressed: () {}, tooltip: '📷 Escanear (RF 53)'),
+          IconButton(icon: const Icon(Icons.qr_code_scanner), onPressed: _showBarcodeScanner, tooltip: '📷 Escanear (RF 53)'),
           IconButton(icon: const Icon(Icons.play_circle_outline), onPressed: _resumeSale, tooltip: 'Retomar venta'),
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
           if (_cart.isNotEmpty) IconButton(icon: const Icon(Icons.delete_sweep), onPressed: _clearCart),

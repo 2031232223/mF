@@ -56,7 +56,7 @@ class _CustomerPageState extends State<CustomerPage> {
             const SizedBox(height: 12),
             TextFormField(controller: _ciController, decoration: const InputDecoration(labelText: 'Carnet de Identidad *', border: OutlineInputBorder()), validator: (v) => v!.isEmpty ? 'Requerido' : null),
             const SizedBox(height: 12),
-            TextFormField(controller: _telefonoController, decoration: const InputDecoration(labelText: 'Teléfono', border: OutlineInputBorder()), validator: (v) => v!.isEmpty ? 'Requerido' : null, keyboardType: TextInputType.phone),
+            TextFormField(controller: _telefonoController, decoration: const InputDecoration(labelText: 'Teléfono *', border: OutlineInputBorder()), validator: (v) => v!.isEmpty ? 'Requerido' : null, keyboardType: TextInputType.phone),
             const SizedBox(height: 16),
             Row(children: [
               Expanded(child: ElevatedButton.icon(onPressed: _saveCustomer, icon: const Icon(Icons.add), label: const Text('AÑADIR'), style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14)))),
