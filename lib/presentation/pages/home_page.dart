@@ -41,7 +41,7 @@ class _HomePageState extends State<HomePage> {
           onDestinationSelected: (index) => setState(() => _selectedIndex = index),
           destinations: const [
             NavigationDestination(icon: Icon(Icons.point_of_sale), label: 'POS'),
-            NavigationDestination(icon: Icon(Icons.inventory_2), label: 'Productos'),
+            NavigationDestination(icon: Icon(Icons.inventory_2), label: 'Inventario'),
             NavigationDestination(icon: Icon(Icons.shopping_cart), label: 'Compras'),  // ✅ AGREGADO
             NavigationDestination(icon: Icon(Icons.analytics), label: 'Reportes'),
             NavigationDestination(icon: Icon(Icons.settings), label: 'Config'),
