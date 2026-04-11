@@ -16,6 +16,21 @@ class ReportsPage extends StatefulWidget {
 }
 
 class _ReportsPageState extends State<ReportsPage> {
+  List<FlSpot> _generateLast7DaysSpots(List<Map<String, dynamic>> sales) {
+    if (sales.isEmpty) return [const FlSpot(0, 0)];
+    final now = DateTime.now();
+    final spots = <FlSpot>[];
+    for (int i = 6; i >= 0; i--) {
+      final date = now.subtract(Duration(days: i));
+      final daySales = sales.where((s) {
+        final sDate = s['fecha'] is DateTime ? s['fecha'] : DateTime.tryParse(s['fecha'].toString());
+        return sDate != null && sDate.year == date.year && sDate.month == date.month && sDate.day == date.day;
+      }).fold(0.0, (sum, s) => sum + (s['total']?.toDouble() ?? 0.0));
+      spots.add(FlSpot((6 - i).toDouble(), daySales));
+    }
+    return spots;
+  }
+
   final _productRepo = ProductRepository();
   final _saleRepo = SaleRepository();
 
