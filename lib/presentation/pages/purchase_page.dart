@@ -298,7 +298,7 @@ class _PurchasePageState extends State<PurchasePage> {
                          }
                        },
                        icon: const Icon(Icons.add_business),
-                       label: const Text('Nuevo Proveedor'),
+                       label: const Text('Nuevo'),
                      ),
                    ],
                  ),
@@ -337,7 +337,8 @@ class _PurchasePageState extends State<PurchasePage> {
                       prefixIcon: const Icon(Icons.search),
                       border: const OutlineInputBorder(),
                       filled: true,
-                      fillColor: Colors.grey[100],
+                      fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[850] : Colors.grey[100],
+                      hintStyle: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.green[300] : Colors.grey),
                     ),
                     onChanged: (v) => setState(() {}),
                   ),
