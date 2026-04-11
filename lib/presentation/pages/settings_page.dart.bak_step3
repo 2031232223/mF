@@ -138,38 +138,6 @@ class SettingsPage extends StatelessWidget {
             value: false,
             onChanged: (v) {},
           ),
-        const Divider(height: 24),
-        const Padding(
-          padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Text('General', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
-        ),
-        ListTile(
-          leading: const Icon(Icons.business, color: Colors.blue),
-          title: const Text('Nombre de empresa'),
-          subtitle: const Text('Nova ADEN (por defecto)'),
-          onTap: () {},
-        ),
-        const Padding(
-          padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Text('Inventario', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
-        ),
-        SwitchListTile(
-          secondary: const Icon(Icons.inventory_2, color: Colors.orange),
-          title: const Text('Recordatorios de stock'),
-          subtitle: const Text('Cada 7 días'),
-          value: false,
-          onChanged: (v) {},
-        ),
-        const Padding(
-          padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Text('Reportes y Operaciones', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
-        ),
-        ListTile(
-          leading: const Icon(Icons.receipt_long, color: Colors.green),
-          title: const Text('Impuesto predeterminado'),
-          subtitle: const Text('0% (por defecto)'),
-          onTap: () {},
-        ),
           ],
         ),
       ),

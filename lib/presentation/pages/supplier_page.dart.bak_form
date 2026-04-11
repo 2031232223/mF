@@ -215,7 +215,7 @@ class _SupplierPageState extends State<SupplierPage> with SingleTickerProviderSt
           const SizedBox(height: 16),
           TextField(
             controller: _contactoCtrl,
-            decoration: InputDecoration(labelText: 'Carnet de Identidad', border: const OutlineInputBorder(), filled: true, fillColor: Colors.grey[100]),
+            decoration: InputDecoration(labelText: 'Persona de Contacto', border: const OutlineInputBorder(), filled: true, fillColor: Colors.grey[100]),
           ),
           const SizedBox(height: 16),
           TextField(
