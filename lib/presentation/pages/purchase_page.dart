@@ -283,6 +283,27 @@ class _PurchasePageState extends State<PurchasePage> {
                 ),
                 
                 // Selector de proveedor (solo si no es compra rápida)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton.icon(
+                      onPressed: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const SupplierPage()),
+                        );
+                        if (result != null && mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Proveedor registrado')),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.add_business, size: 18),
+                      label: const Text('Nuevo', style: TextStyle(fontSize: 12)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
                 if (!_isQuickPurchase)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
