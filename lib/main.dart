@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:ui'; // ✅ Importación necesaria para Flutter bajo nivel
+import 'presentation/pages/splash_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/utils/theme_provider.dart';
@@ -34,7 +35,7 @@ class NovaAdenApp extends StatelessWidget {
           title: 'Nova ADEN',
           debugShowCheckedModeBanner: false,
           theme: themeProvider.themeData,
-          home: const HomePage(),
+          home: const SplashPage(),
           // Intercepta errores de UI para mostrarlos en pantalla
           builder: (context, child) {
             ErrorWidget.builder = (details) {

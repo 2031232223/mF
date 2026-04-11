@@ -41,9 +41,10 @@ class _ProductListPageState extends State<ProductListPage> {
         title: const Text('Confirmar Eliminación'),
         content: const Text('¿Eliminar este producto?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Eliminar')),
-        ],
+          IconButton(icon: const Icon(Icons.refresh), tooltip: 'Actualizar', onPressed: _load),
+          IconButton(icon: const Icon(Icons.file_download), tooltip: 'Exportar CSV', onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Exportar: Función no implementada aún")))),
+          IconButton(icon: const Icon(Icons.file_upload), tooltip: 'Importar CSV', onPressed: _importProductsCsv),
+        ]
       ),
     );
     if (confirm == true) {

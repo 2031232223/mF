@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'supplier_page.dart';
 import 'package:intl/intl.dart';
 import '../../core/models/product.dart';
 import '../../core/models/supplier.dart';

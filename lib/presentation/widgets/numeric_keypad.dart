@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class NumericKeypad extends StatelessWidget {
-  final Function(String) onNumberPressed;
+  final void Function(String) onNumberPressed;
   final VoidCallback onBackspace;
   final VoidCallback onClear;
 
@@ -19,31 +19,46 @@ class NumericKeypad extends StatelessWidget {
       padding: const EdgeInsets.all(8),
       child: Column(
         children: [
-          Row(children: _buildRow(['1', '2', '3'])),
-          Row(children: _buildRow(['4', '5', '6'])),
-          Row(children: _buildRow(['7', '8', '9'])),
+          Row(children: _buildNumRow(['1', '2', '3'])),
+          Row(children: _buildNumRow(['4', '5', '6'])),
+          Row(children: _buildNumRow(['7', '8', '9'])),
           Row(children: [
-            Expanded(child: _buildButton('0', onNumberPressed)),
-            Expanded(child: _buildButton('.', onNumberPressed)),
+            Expanded(child: _buildNumButton('0')),
+            Expanded(child: _buildNumButton('.')),
             Expanded(child: IconButton(icon: const Icon(Icons.backspace, color: Colors.red), onPressed: onBackspace)),
           ]),
-          Row(children: [Expanded(child: _buildButton('C', onClear, color: Colors.orange))]),
+          Row(children: [Expanded(child: _buildActionBtn('C', onClear, Colors.orange))]),
         ],
       ),
     );
   }
 
-  List<Widget> _buildRow(List<String> numbers) {
-    return numbers.map((n) => Expanded(child: _buildButton(n, onNumberPressed))).toList();
+  List<Widget> _buildNumRow(List<String> nums) {
+    return nums.map((n) => Expanded(child: _buildNumButton(n))).toList();
   }
 
-  Widget _buildButton(String text, Function(String) onPressed, {Color? color}) {
+  Widget _buildNumButton(String text) {
     return Padding(
       padding: const EdgeInsets.all(4),
       child: ElevatedButton(
-        onPressed: () => onPressed(text),
+        onPressed: () => onNumberPressed(text),
         style: ElevatedButton.styleFrom(
-          backgroundColor: color ?? Colors.white,
+          backgroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        child: Text(text, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+      ),
+    );
+  }
+
+  Widget _buildActionBtn(String text, VoidCallback action, Color bgColor) {
+    return Padding(
+      padding: const EdgeInsets.all(4),
+      child: ElevatedButton(
+        onPressed: action,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: bgColor,
           padding: const EdgeInsets.symmetric(vertical: 20),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
