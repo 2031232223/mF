@@ -267,66 +267,101 @@ class _PurchasePageState extends State<PurchasePage> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-               // RF 6: Toggle compra rápida
-               Padding(
-                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                 child: Row(
-                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                   children: [
-                     Row(
-                       children: [
-                         const Text('Compra rápida (sin proveedor):'),
-                         const SizedBox(width: 8),
-                         Switch(
-                           value: _isQuickPurchase,
-                           onChanged: (v) => setState(() => _isQuickPurchase = v),
-                           activeColor: Colors.blue,
-                         ),
-                       ],
-                     ),
-                     TextButton.icon(
-                       onPressed: () async {
-                         final result = await Navigator.push(
-                           context,
-                           MaterialPageRoute(builder: (_) => const SupplierPage()),
-                         );
-                         if (result != null && mounted) {
-                           setState(() {
-                             _suppliers.add(result);
-                             _selectedSupplier = result;
-                           });
-                         }
-                       },
-                       icon: const Icon(Icons.add_business),
-                       label: const Text('Nuevo Proveedor'),
-                     ),
-                   ],
-                 ),
-               ),
-
-               // Selector de proveedor (solo si no es compra rápida)
-               if (!_isQuickPurchase)
-                 Padding(
-                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                   child: DropdownButtonFormField<Supplier>(
-                     decoration: InputDecoration(
-                       labelText: 'Proveedor *',
-                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                       filled: true,
-                       fillColor: Colors.grey[100],
-                     ),
-                     items: [
-                       const DropdownMenuItem(value: null, child: Text('Seleccionar proveedor')),
-                       ..._suppliers.map((s) => DropdownMenuItem(value: s, child: Text(s.nombre))),
-                     ],
-                     value: _selectedSupplier,
-                     onChanged: (v) => setState(() => _selectedSupplier = v),
-                   ),
-                 ),
-
-               const SizedBox(height: 16),
-
-               // Buscador de productos
+                // RF 6: Toggle compra rápida
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      const Text('Compra rápida (sin proveedor):'),
+                    const SizedBox(width: 8),
+                    TextButton.icon(
+                      onPressed: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const SupplierPage()),
+                        );
+                        if (result != null && mounted) {
+                          setState(() {
+                            _suppliers.add(result);
+                            _selectedSupplier = result;
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Proveedor registrado')),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.add_business, size: 18),
+                      label: const Text('Nuevo', style: TextStyle(fontSize: 12)),
+                    ),
+                    const SizedBox(width: 8),
+                    Switch(
+                        value: _isQuickPurchase,
+                        onChanged: (v) => setState(() => _isQuickPurchase = v),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // Selector de proveedor (solo si no es compra rápida)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton.icon(
+                      onPressed: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const SupplierPage()),
+                        );
+                        if (result != null && mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Proveedor registrado')),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.add_business, size: 18),
+                      label: const Text('Nuevo', style: TextStyle(fontSize: 12)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                if (!_isQuickPurchase)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: DropdownButtonFormField<Supplier>(
+                      decoration: InputDecoration(
+                        labelText: 'Proveedor *',
+                        border: OutlineInputBorder(),
+                        filled: true,
+                        fillColor: Colors.grey[100],
+                      ),
+                      items: [
+                        const DropdownMenuItem(value: null, child: Text('Seleccionar proveedor')),
+                        ..._suppliers.map((s) => DropdownMenuItem(value: s, child: Text(s.nombre))),
+                      ],
+                      value: _selectedSupplier,
+                      onChanged: (v) => setState(() => _selectedSupplier = v),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+IconButton(
+  icon: const Icon(Icons.add_circle, color: Colors.blue, size: 28),
+  tooltip: 'Registrar nuevo proveedor',
+  onPressed: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => SupplierPage()),
+                      );
+                      if (result != null && mounted) {
+                        // El proveedor nuevo se manejará en SupplierPage
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Proveedor registrado')),
+                        );
+                      }
+                    },
+),
+                
+                const SizedBox(height: 16),
+                
                 // Buscador de productos
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
