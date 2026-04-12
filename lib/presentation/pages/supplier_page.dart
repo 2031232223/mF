@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../../core/models/supplier.dart';
 import '../../core/repositories/supplier_repository.dart';
 import '../../core/database/database_helper.dart';
 
 class SupplierPage extends StatefulWidget {
   const SupplierPage({super.key});
+
   @override
   State<SupplierPage> createState() => _SupplierPageState();
 }
@@ -19,7 +19,7 @@ class _SupplierPageState extends State<SupplierPage> with SingleTickerProviderSt
 
   // Formulario
   final _nombreCtrl = TextEditingController();
-  final _contactoCtrl = TextEditingController();
+  final _ciCtrl = TextEditingController();
   final _telefonoCtrl = TextEditingController();
 
   @override
@@ -34,7 +34,7 @@ class _SupplierPageState extends State<SupplierPage> with SingleTickerProviderSt
     _tabController.dispose();
     _searchCtrl.dispose();
     _nombreCtrl.dispose();
-    _contactoCtrl.dispose();
+    _ciCtrl.dispose();
     _telefonoCtrl.dispose();
     super.dispose();
   }
@@ -46,66 +46,26 @@ class _SupplierPageState extends State<SupplierPage> with SingleTickerProviderSt
   }
 
   Future<void> _saveSupplier() async {
-    if (_nombreCtrl.text.isEmpty || _telefonoCtrl.text.isEmpty) {
+    if (_nombreCtrl.text.isEmpty || _ciCtrl.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Complete campos obligatorios')));
       return;
     }
     try {
       final supplier = Supplier(
         nombre: _nombreCtrl.text.trim(),
-        contacto: _contactoCtrl.text.trim(),
+        ciIdentidad: _ciCtrl.text.trim(),
         telefono: _telefonoCtrl.text.trim(),
       );
       await _supplierRepo.createSupplier(supplier);
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Proveedor registrado'), backgroundColor: Colors.green));
       _nombreCtrl.clear();
-      _contactoCtrl.clear();
+      _ciCtrl.clear();
       _telefonoCtrl.clear();
       _loadData();
       _tabController.animateTo(0);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ $e')));
     }
-  }
-
-  // RF 49: Ver histórico por proveedor
-  Future<void> _showSupplierHistory(Supplier supplier) async {
-    final db = await DatabaseHelper.instance.database;
-    final purchases = await db.rawQuery('''
-      SELECT c.id, c.fecha, c.total
-      FROM compras c
-      WHERE c.proveedor_id = ?
-      ORDER BY c.fecha DESC
-    ''', [supplier.id]);
-
-    if (!mounted) return;
-
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text('📋 Historial: ${supplier.nombre}'),
-        content: SizedBox(
-          width: double.maxFinite,
-          height: 400,
-          child: purchases.isEmpty
-              ? const Center(child: Text('Sin compras registradas'))
-              : ListView.builder(
-                  itemCount: purchases.length,
-                  itemBuilder: (ctx, i) {
-                    final p = purchases[i];
-                    return ListTile(
-                      title: Text('Compra #${p['id']}'),
-                      subtitle: Text(DateFormat('dd/MM/yyyy').format(DateTime.parse(p['fecha'] as String))),
-                      trailing: Text('\$${(p['total'] as num).toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                    );
-                  },
-                ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar')),
-        ],
-      ),
-    );
   }
 
   Future<void> _deleteSupplier(Supplier supplier) async {
@@ -161,7 +121,14 @@ class _SupplierPageState extends State<SupplierPage> with SingleTickerProviderSt
           padding: const EdgeInsets.all(16),
           child: TextField(
             controller: _searchCtrl,
-            decoration: InputDecoration(hintText: 'Buscar proveedor...', prefixIcon: const Icon(Icons.search), border: const OutlineInputBorder(), filled: true, fillColor: Colors.grey[100]),
+            decoration: InputDecoration(
+              hintText: 'Buscar proveedor...',
+              prefixIcon: const Icon(Icons.search),
+              border: const OutlineInputBorder(),
+              filled: true,
+              fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[850] : Colors.grey[100],
+              hintStyle: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.green[300] : Colors.grey),
+            ),
             onChanged: (v) => setState(() {}),
           ),
         ),
@@ -178,20 +145,10 @@ class _SupplierPageState extends State<SupplierPage> with SingleTickerProviderSt
                       child: ListTile(
                         leading: const CircleAvatar(backgroundColor: Colors.blue, child: Icon(Icons.store, color: Colors.white)),
                         title: Text(s.nombre, style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text('${s.contacto} • ${s.telefono}'),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.history, color: Colors.teal),
-                              onPressed: () => _showSupplierHistory(s), // RF 49
-                              tooltip: 'Ver historial',
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () => _deleteSupplier(s),
-                            ),
-                          ],
+                        subtitle: Text('${s.ciIdentidad} • ${s.telefono}'),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => _deleteSupplier(s),
                         ),
                       ),
                     );
@@ -210,21 +167,44 @@ class _SupplierPageState extends State<SupplierPage> with SingleTickerProviderSt
         children: [
           TextField(
             controller: _nombreCtrl,
-            decoration: InputDecoration(labelText: 'Nombre *', border: const OutlineInputBorder(), filled: true, fillColor: Colors.grey[100]),
+            decoration: InputDecoration(
+              labelText: 'Nombre *',
+              border: const OutlineInputBorder(),
+              filled: true,
+              fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[850] : Colors.grey[100],
+              hintStyle: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.green[300] : Colors.grey),
+            ),
           ),
           const SizedBox(height: 16),
           TextField(
-            controller: _contactoCtrl,
-            decoration: InputDecoration(labelText: 'Carnet de Identidad', border: const OutlineInputBorder(), filled: true, fillColor: Colors.grey[100]),
+            controller: _ciCtrl,
+            decoration: InputDecoration(
+              labelText: 'Carnet de Identidad',
+              border: const OutlineInputBorder(),
+              filled: true,
+              fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[850] : Colors.grey[100],
+              hintStyle: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.green[300] : Colors.grey),
+            ),
           ),
           const SizedBox(height: 16),
           TextField(
             controller: _telefonoCtrl,
             keyboardType: TextInputType.phone,
-            decoration: InputDecoration(labelText: 'Teléfono *', border: const OutlineInputBorder(), filled: true, fillColor: Colors.grey[100]),
+            decoration: InputDecoration(
+              labelText: 'Teléfono',
+              border: const OutlineInputBorder(),
+              filled: true,
+              fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[850] : Colors.grey[100],
+              hintStyle: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.green[300] : Colors.grey),
+            ),
           ),
           const SizedBox(height: 24),
-          SizedBox(width: double.infinity, height: 50, child: ElevatedButton.icon(onPressed: _saveSupplier, icon: const Icon(Icons.save), label: const Text('GUARDAR PROVEEDOR', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)), style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white))),
+          SizedBox(width: double.infinity, height: 50, child: ElevatedButton.icon(
+            onPressed: _saveSupplier,
+            icon: const Icon(Icons.save),
+            label: const Text('GUARDAR PROVEEDOR', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
+          )),
         ],
       ),
     );
