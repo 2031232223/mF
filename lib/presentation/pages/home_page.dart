@@ -12,6 +12,7 @@ import 'backup_page.dart';
 import 'supplier_page.dart';
 import 'customer_page.dart';
 import 'credit_payments_page.dart';
+import 'dashboard_page.dart';
 import 'dashboard_page.dart'; // ✅ Nueva pantalla independiente
 
 class HomePage extends StatefulWidget {

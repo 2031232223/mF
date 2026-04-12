@@ -18,14 +18,15 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
-    _loadStats();
+    _loadRealData();
   }
 
-  Future<void> _loadStats() async {
+  // Cargar datos REALES desde base de datos
+  Future<void> _loadRealData() async {
     try {
       final db = await DatabaseHelper.instance.database;
       
-      // Conteos reales desde BD (empiezan en 0 si está vacía)
+      // Conteos automáticos desde tablas
       final v = await db.rawQuery('SELECT COUNT(*) as c FROM ventas');
       final p = await db.rawQuery('SELECT COUNT(*) as c FROM productos');
       final pr = await db.rawQuery('SELECT COUNT(*) as c FROM proveedores');
@@ -76,30 +77,31 @@ class _DashboardPageState extends State<DashboardPage> {
       appBar: AppBar(
         title: const Text('Resumen del Negocio'),
         centerTitle: true,
-        actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadStats),
-        ],
+        actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _loadRealData)],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16),
-              child: ListView(
-                children: [
-                  const Text('Indicadores Clave', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 16),
-                  _statCard(icon: Icons.attach_money, label: 'Ventas Registradas', value: _ventasCount, color: Colors.green),
-                  const SizedBox(height: 12),
-                  _statCard(icon: Icons.inventory_2, label: 'Productos en Stock', value: _productosCount, color: Colors.orange),
-                  const SizedBox(height: 12),
-                  _statCard(icon: Icons.store, label: 'Proveedores Activos', value: _proveedoresCount, color: Colors.blue),
-                  const SizedBox(height: 12),
-                  _statCard(icon: Icons.person, label: 'Clientes Registrados', value: _clientesCount, color: Colors.purple),
-                  const SizedBox(height: 24),
-                  const Divider(),
-                  const SizedBox(height: 12),
-                  const Text('💡 Los datos se actualizan automáticamente al registrar operaciones.', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                ],
+          : RefreshIndicator(
+              onRefresh: _loadRealData,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: ListView(
+                  children: [
+                    const Text('Indicadores Clave', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 16),
+                    _statCard(icon: Icons.attach_money, label: 'Ventas Registradas', value: _ventasCount, color: Colors.green),
+                    const SizedBox(height: 12),
+                    _statCard(icon: Icons.inventory_2, label: 'Productos en Stock', value: _productosCount, color: Colors.orange),
+                    const SizedBox(height: 12),
+                    _statCard(icon: Icons.store, label: 'Proveedores Activos', value: _proveedoresCount, color: Colors.blue),
+                    const SizedBox(height: 12),
+                    _statCard(icon: Icons.person, label: 'Clientes Registrados', value: _clientesCount, color: Colors.purple),
+                    const SizedBox(height: 24),
+                    const Divider(),
+                    const SizedBox(height: 12),
+                    const Text('💡 Los datos se actualizan automáticamente al registrar operaciones.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  ],
+                ),
               ),
             ),
     );
