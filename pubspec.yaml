@@ -7,7 +7,6 @@ environment:
   sdk: '>=3.2.0 <4.0.0'
 
 dependencies:
-  file_picker: ^6.1.1
   flutter:
     sdk: flutter
   
@@ -22,18 +21,16 @@ dependencies:
   
   # Archivos y preferencias (multiplataforma)
   shared_preferences: ^2.2.2
-  path_provider: ^2.1.1
+  path_provider: ^2.1.2  # ✅ Actualizado a versión más reciente
   
   # CSV para exportar/importar
   csv: ^5.1.1
   
   # PDF y impresión (compatibles con Flutter 3.19.0)
-  pdf: ^3.10.4
+  pdf: ^3.10.8          # ✅ Actualizado a versión más reciente
   printing: ^5.11.0
-    # ✅ Para exportar y compartir PDF
-  share_plus: ^7.2.1
-  pdf: ^3.10.8
-  path_provider: ^2.1.2
+  share_plus: ^7.2.1    # ✅ Agregado para compartir archivos
+  
   # Compresión de respaldos
   archive: ^3.4.10
   
@@ -42,9 +39,11 @@ dependencies:
   
   # Criptografía para validación de respaldos
   crypto: ^3.0.3
+  
+  # Selector de archivos
+  file_picker: ^6.1.1
 
 dev_dependencies:
-  file_picker: ^6.1.1
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.1
