@@ -434,3 +434,4 @@ class _PurchasePageState extends State<PurchasePage> {
     );
   }
 }
+

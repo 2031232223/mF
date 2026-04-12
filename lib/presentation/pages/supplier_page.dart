@@ -92,7 +92,7 @@ class _SupplierPageState extends State<SupplierPage> with SingleTickerProviderSt
       children: [
         Padding(padding: const EdgeInsets.all(16), child: TextField(
           controller: _searchCtrl,
-          decoration: InputDecoration(hintText: 'Buscar...', prefixIcon: const Icon(Icons.search), border: const OutlineInputBorder(), filled: true, fillColor: Colors.grey[100]),
+          decoration: InputDecoration(hintText: 'Buscar...', prefixIcon: const Icon(Icons.search), border: const OutlineInputBorder(), filled: true, fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[850] : Colors.grey[100]),
           onChanged: (v) => setState(() {}),
         )),
         Expanded(child: filtered.isEmpty ? const Center(child: Text('Vacío')) : ListView.builder(
@@ -112,11 +112,11 @@ class _SupplierPageState extends State<SupplierPage> with SingleTickerProviderSt
 
   Widget _buildForm() {
     return Padding(padding: const EdgeInsets.all(16), child: Column(children: [
-      TextField(controller: _nombreCtrl, decoration: const InputDecoration(labelText: 'Nombre *', border: OutlineInputBorder())),
+      TextField(controller: _nombreCtrl, decoration: InputDecoration(filled: true, fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[850] : Colors.grey[100], labelText: 'Nombre *', border: OutlineInputBorder())),
       const SizedBox(height: 12),
-      TextField(controller: _ciCtrl, decoration: const InputDecoration(labelText: 'Carnet de Identidad', border: OutlineInputBorder())),
+      TextField(controller: _ciCtrl, decoration: InputDecoration(filled: true, fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[850] : Colors.grey[100], labelText: 'Carnet de Identidad', border: OutlineInputBorder())),
       const SizedBox(height: 12),
-      TextField(controller: _telefonoCtrl, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Teléfono', border: OutlineInputBorder())),
+      TextField(controller: _telefonoCtrl, keyboardType: TextInputType.phone, decoration: InputDecoration(filled: true, fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[850] : Colors.grey[100], labelText: 'Teléfono', border: OutlineInputBorder())),
       const SizedBox(height: 20),
       SizedBox(width: double.infinity, height: 50, child: ElevatedButton.icon(onPressed: _saveSupplier, icon: const Icon(Icons.save), label: const Text('GUARDAR PROVEEDOR'), style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white))),
     ]));

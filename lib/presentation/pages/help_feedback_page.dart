@@ -30,7 +30,7 @@ class _HelpFeedbackPageState extends State<HelpFeedbackPage> {
             const SizedBox(height: 12),
             ..._faqs.map((faq) => ExpansionTile(
               title: Text(faq['q'], style: const TextStyle(fontWeight: FontWeight.w500)),
-              children: [Padding(padding: const EdgeInsets.all(16), child: Text(faq['a'], style: const TextStyle(color: Colors.black54)))],
+              children: [Padding(padding: const EdgeInsets.all(16), child: Text(faq['a'], style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.green[300] : Colors.black54)))],
             )),
             const SizedBox(height: 24),
             const Text('Enviar Retroalimentación', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -38,7 +38,7 @@ class _HelpFeedbackPageState extends State<HelpFeedbackPage> {
             TextField(
               controller: _feedbackCtrl,
               maxLines: 5,
-              decoration: InputDecoration(hintText: 'Escribe tu sugerencia o reporte...', border: const OutlineInputBorder(), filled: true, fillColor: Colors.grey[100]),
+              decoration: InputDecoration(hintText: 'Escribe tu sugerencia o reporte...', border: const OutlineInputBorder(), filled: true, fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[850] : Colors.grey[100]),
             ),
             const SizedBox(height: 16),
             SizedBox(

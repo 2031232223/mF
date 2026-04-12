@@ -17,6 +17,7 @@ class _ProductFormPageState extends State<ProductFormPage> {
   late TextEditingController _nombreController;
   late TextEditingController _codigoController;
   late TextEditingController _costoController;
+  late TextEditingController _margenController;
   late TextEditingController _precioController;
   late TextEditingController _stockController;
   late TextEditingController _stockMinimoController;
@@ -32,6 +33,7 @@ class _ProductFormPageState extends State<ProductFormPage> {
     _nombreController = TextEditingController(text: widget.product?.nombre ?? '');
     _codigoController = TextEditingController(text: widget.product?.codigo ?? '');
     _costoController = TextEditingController(text: widget.product?.costo?.toString() ?? '');
+    _margenController = TextEditingController(text: widget.product?.margenGanancia?.toString() ?? '30');
     _precioController = TextEditingController(text: widget.product?.precioVenta.toString() ?? '');
     _stockController = TextEditingController(text: widget.product?.stockActual.toString() ?? '0');
     _stockMinimoController = TextEditingController(text: widget.product?.stockMinimo.toString() ?? '5');
@@ -45,6 +47,7 @@ class _ProductFormPageState extends State<ProductFormPage> {
     _nombreController.dispose();
     _codigoController.dispose();
     _costoController.dispose();
+    _margenController.dispose();
     _precioController.dispose();
     _stockController.dispose();
     _stockMinimoController.dispose();
@@ -64,6 +67,7 @@ class _ProductFormPageState extends State<ProductFormPage> {
         nombre: _nombreController.text.trim(),
         codigo: _codigoController.text.trim(),
         costo: double.tryParse(_costoController.text) ?? 0.0,
+          margenGanancia: double.tryParse(_margenController.text) ?? 0.0,
         precioVenta: double.parse(_precioController.text),
         stockActual: int.tryParse(_stockController.text) ?? 0,
         stockMinimo: int.tryParse(_stockMinimoController.text) ?? 5,
@@ -136,10 +140,27 @@ class _ProductFormPageState extends State<ProductFormPage> {
             Row(
               children: [
                 Expanded(
-                  child: TextFormField(
-                    controller: _costoController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(labelText: 'Costo', border: OutlineInputBorder()),
+                  child: Column(
+                    children: [
+                      TextFormField(
+                        controller: _costoController,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        decoration: const InputDecoration(labelText: 'Costo', border: OutlineInputBorder()),
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _margenController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(labelText: 'Margen de ganancia (%)', border: OutlineInputBorder()),
+                        onChanged: (val) {
+                          final costo = double.tryParse(_costoController.text) ?? 0;
+                          final margen = double.tryParse(val) ?? 0;
+                          if (costo > 0) {
+                            _precioController.text = (costo + (costo * (margen / 100))).toStringAsFixed(2);
+                          }
+                        },
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(width: 12),
