@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'dart:convert';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../core/models/product.dart';
 import '../../core/models/customer.dart';
 import '../../core/models/sale.dart';
@@ -15,6 +18,7 @@ import 'paused_sales_page.dart';
 class PosPage extends StatefulWidget {
   final VoidCallback? onSaleCompleted;
   const PosPage({super.key, this.onSaleCompleted});
+
   @override
   State<PosPage> createState() => _PosPageState();
 }
@@ -37,13 +41,13 @@ class _PosPageState extends State<PosPage> {
   bool _isCredit = false;
   bool _applyDiscount = false;
   double _discountPercent = 0.0;
+  int? _lastSaleId;
 
   @override
   void initState() {
     super.initState();
     _loadData();
   }
-
   @override
   void dispose() {
     _searchController.dispose();
@@ -92,8 +96,7 @@ class _PosPageState extends State<PosPage> {
 
   void _showBarcodeScanner() {
     showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
+      context: context,      builder: (ctx) => AlertDialog(
         title: const Text('📷 Escanear Código de Barras'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -142,8 +145,7 @@ class _PosPageState extends State<PosPage> {
       return;
     }
     setState(() {
-      final idx = _cart.indexWhere((c) => c.productoId == product.id);
-      if (idx >= 0) {
+      final idx = _cart.indexWhere((c) => c.productoId == product.id);      if (idx >= 0) {
         if (_cart[idx].cantidad < product.stockActual) {
           _cart[idx].cantidad++;
         }
@@ -192,8 +194,7 @@ class _PosPageState extends State<PosPage> {
     if (_cart.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('⚠️ Agrega productos'), backgroundColor: Colors.orange),
-      );
-      return;
+      );      return;
     }
     final name = await showDialog<String>(
       context: context,
@@ -241,7 +242,81 @@ class _PosPageState extends State<PosPage> {
     }
   }
 
-  // ✅ CORRECCIÓN PRINCIPAL: Método _completeSale con firmas correctas
+  // ✅ NUEVO: Generar y compartir PDF del ticket
+  Future<void> _generateAndShareReceipt() async {    if (_lastSaleId == null) return;
+
+    try {
+      // Mostrar indicador de carga
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => const Center(child: CircularProgressIndicator()),
+      );
+
+      // Obtener datos de la última venta
+      final sale = await _saleRepo.getSaleById(_lastSaleId!);
+      if (sale == null) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('❌ No se encontró la venta'), backgroundColor: Colors.red),
+        );
+        return;
+      }
+
+      // Obtener detalles de la venta
+      final saleLines = await _saleRepo.getSaleLines(sale.id!);
+      
+      // Obtener cliente si existe
+      Customer? customer;
+      if (sale.clienteId != null) {
+        customer = await _customerRepo.getCustomerById(sale.clienteId!);
+      }
+
+      // Generar PDF
+      final pdfGenerator = PdfGenerator();
+      final pdfBytes = await pdfGenerator.generateReceiptPdf(
+        saleNumber: sale.id!,
+        date: DateTime.parse(sale.fechaVenta),
+        customer: customer,
+        items: saleLines,
+        subtotal: sale.total,
+        discount: _discountAmountCUP,
+        total: sale.total,
+        amountPaid: sale.montoPagado,
+        change: sale.montoPagado - sale.total,
+        currency: _selectedCurrency,
+        isCredit: sale.montoPendiente > 0,
+        pendingAmount: sale.montoPendiente,
+      );
+
+      Navigator.pop(context);
+
+      // Guardar PDF en archivo temporal
+      final directory = await getTemporaryDirectory();      final filePath = '${directory.path}/ticket_${sale.id}_${DateTime.now().millisecondsSinceEpoch}.pdf';
+      final file = File(filePath);
+      await file.writeAsBytes(pdfBytes);
+
+      // Compartir PDF
+      await Share.shareXFiles(
+        [XFile(filePath)],
+        subject: 'Ticket de Venta #${sale.id}',
+        text: 'Ticket de venta Nova ADEN #${sale.id}',
+      );
+
+      // Limpiar archivo temporal después de compartir
+      await Future.delayed(const Duration(seconds: 2));
+      if (await file.exists()) {
+        await file.delete();
+      }
+
+    } catch (e) {
+      if (mounted) Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('❌ Error al generar ticket: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
   Future<void> _completeSale() async {
     if (_cart.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -266,8 +341,7 @@ class _PosPageState extends State<PosPage> {
       }
 
       // ✅ Convertir CartItem → SaleLine (con los parámetros que espera el repo)
-      final saleLines = _cart.map((item) => SaleLine(
-        ventaId: 0, // El repo asigna el ID real después de insertar la venta
+      final saleLines = _cart.map((item) => SaleLine(        ventaId: 0, // El repo asigna el ID real después de insertar la venta
         productoId: item.productoId,
         cantidad: item.cantidad,
         precioUnitario: item.precioCUP, // Precio unitario en CUP
@@ -275,7 +349,7 @@ class _PosPageState extends State<PosPage> {
       )).toList();
 
       // ✅ Guardar venta con los 8 parámetros POSICIONALES que espera createSale
-      await _saleRepo.createSale(
+      _lastSaleId = await _saleRepo.createSale(
         _selectedCustomer?.id,                              // 1: clienteId
         saleLines,                                          // 2: List<SaleLine> (NO JSON)
         totalCUP,                                           // 3: total en CUP
@@ -297,6 +371,31 @@ class _PosPageState extends State<PosPage> {
         ),
       );
 
+      // ✅ NUEVO: Preguntar si desea generar el ticket PDF
+      if (mounted) {
+        final shouldGeneratePdf = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('🧾 Ticket de Venta'),
+            content: const Text('¿Desea generar y compartir el ticket en PDF?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('No'),
+              ),
+              ElevatedButton.icon(
+                onPressed: () => Navigator.pop(ctx, true),
+                icon: const Icon(Icons.picture_as_pdf),
+                label: const Text('Generar PDF'),
+              ),
+            ],
+          ),
+        );
+        if (shouldGeneratePdf == true) {
+          await _generateAndShareReceipt();
+        }
+      }
+
       // Resetear formulario
       if (widget.onSaleCompleted != null) widget.onSaleCompleted!();
       _clearCart();
@@ -305,6 +404,7 @@ class _PosPageState extends State<PosPage> {
       _applyDiscount = false;
       _discountPercent = 0.0;
       _selectedCustomer = null;
+      _lastSaleId = null;
       _loadData();
 
     } catch (e) {
@@ -339,8 +439,7 @@ class _PosPageState extends State<PosPage> {
           ElevatedButton(
             onPressed: () async {
               // Teléfono ya no es obligatorio
-              if (nc.text.isEmpty || cc.text.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
+              if (nc.text.isEmpty || cc.text.isEmpty) {                ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('⚠️ Complete campos'), backgroundColor: Colors.orange),
                 );
                 return;
@@ -389,8 +488,7 @@ class _PosPageState extends State<PosPage> {
   }
 
   Widget _buildCartHeader(Function setModalState, BuildContext ctx) {
-    return Container(
-      padding: const EdgeInsets.all(16),
+    return Container(      padding: const EdgeInsets.all(16),
       color: Colors.blue,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -405,7 +503,7 @@ class _PosPageState extends State<PosPage> {
                 items: const [
                   DropdownMenuItem(value: 'CUP', child: Text('🇨🇺 CUP', style: TextStyle(color: Colors.white))),
                   DropdownMenuItem(value: 'MLC', child: Text('💳 MLC', style: TextStyle(color: Colors.white))),
-                  DropdownMenuItem(value: 'USD', child: Text('🇺🇸 USD', style: TextStyle(color: Colors.white))),
+                  DropdownMenuItem(value: 'USD', child: Text('🇺 USD', style: TextStyle(color: Colors.white))),
                 ],
                 onChanged: (v) {
                   if (v != null) {
@@ -439,7 +537,6 @@ class _PosPageState extends State<PosPage> {
       ),
     );
   }
-
   Widget _buildCustomerSection(Function setModalState) {
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -489,8 +586,7 @@ class _PosPageState extends State<PosPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(icon: const Icon(Icons.remove_circle, color: Colors.red, size: 28), onPressed: () { _decreaseQuantity(i); setModalState(() {}); }),
-                Text('${c.cantidad}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                IconButton(icon: const Icon(Icons.add_circle, color: Colors.green, size: 28), onPressed: () { _increaseQuantity(i); setModalState(() {}); }),
+                Text('${c.cantidad}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),                IconButton(icon: const Icon(Icons.add_circle, color: Colors.green, size: 28), onPressed: () { _increaseQuantity(i); setModalState(() {}); }),
                 IconButton(icon: const Icon(Icons.delete_forever, color: Colors.red), onPressed: () { _removeFromCart(i); setModalState(() {}); }),
               ],
             ),
@@ -539,8 +635,7 @@ class _PosPageState extends State<PosPage> {
                       },
                     ),
                   ),
-                  Text('${_discountPercent.toInt()}%', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                ],
+                  Text('${_discountPercent.toInt()}%', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),                ],
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -589,8 +684,7 @@ class _PosPageState extends State<PosPage> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: TextField(
-                keyboardType: TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(
+                keyboardType: TextInputType.numberWithOptions(decimal: true),                decoration: InputDecoration(
                   labelText: 'Monto Pagado',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                   prefixIcon: const Icon(Icons.payments, color: Colors.blue),
@@ -639,8 +733,7 @@ class _PosPageState extends State<PosPage> {
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.all(16),
-              ),
-            ),
+              ),            ),
           ),
         ],
       ),
@@ -689,8 +782,7 @@ class _PosPageState extends State<PosPage> {
                     decoration: InputDecoration(
                       hintText: 'Buscar por código o nombre...',
                       prefixIcon: const Icon(Icons.search),
-                      border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-                      filled: true,
+                      border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),                      filled: true,
                       fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[850] : Colors.grey[100],
                       hintStyle: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.green[300] : Colors.grey),
                     ),
@@ -739,8 +831,7 @@ class _PosPageState extends State<PosPage> {
                       color: Colors.white,
                       boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8, offset: const Offset(0, -2))],
                     ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
+                    child: Column(                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Row(
                           children: [
@@ -789,8 +880,7 @@ class _PosPageState extends State<PosPage> {
                     ),
                   ),
               ],
-            ),
-    );
+            ),    );
   }
 }
 
