@@ -1,262 +1,218 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:path_provider/path_provider.dart';
 import 'dart:io';
-import 'dart:convert';
+import 'package:share_plus/share_plus.dart';
 import '../../core/models/product.dart';
 import '../../core/repositories/product_repository.dart';
-import '../../core/utils/csv_exporter.dart';
-import 'package:file_picker/file_picker.dart';
+import '../../core/utils/pdf_generator.dart';
+import 'product_form_page.dart';
 
 class ProductListPage extends StatefulWidget {
-  final VoidCallback? onStatsChanged;
-  const ProductListPage({super.key, this.onStatsChanged});
+  const ProductListPage({super.key});
 
   @override
   State<ProductListPage> createState() => _ProductListPageState();
 }
 
 class _ProductListPageState extends State<ProductListPage> {
-  final _repo = ProductRepository();
+  final _productRepo = ProductRepository();
   List<Product> _products = [];
-  bool _loading = true;
-  final _search = TextEditingController();
-  bool _showInactive = false;
+  bool _isLoading = true;
+  final _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _loadProducts();
   }
 
-  Future<void> _load() async {
-    setState(() => _loading = true);
-    _products = await _repo.getAllProducts();
-    setState(() => _loading = false);
-    if (widget.onStatsChanged != null) widget.onStatsChanged!();
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
-  Future<void> _deleteProduct(int id) async {
-    bool? confirm = await showDialog<bool>(
+  Future<void> _loadProducts() async {
+    setState(() => _isLoading = true);
+    _products = await _productRepo.getAllProducts();
+    setState(() => _isLoading = false);
+  }
+
+  Future<void> _deleteProduct(Product product) async {
+    try {
+      await _productRepo.deleteProduct(product.id!);
+      await _loadProducts();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('✅ Producto eliminado'), backgroundColor: Colors.green),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  // ✅ NUEVA FUNCIÓN DE EXPORTACIÓN A PDF
+  Future<void> _exportToPDF() async {
+    final pdf = pw.Document();
+    
+    pdf.addPage(
+      pw.Page(
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text('Nova ADEN - Inventario de Productos', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 20),
+              pw.Table(
+                border: pw.TableBorder.all(),
+                children: [
+                  pw.TableRow(children: [
+                    pw.Padding(padding: pw.EdgeInsets.all(8), child: pw.Text('Producto', style: pw.TextStyle(fontWeight: pw.FontWeight.bold))),
+                    pw.Padding(padding: pw.EdgeInsets.all(8), child: pw.Text('Código', style: pw.TextStyle(fontWeight: pw.FontWeight.bold))),
+                    pw.Padding(padding: pw.EdgeInsets.all(8), child: pw.Text('Stock', style: pw.TextStyle(fontWeight: pw.FontWeight.bold))),
+                    pw.Padding(padding: pw.EdgeInsets.all(8), child: pw.Text('Precio', style: pw.TextStyle(fontWeight: pw.FontWeight.bold))),
+                  ]),
+                  ..._products.map((p) => pw.TableRow(children: [
+                    pw.Padding(padding: pw.EdgeInsets.all(4), child: pw.Text(p.nombre)),
+                    pw.Padding(padding: pw.EdgeInsets.all(4), child: pw.Text(p.codigo)),
+                    pw.Padding(padding: pw.EdgeInsets.all(4), child: pw.Text(p.stockActual.toString())),
+                    pw.Padding(padding: pw.EdgeInsets.all(4), child: pw.Text('\$${p.precioVenta.toStringAsFixed(2)}')),
+                  ])),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final path = directory.path;
+      final file = File('$path/inventario_nova_aden.pdf');
+      await file.writeAsBytes(await pdf.save());
+      
+      if (mounted) {
+        await Share.shareXFiles([XFile(file.path)], text: 'Inventario Nova ADEN');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('✅ PDF exportado y compartido'), backgroundColor: Colors.green),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('❌ Error al exportar: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  // ✅ DIÁLOGO DE ELIMINACIÓN CORREGIDO (SÍ/NO)
+  void _showDeleteConfirmation(Product product) {
+    showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Confirmar Eliminación'),
         content: const Text('¿Eliminar este producto?'),
         actions: [
-          IconButton(icon: const Icon(Icons.refresh), tooltip: 'Actualizar', onPressed: _load),
-          IconButton(icon: const Icon(Icons.file_download), tooltip: 'Exportar CSV', onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Exportar: Función no implementada aún")))),
-          IconButton(icon: const Icon(Icons.file_upload), tooltip: 'Importar CSV', onPressed: _importProductsCsv),
-        ]
-      ),
-    );
-    if (confirm == true) {
-      await _repo.deleteProduct(id);
-      _load();
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Eliminado')));
-    }
-  }
-
-  Future<void> _toggleActive(Product p) async {
-    final updated = Product(
-      id: p.id, nombre: p.nombre, codigo: p.codigo, costo: p.costo, precioVenta: p.precioVenta,
-      stockActual: p.stockActual, stockMinimo: p.stockMinimo, categoria: p.categoria,
-      esFavorito: p.esFavorito, stockCritico: p.stockCritico, margenGanancia: p.margenGanancia,
-      unidadMedida: p.unidadMedida, activo: !p.activo, notas: p.notas,
-    );
-    await _repo.updateProduct(p.id!, updated);
-    _load();
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(p.activo ? '✅ Archivado' : '✅ Reactivado')));
-  }
-
-  // ✅ FUNCIÓN CORREGIDA Y AGREGADA AQUÍ
-  Future<void> _toggleFavorite(Product p) async {
-    final updated = Product(
-      id: p.id, nombre: p.nombre, codigo: p.codigo, costo: p.costo, precioVenta: p.precioVenta,
-      stockActual: p.stockActual, stockMinimo: p.stockMinimo, categoria: p.categoria,
-      esFavorito: !p.esFavorito, stockCritico: p.stockCritico, margenGanancia: p.margenGanancia,
-      unidadMedida: p.unidadMedida, activo: p.activo, notas: p.notas,
-    );
-    await _repo.updateProduct(p.id!, updated);
-    _load();
-  }
-
-  Future<void> _duplicateProduct(Product p) async {
-    try {
-      final newProduct = Product(
-        id: null, nombre: '${p.nombre} (Copia)', codigo: '${p.codigo}-COPY', costo: p.costo,
-        precioVenta: p.precioVenta, stockActual: 0, stockMinimo: p.stockMinimo, categoria: p.categoria,
-        esFavorito: false, stockCritico: p.stockCritico, margenGanancia: p.margenGanancia,
-        unidadMedida: p.unidadMedida, activo: true, notas: p.notas,
-      );
-      await _repo.createProduct(newProduct);
-      _load();
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Duplicado'), backgroundColor: Colors.green));
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ $e')));
-    }
-  }
-
-  Future<void> _importProductsCsv() async {
-    try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['csv']);
-      if (result == null || result.files.isEmpty) return;
-      final file = File(result.files.first.path!);
-      final lines = await file.readAsLines();
-      int imported = 0, errors = 0;
-      for (var i = 1; i < lines.length; i++) {
-        if (lines[i].trim().isEmpty) continue;
-        try {
-          final cols = lines[i].split(',');
-          if (cols.length < 4) continue;
-          final prod = Product(
-            id: null,
-            nombre: cols[0].replaceAll('"', '').trim(),
-            codigo: cols[1].replaceAll('"', '').trim(),
-            costo: double.tryParse(cols[2].replaceAll('"', '').trim()),
-            precioVenta: double.tryParse(cols[3].replaceAll('"', '').trim()) ?? 0.0,
-            stockActual: int.tryParse(cols[4].replaceAll('"', '').trim()) ?? 0,
-            stockMinimo: int.tryParse(cols[5].replaceAll('"', '').trim()) ?? 5,
-            categoria: cols.length > 6 ? cols[6].replaceAll('"', '').trim() : null,
-            esFavorito: false, activo: true, unidadMedida: 'UND', notas: null, stockCritico: 0, margenGanancia: 0.0,
-          );
-          await _repo.createProduct(prod);
-          imported++;
-        } catch (e) { errors++; }
-      }
-      _load();
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('✅ Importados: $imported | Errores: $errors'), backgroundColor: Colors.green));
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red));
-    }
-  }
-
-  void _showProductForm({Product? product}) {
-    final nombreCtrl = TextEditingController(text: product?.nombre ?? '');
-    final codigoCtrl = TextEditingController(text: product?.codigo ?? '');
-    final precioCtrl = TextEditingController(text: product?.precioVenta.toString() ?? '');
-    final stockCtrl = TextEditingController(text: product?.stockActual.toString() ?? '0');
-    final stockMinCtrl = TextEditingController(text: product?.stockMinimo.toString() ?? '5');
-    final unidadCtrl = TextEditingController(text: product?.unidadMedida ?? 'UND');
-    final costoCtrl = TextEditingController(text: product?.costo?.toString() ?? '');
-    final categoriaCtrl = TextEditingController(text: product?.categoria ?? '');
-    final notasCtrl = TextEditingController(text: product?.notas ?? '');
-
-    showModalBottomSheet(
-      context: context, isScrollControlled: true,
-      builder: (ctx) => StatefulBuilder(
-        builder: (_, setModalState) => Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Text(product == null ? 'Nuevo Producto' : 'Editar Producto', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
-            ]),
-            const Divider(),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(children: [
-                  TextField(controller: nombreCtrl, decoration: InputDecoration(labelText: 'Nombre *', border: const OutlineInputBorder(), filled: true, fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : Colors.grey[100])),
-                  const SizedBox(height: 12),
-                  TextField(controller: codigoCtrl, decoration: InputDecoration(labelText: 'Código *', border: const OutlineInputBorder(), filled: true, fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : Colors.grey[100])),
-                  const SizedBox(height: 12),
-                  TextField(controller: categoriaCtrl, decoration: InputDecoration(labelText: 'Categoría', border: const OutlineInputBorder(), filled: true, fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : Colors.grey[100])),
-                  const SizedBox(height: 12),
-                  
-                  Card(
-                    color: Theme.of(context).brightness == Brightness.dark ? Colors.blue[900]?.withOpacity(0.3) : Colors.blue[50],
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        const Text('💡 Sugerencia de Precio (Margen 30%)', style: TextStyle(fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('Costo: \$${costoCtrl.text.isNotEmpty ? costoCtrl.text : '0.00'}'),
-                            ElevatedButton(
-                              onPressed: () {
-                                final cost = double.tryParse(costoCtrl.text) ?? 0;
-                                if (cost > 0) {
-                                  final suggested = cost * 1.30; 
-                                  // ✅ CORRECCIÓN: .text = en lugar de .setText()
-                                  precioCtrl.text = suggested.toStringAsFixed(2);
-                                  setModalState(() {});
-                                }
-                              },
-                              child: const Text('Calcular'),
-                            ),
-                          ],
-                        ),
-                      ]),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  Row(children: [
-                    Expanded(child: TextField(controller: unidadCtrl, decoration: InputDecoration(labelText: 'Unidad Medida', border: const OutlineInputBorder(), filled: true, fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : Colors.grey[100]))),
-                    const SizedBox(width: 12),
-                    Expanded(child: TextField(controller: stockMinCtrl, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Stock Mínimo', border: const OutlineInputBorder(), filled: true, fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : Colors.grey[100]))),
-                  ]),
-                  const SizedBox(height: 12),
-                  Row(children: [
-                    Expanded(child: TextField(controller: costoCtrl, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Costo', border: const OutlineInputBorder(), filled: true, fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : Colors.grey[100]))),
-                    const SizedBox(width: 12),
-                    Expanded(child: TextField(controller: precioCtrl, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Precio Venta *', border: const OutlineInputBorder(), filled: true, fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : Colors.grey[100]))),
-                  ]),
-                  const SizedBox(height: 12),
-                  TextField(controller: stockCtrl, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Stock Actual', border: const OutlineInputBorder(), filled: true, fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : Colors.grey[100])),
-                  const SizedBox(height: 16),
-                  const Text('Notas adicionales:', style: TextStyle(fontWeight: FontWeight.bold)),
-                  TextField(controller: notasCtrl, maxLines: 2, decoration: InputDecoration(border: const OutlineInputBorder(), filled: true, fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : Colors.grey[100])),
-                ]),
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(width: double.infinity, height: 50, child: ElevatedButton.icon(
-              onPressed: () async {
-                if (nombreCtrl.text.isEmpty || codigoCtrl.text.isEmpty || precioCtrl.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Complete campos obligatorios')));
-                  return;
-                }
-                try {
-                  final catVal = categoriaCtrl.text.trim().isNotEmpty ? categoriaCtrl.text.trim() : null;
-                  final unitVal = unidadCtrl.text.trim().isNotEmpty ? unidadCtrl.text.trim() : 'UND';
-                  final newProduct = Product(
-                    id: product?.id,
-                    nombre: nombreCtrl.text.trim(),
-                    codigo: codigoCtrl.text.trim(),
-                    costo: double.tryParse(costoCtrl.text),
-                    precioVenta: double.parse(precioCtrl.text),
-                    stockActual: int.tryParse(stockCtrl.text) ?? 0,
-                    stockMinimo: int.tryParse(stockMinCtrl.text) ?? 5,
-                    unidadMedida: unitVal,
-                    categoria: catVal,
-                    esFavorito: product?.esFavorito ?? false,
-                    activo: product?.activo ?? true,
-                    notas: notasCtrl.text.trim().isEmpty ? null : notasCtrl.text.trim(),
-                    stockCritico: product?.stockCritico ?? 0,
-                    margenGanancia: product?.margenGanancia ?? 0.0,
-                  );
-                  if (product == null) await _repo.createProduct(newProduct);
-                  else await _repo.updateProduct(product.id!, newProduct);
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(product == null ? '✅ Creado' : '✅ Actualizado'), backgroundColor: Colors.green));
-                    Navigator.pop(ctx);
-                    _load();
-                  }
-                } catch (e) {
-                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ $e')));
-                }
-              },
-              icon: const Icon(Icons.save),
-              label: Text(product == null ? 'CREAR' : 'GUARDAR', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
-            )),
-          ]),
-        ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('No'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await _deleteProduct(product);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+            child: const Text('Sí'),
+          ),
+        ],
       ),
     );
   }
 
   @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Inventario'),
+        centerTitle: true,
+        actions: [
+          IconButton(icon: const Icon(Icons.download), onPressed: _exportToPDF),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadProducts),
+        ],
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: TextField(
+              controller: _searchController,
+              decoration: const InputDecoration(
+                hintText: 'Buscar...',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
+                filled: true,
+              ),
+              onChanged: (v) => setState(() {}),
+            ),
+          ),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _products.isEmpty
+                    ? const Center(child: Text('No hay productos registrados'))
+                    : ListView.builder(
+                        itemCount: _products.where((p) => p.nombre.toLowerCase().contains(_searchController.text.toLowerCase())).length,
+                        itemBuilder: (ctx, i) {
+                          final filtered = _products.where((p) => p.nombre.toLowerCase().contains(_searchController.text.toLowerCase())).toList();
+                          final p = filtered[i];
+                          return Card(
+                            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: p.stockActual > 0 ? Colors.blue : Colors.grey,
+                                child: Icon(Icons.inventory_2, color: Colors.white),
+                              ),
+                              title: Text(p.nombre, style: const TextStyle(fontWeight: FontWeight.bold)),
+                              subtitle: Text('Stock: ${p.stockActual} UND | \$${p.precioVenta.toStringAsFixed(2)}'),
+                              trailing: PopupMenuButton(
+                                itemBuilder: (ctx) => [
+                                  const PopupMenuItem(value: 'edit', child: Text('Editar')),
+                                  const PopupMenuItem(value: 'delete', child: Text('Eliminar')),
+                                ],
+                                onSelected: (value) {
+                                  if (value == 'edit') {
+                                    Navigator.push(context, MaterialPageRoute(builder: (_) => ProductFormPage(product: p))).then((_) => _loadProducts());
+                                  } else if (value == 'delete') {
+                                    _showDeleteConfirmation(p);
+                                  }
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProductFormPage())).then((_) => _loadProducts()),
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
   Widget build(BuildContext context) {
     final filteredList = _products.where((p) {
       if (!_showInactive && !p.activo) return false;
