@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import 'supplier_page.dart';
 import 'package:intl/intl.dart';
 import '../../core/models/product.dart';
 import '../../core/models/supplier.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/repositories/product_repository.dart';
 import '../../core/repositories/supplier_repository.dart';
+import 'supplier_page.dart';
 
 class PurchasePage extends StatefulWidget {
   const PurchasePage({super.key});
+
   @override
   State<PurchasePage> createState() => _PurchasePageState();
 }
@@ -25,7 +26,7 @@ class _PurchasePageState extends State<PurchasePage> {
   
   // Carrito: productId -> {cantidad, costoUnitario}
   final Map<int, Map<String, dynamic>> _cart = {};
-  bool _isQuickPurchase = false; // RF 6: Compra rápida sin proveedor
+  bool _isQuickPurchase = false;
 
   @override
   void initState() {
@@ -77,21 +78,12 @@ class _PurchasePageState extends State<PurchasePage> {
     setState(() => _cart.remove(productId));
   }
 
-  void _updateCost(int productId, double newCost) {
-    setState(() {
-      if (_cart.containsKey(productId)) {
-        _cart[productId]!['costoUnitario'] = newCost;
-      }
-    });
-  }
-
   double get _cartTotal {
     return _cart.values.fold(0.0, (sum, item) {
       return sum + (item['cantidad'] * item['costoUnitario']);
     });
   }
 
-  // RF 50: Calcular costo promedio ponderado
   double _calculateWeightedAverageCost(int productId, double newCost, int newQty) {
     final product = _products.firstWhere((p) => p.id == productId, orElse: () => _products.first);
     final currentStock = product.stockActual;
@@ -122,30 +114,27 @@ class _PurchasePageState extends State<PurchasePage> {
     try {
       final db = await DatabaseHelper.instance.database;
       
-      // RF 7/10: Registrar compra
       final purchaseId = await db.insert('compras', {
         'proveedor_id': _isQuickPurchase ? null : _selectedSupplier?.id,
         'fecha': DateTime.now().toIso8601String(),
         'total': _cartTotal,
       });
       
-      // RF 8/9/10: Procesar líneas y actualizar stock + costo promedio (RF 50)
       for (var entry in _cart.entries) {
         final productId = entry.key;
         final item = entry.value;
         final cantidad = item['cantidad'] as int;
         final costoUnitario = item['costoUnitario'] as double;
         
-        // Insertar línea de compra
+        // ✅ CORREGIDO: costo_unitario → precio_unitario
         await db.insert('compra_detalles', {
           'compra_id': purchaseId,
           'producto_id': productId,
           'cantidad': cantidad,
-          'costo_unitario': costoUnitario,
+          'precio_unitario': costoUnitario,
           'subtotal': cantidad * costoUnitario,
         });
         
-        // RF 50: Actualizar producto con costo promedio ponderado
         final newAvgCost = _calculateWeightedAverageCost(productId, costoUnitario, cantidad);
         await db.rawUpdate(
           'UPDATE productos SET stock_actual = stock_actual + ?, costo = ? WHERE id = ?',
@@ -157,7 +146,6 @@ class _PurchasePageState extends State<PurchasePage> {
         const SnackBar(content: Text('✅ Compra registrada y stock actualizado'), backgroundColor: Colors.green),
       );
       
-      // Limpiar carrito y recargar
       setState(() => _cart.clear());
       _loadData();
       
@@ -196,47 +184,9 @@ class _PurchasePageState extends State<PurchasePage> {
                       title: Text('Compra #${p['id']}'),
                       subtitle: Text('${p['proveedor'] ?? 'Rápida'} - ${DateFormat('dd/MM/yyyy').format(DateTime.parse(p['fecha'] as String))}'),
                       trailing: Text('\$${(p['total'] as num).toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                      onTap: () => _showPurchaseDetails(p['id'] as int),
                     );
                   },
                 ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar')),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _showPurchaseDetails(int purchaseId) async {
-    final db = await DatabaseHelper.instance.database;
-    final details = await db.rawQuery('''
-      SELECT cd.*, pr.nombre as producto
-      FROM compra_detalles cd
-      JOIN productos pr ON cd.producto_id = pr.id
-      WHERE cd.compra_id = ?
-    ''', [purchaseId]);
-    
-    if (!mounted) return;
-    
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Detalle de Compra'),
-        content: SizedBox(
-          width: double.maxFinite,
-          height: 300,
-          child: ListView.builder(
-            itemCount: details.length,
-            itemBuilder: (ctx, i) {
-              final d = details[i];
-              return ListTile(
-                title: Text(d['producto'] as String),
-                subtitle: Text('${d['cantidad']} un. x \$${(d['costo_unitario'] as num).toStringAsFixed(2)}'),
-                trailing: Text('\$${(d['subtotal'] as num).toStringAsFixed(2)}'),
-              );
-            },
-          ),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar')),
@@ -254,7 +204,7 @@ class _PurchasePageState extends State<PurchasePage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.history),
-            onPressed: _showPurchaseHistory, // RF 11: Listar compras
+            onPressed: _showPurchaseHistory,
             tooltip: 'Historial',
           ),
           IconButton(
@@ -267,72 +217,69 @@ class _PurchasePageState extends State<PurchasePage> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-               // RF 6: Toggle compra rápida
-               Padding(
-                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                 child: Row(
-                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                   children: [
-                     Row(
-                       children: [
-                         const Text('Compra rápida (sin proveedor):'),
-                         const SizedBox(width: 8),
-                         Switch(
-                           value: _isQuickPurchase,
-                           onChanged: (v) => setState(() => _isQuickPurchase = v),
-                           activeColor: Colors.blue,
-                         ),
-                       ],
-                     ),
-                     TextButton.icon(
-                       onPressed: () async {
-                         final result = await Navigator.push(
-                           context,
-                           MaterialPageRoute(builder: (_) => const SupplierPage()),
-                         );
-                         if (result != null && mounted) {
-                           setState(() {
-                             _suppliers.add(result);
-                             _selectedSupplier = result;
-                           });
-                         }
-                       },
-                       icon: const Icon(Icons.add_business),
-                       label: const Text('Nuevo'),
-                     ),
-                   ],
-                 ),
-               ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Text('Compra rápida:'),
+                          const SizedBox(width: 8),
+                          Switch(
+                            value: _isQuickPurchase,
+                            onChanged: (v) => setState(() => _isQuickPurchase = v),
+                            activeColor: Colors.blue,
+                          ),
+                        ],
+                      ),
+                      TextButton.icon(
+                        onPressed: () async {
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const SupplierPage()),
+                          );
+                          if (result != null && mounted) {
+                            setState(() {
+                              _suppliers.add(result);
+                              _selectedSupplier = result;
+                            });
+                          }
+                        },
+                        icon: const Icon(Icons.add_business),
+                        label: const Text('Nuevo'),
+                      ),
+                    ],
+                  ),
+                ),
 
-               // Selector de proveedor (solo si no es compra rápida)
-               if (!_isQuickPurchase)
-                 Padding(
-                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: DropdownButtonFormField<int?>(
-  decoration: InputDecoration(
-    labelText: 'Proveedor *',
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-    filled: true,
-    fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[850] : Colors.grey[100],
-  ),
-  items: [
-    const DropdownMenuItem(value: null, child: Text('Seleccionar proveedor')),
-    ..._suppliers.map((s) => DropdownMenuItem(value: s.id, child: Text(s.nombre))),
-  ],
-  value: _selectedSupplier?.id,
-  onChanged: (int? supplierId) {
-    setState(() {
-      _selectedSupplier = supplierId == null 
-          ? null 
-          : _suppliers.firstWhere((s) => s.id == supplierId, orElse: () => _suppliers.first);
-    });
-  },
-),
+                if (!_isQuickPurchase)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: DropdownButtonFormField<int?>(
+                      decoration: InputDecoration(
+                        labelText: 'Proveedor *',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                        filled: true,
+                        fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[850] : Colors.grey[100],
+                      ),
+                      items: [
+                        const DropdownMenuItem(value: null, child: Text('Seleccionar proveedor')),
+                        ..._suppliers.map((s) => DropdownMenuItem(value: s.id, child: Text(s.nombre))),
+                      ],
+                      value: _selectedSupplier?.id,
+                      onChanged: (int? supplierId) {
+                        setState(() {
+                          _selectedSupplier = supplierId == null 
+                              ? null 
+                              : _suppliers.firstWhere((s) => s.id == supplierId, orElse: () => _suppliers.first);
+                        });
+                      },
+                    ),
+                  ),
 
-               const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-               // Buscador de productos
-                // Buscador de productos
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: TextField(
@@ -343,7 +290,6 @@ class _PurchasePageState extends State<PurchasePage> {
                       border: const OutlineInputBorder(),
                       filled: true,
                       fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[850] : Colors.grey[100],
-                      hintStyle: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.green[300] : Colors.grey),
                     ),
                     onChanged: (v) => setState(() {}),
                   ),
@@ -351,7 +297,6 @@ class _PurchasePageState extends State<PurchasePage> {
                 
                 const SizedBox(height: 16),
                 
-                // Lista de productos
                 Expanded(
                   child: ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -399,12 +344,11 @@ class _PurchasePageState extends State<PurchasePage> {
                   ),
                 ),
                 
-                // Footer con carrito y confirmar
                 if (_cart.isNotEmpty)
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[900] : Colors.white,
                       boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8, offset: const Offset(0, -2))],
                     ),
                     child: Column(
@@ -422,7 +366,7 @@ class _PurchasePageState extends State<PurchasePage> {
                           width: double.infinity,
                           height: 50,
                           child: ElevatedButton.icon(
-                            onPressed: _confirmPurchase, // RF 10: Confirmar compra
+                            onPressed: _confirmPurchase,
                             icon: const Icon(Icons.check_circle),
                             label: const Text('CONFIRMAR COMPRA', style: TextStyle(fontWeight: FontWeight.bold)),
                             style: ElevatedButton.styleFrom(
@@ -439,4 +383,3 @@ class _PurchasePageState extends State<PurchasePage> {
     );
   }
 }
-
