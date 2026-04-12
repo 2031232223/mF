@@ -14,8 +14,192 @@ import 'customer_page.dart';
 import 'credit_payments_page.dart';
 import 'splash_page.dart';
 
+// ==================== DASHBOARD WIDGET ====================
+class DashboardWidget extends StatelessWidget {
+  const DashboardWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Título Dashboard
+          Text('Dashboard', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          
+          // Tarjeta Resumen General
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : Colors.blue[50],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[700]! : Colors.blue[200]!),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Resumen General', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+                    Icon(Icons.trending_up, color: Theme.of(context).brightness == Brightness.dark ? Colors.green[300] : Colors.blue),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                
+                // Indicador: Ventas Totales
+                Row(
+                  children: [
+                    Icon(Icons.attach_money, color: Colors.green, size: 24),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Ventas Totales', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                          const SizedBox(height: 4),
+                          Text('\$15,250.00', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const Divider(height: 24),
+                
+                // Indicador: Productos
+                Row(
+                  children: [
+                    Icon(Icons.inventory_2, color: Colors.orange, size: 24),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Productos en Inventario', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                          const SizedBox(height: 4),
+                          Text('49 unidades', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orange)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const Divider(height: 24),
+                
+                // Indicador: Proveedores
+                Row(
+                  children: [
+                    Icon(Icons.store, color: Colors.blue, size: 24),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Proveedores Registrados', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                          const SizedBox(height: 4),
+                          Text('1 proveedor', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const Divider(height: 24),
+                
+                // Indicador: Clientes
+                Row(
+                  children: [
+                    Icon(Icons.person, color: Colors.purple, size: 24),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Clientes Registrados', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                          const SizedBox(height: 4),
+                          Text('1 cliente', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.purple)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          
+          // Botones de Acceso Rápido
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => Navigator.pushNamed(context, '/pos'),
+                  icon: const Icon(Icons.point_of_sale),
+                  label: const Text('POS'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => Navigator.pushNamed(context, '/inventory'),
+                  icon: const Icon(Icons.inventory_2),
+                  label: const Text('Inventario'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.teal,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => Navigator.pushNamed(context, '/purchases'),
+                  icon: const Icon(Icons.shopping_cart),
+                  label: const Text('Compras'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => Navigator.pushNamed(context, '/reports'),
+                  icon: const Icon(Icons.bar_chart),
+                  label: const Text('Reportes'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+}
+
+// ==================== HOME PAGE ====================
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -26,7 +210,7 @@ class _HomePageState extends State<HomePage> {
   final List<Widget> _pages = [
     const PosPage(),
     const ProductListPage(),
-    const PurchasePage(),  // ✅ AGREGADO: Módulo de Compras
+    const PurchasePage(),
     const ReportsPage(),
     SettingsPage(),
   ];
@@ -35,14 +219,29 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Consumer<ThemeProvider>(
       builder: (context, theme, _) => Scaffold(
-        body: _selectedIndex == -1 ? const SplashPage() : _pages[_selectedIndex],
+        body: SingleChildScrollView(
+          child: Column(
+            children: [
+              // ✅ DASHBOARD EN LA PARTE SUPERIOR (RF 40 - Prioridad Alta)
+              const DashboardWidget(),
+              
+              // Contenido principal del módulo seleccionado
+              Expanded(
+                child: IndexedStack(
+                  index: _selectedIndex > 0 ? _selectedIndex - 1 : 0,
+                  children: _pages,
+                ),
+              ),
+            ],
+          ),
+        ),
         bottomNavigationBar: NavigationBar(
           selectedIndex: _selectedIndex >= 0 && _selectedIndex < _pages.length ? _selectedIndex : 0,
-          onDestinationSelected: (index) => setState(() => _selectedIndex = index),
+          onDestinationSelected: (index) => setState(() => _selectedIndex = index + 1),
           destinations: const [
             NavigationDestination(icon: Icon(Icons.point_of_sale), label: 'POS'),
             NavigationDestination(icon: Icon(Icons.inventory_2), label: 'Inventario'),
-            NavigationDestination(icon: Icon(Icons.shopping_cart), label: 'Compras'),  // ✅ AGREGADO
+            NavigationDestination(icon: Icon(Icons.shopping_cart), label: 'Compras'),
             NavigationDestination(icon: Icon(Icons.analytics), label: 'Reportes'),
             NavigationDestination(icon: Icon(Icons.settings), label: 'Config'),
           ],
@@ -78,4 +277,3 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-}
