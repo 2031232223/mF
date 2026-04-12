@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:printing/printing.dart';
@@ -34,20 +35,22 @@ class _PosPageState extends State<PosPage> {
   final _barcodeController = TextEditingController();
   double _amountPaid = 0.0;
   String _selectedCurrency = 'CUP';
-  double _mlcRate = 120.0;
-  double _usdRate = 1.0;
+  double _mlcRate = 120.0;  // ✅ Tasa MLC: 1 MLC = 120 CUP
+  double _usdRate = 500.0;  // ✅ Tasa USD: 1 USD = 500 CUP (AJUSTAR SEGÚN NECESIDAD)
   bool _isCredit = false;
   bool _applyDiscount = false;
   double _discountPercent = 0.0;
   int? _lastSaleId;
+  String? _lastSaleCurrency;
+  double? _lastSaleExchangeRate;
 
   @override
   void initState() {
     super.initState();
     _loadData();
   }
-
-  @override  void dispose() {
+  @override
+  void dispose() {
     _searchController.dispose();
     _barcodeController.dispose();
     super.dispose();
@@ -94,9 +97,9 @@ class _PosPageState extends State<PosPage> {
 
   void _showBarcodeScanner() {
     showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('📷 Escanear Código de Barras'),        content: Column(
+      context: context,      builder: (ctx) => AlertDialog(
+        title: const Text('📷 Escanear Código de Barras'),
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text('Ingrese el código manualmente o use el escáner:', style: TextStyle(fontSize: 14)),
@@ -143,9 +146,9 @@ class _PosPageState extends State<PosPage> {
       return;
     }
     setState(() {
-      final idx = _cart.indexWhere((c) => c.productoId == product.id);
-      if (idx >= 0) {
-        if (_cart[idx].cantidad < product.stockActual) {          _cart[idx].cantidad++;
+      final idx = _cart.indexWhere((c) => c.productoId == product.id);      if (idx >= 0) {
+        if (_cart[idx].cantidad < product.stockActual) {
+          _cart[idx].cantidad++;
         }
       } else {
         _cart.add(CartItem(
@@ -192,9 +195,9 @@ class _PosPageState extends State<PosPage> {
     if (_cart.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('⚠️ Agrega productos'), backgroundColor: Colors.orange),
-      );
-      return;
-    }    final name = await showDialog<String>(
+      );      return;
+    }
+    final name = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('⏸️ Pausar Venta'),
@@ -240,7 +243,6 @@ class _PosPageState extends State<PosPage> {
     }
   }
 
-  // ✅ NUEVO: Generar ticket PDF usando el método existente de PdfGenerator
   Future<void> _generateAndShareReceipt() async {
     if (_lastSaleId == null) return;
     try {
@@ -263,8 +265,13 @@ class _PosPageState extends State<PosPage> {
       
       Navigator.pop(context);
 
-      // Usar el método estático existente que abre el diálogo nativo de compartir
-      await PdfGenerator.generateSaleTicket(sale, saleLines);
+      // ✅ Usar moneda y tasa guardadas en la venta
+      await PdfGenerator.generateSaleTicketWithCurrency(
+        sale, 
+        saleLines,
+        _lastSaleCurrency ?? 'CUP',
+        _lastSaleExchangeRate ?? 1.0,
+      );
 
     } catch (e) {
       if (mounted) Navigator.pop(context);
@@ -283,20 +290,40 @@ class _PosPageState extends State<PosPage> {
     }
 
     try {
-      // Calcular totales en CUP (la BD siempre guarda en CUP)
+      // ✅ Calcular total en CUP
       final totalCUP = _totalCUP;
-      final paidCUP = _selectedCurrency == 'CUP' 
-          ? _amountPaid 
-          : _amountPaid * (_selectedCurrency == 'MLC' ? _mlcRate : _usdRate);
+      
+      // ✅ Calcular pago en CUP (convertir si es moneda extranjera)      double paidCUP;
+      if (_selectedCurrency == 'CUP') {
+        paidCUP = _amountPaid;
+      } else {
+        double rate = _selectedCurrency == 'MLC' ? _mlcRate : _usdRate;
+        paidCUP = _amountPaid * rate;
+      }
+      
+      final pendingCUP = _isCredit ? (totalCUP - paidCUP) : 0.0;
 
-      // Validar pago si no es crédito
-      if (!_isCredit && paidCUP < totalCUP) {
+      // ✅ Validar pago con cálculo correcto del faltante
+      if (!_isCredit && paidCUP < (totalCUP - 0.01)) {
+        // Calcular faltante en la moneda seleccionada
+        double faltanteEnMoneda;
+        if (_selectedCurrency == 'CUP') {
+          faltanteEnMoneda = totalCUP - _amountPaid;
+        } else {
+          double rate = _selectedCurrency == 'MLC' ? _mlcRate : _usdRate;
+          faltanteEnMoneda = (totalCUP / rate) - _amountPaid;
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('⚠️ Pago insuficiente'), backgroundColor: Colors.orange),        );
+          SnackBar(
+            content: Text('⚠️ Pago insuficiente. Faltan: ${faltanteEnMoneda.toStringAsFixed(2)} $_selectedCurrency'), 
+            backgroundColor: Colors.orange,
+          ),
+        );
         return;
       }
 
-      // Convertir CartItem → SaleLine
+      // Crear líneas de venta
       final saleLines = _cart.map((item) => SaleLine(
         ventaId: 0,
         productoId: item.productoId,
@@ -305,47 +332,66 @@ class _PosPageState extends State<PosPage> {
         subtotal: item.subtotalCUP,
       )).toList();
 
-      // Guardar venta y capturar el ID retornado
+      // ✅ Guardar venta con moneda y tasa
       final saleId = await _saleRepo.createSale(
         _selectedCustomer?.id,
         saleLines,
         totalCUP,
         paidCUP,
-        _isCredit ? (totalCUP - paidCUP) : 0.0,
+        pendingCUP,
         _isCredit ? 'Venta fiada' : null,
         _selectedCurrency,
         _selectedCurrency == 'MLC' ? _mlcRate : (_selectedCurrency == 'USD' ? _usdRate : 1.0),
       );
-
-      // Guardar el ID para posible generación de PDF
       _lastSaleId = saleId is int ? saleId : null;
+      _lastSaleCurrency = _selectedCurrency;
+      _lastSaleExchangeRate = _selectedCurrency == 'MLC' ? _mlcRate : (_selectedCurrency == 'USD' ? _usdRate : 1.0);
 
-      // Feedback al usuario
+      // ✅ Mostrar confirmación en moneda correcta
+      String mensaje;
+      if (_selectedCurrency == 'CUP') {
+        mensaje = '✅ Venta: ${totalCUP.toStringAsFixed(2)} CUP';
+      } else {
+        double montoEnMoneda = _amountPaid;
+        mensaje = '✅ Venta: ${montoEnMoneda.toStringAsFixed(2)} $_selectedCurrency (${totalCUP.toStringAsFixed(2)} CUP)';
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('✅ Venta registrada: ${totalCUP.toStringAsFixed(2)} CUP'), 
+          content: Text(mensaje), 
           backgroundColor: Colors.green,
           duration: const Duration(seconds: 3),
         ),
       );
 
-      // Preguntar si desea generar el ticket PDF
+      // Preguntar por PDF
       if (mounted) {
         final shouldGeneratePdf = await showDialog<bool>(
           context: context,
           builder: (ctx) => AlertDialog(
             title: const Text('🧾 Ticket de Venta'),
-            content: const Text('¿Desea generar y compartir el ticket en PDF?'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Total: ${_amountPaid.toStringAsFixed(2)} $_selectedCurrency'),
+                if (_selectedCurrency != 'CUP')
+                  Text('(${totalCUP.toStringAsFixed(2)} CUP)', 
+                    style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                const SizedBox(height: 8),
+                const Text('¿Generar ticket PDF?'),
+              ],
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
                 child: const Text('No'),
               ),
-              ElevatedButton.icon(                onPressed: () => Navigator.pop(ctx, true),
+              ElevatedButton.icon(
+                onPressed: () => Navigator.pop(ctx, true),
                 icon: const Icon(Icons.picture_as_pdf),
-                label: const Text('Generar PDF'),
-              ),
-            ],
+                label: const Text('Generar'),
+              ),            ],
           ),
         );
 
@@ -354,7 +400,7 @@ class _PosPageState extends State<PosPage> {
         }
       }
 
-      // Resetear formulario
+      // Limpiar
       if (widget.onSaleCompleted != null) widget.onSaleCompleted!();
       _clearCart();
       _amountPaid = 0.0;
@@ -363,11 +409,13 @@ class _PosPageState extends State<PosPage> {
       _discountPercent = 0.0;
       _selectedCustomer = null;
       _lastSaleId = null;
+      _lastSaleCurrency = null;
+      _lastSaleExchangeRate = null;
       _loadData();
 
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('❌ $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red),
       );
     }
   }
@@ -390,9 +438,9 @@ class _PosPageState extends State<PosPage> {
               const SizedBox(height: 8),
               TextField(controller: tc, decoration: const InputDecoration(labelText: 'Teléfono ', border: OutlineInputBorder())),
             ],
-          ),        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          ),
+        ),
+        actions: [          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
           ElevatedButton(
             onPressed: () async {
               if (nc.text.isEmpty || cc.text.isEmpty) {
@@ -439,9 +487,9 @@ class _PosPageState extends State<PosPage> {
               Expanded(child: _buildCartContent(scrollController, setModalState)),
             ],
           ),
-        ),      ),
-    );
-  }
+        ),
+      ),
+    );  }
 
   Widget _buildCartHeader(Function setModalState, BuildContext ctx) {
     return Container(
@@ -488,9 +536,9 @@ class _PosPageState extends State<PosPage> {
             const Padding(padding: EdgeInsets.all(32), child: Center(child: Text('Carrito vacío', style: TextStyle(fontSize: 16, color: Colors.grey))))
           else
             _buildCartItems(setModalState),
-          _buildDiscountSection(setModalState),          _buildPaymentSection(setModalState),
-        ],
-      ),
+          _buildDiscountSection(setModalState),
+          _buildPaymentSection(setModalState),
+        ],      ),
     );
   }
 
@@ -537,9 +585,9 @@ class _PosPageState extends State<PosPage> {
               backgroundColor: Colors.blue,
               child: Text('${c.cantidad}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ),
-            title: Text(c.nombre, style: const TextStyle(fontWeight: FontWeight.bold)),            subtitle: Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_convert(c.precioCUP).toStringAsFixed(2)} c/u'),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
+            title: Text(c.nombre, style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_convert(c.precioCUP).toStringAsFixed(2)} c/u'),
+            trailing: Row(              mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(icon: const Icon(Icons.remove_circle, color: Colors.red, size: 28), onPressed: () { _decreaseQuantity(i); setModalState(() {}); }),
                 Text('${c.cantidad}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -586,9 +634,9 @@ class _PosPageState extends State<PosPage> {
                       max: 50,
                       divisions: 10,
                       label: '${_discountPercent.toInt()}%',
-                      onChanged: (v) {                        setModalState(() => _discountPercent = v);
-                        setState(() => _discountPercent = v);
-                      },
+                      onChanged: (v) {
+                        setModalState(() => _discountPercent = v);
+                        setState(() => _discountPercent = v);                      },
                     ),
                   ),
                   Text('${_discountPercent.toInt()}%', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
@@ -635,9 +683,9 @@ class _PosPageState extends State<PosPage> {
             ),
           ]),
           const SizedBox(height: 12),
-          const Divider(),          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text('Pagado:', style: TextStyle(fontSize: 16, color: Colors.grey[700])),
-            Padding(
+          const Divider(),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Text('Pagado:', style: TextStyle(fontSize: 16, color: Colors.grey[700])),            Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: TextField(
                 keyboardType: TextInputType.numberWithOptions(decimal: true),
@@ -662,7 +710,7 @@ class _PosPageState extends State<PosPage> {
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 const Text('⚠️ Faltante:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.orange)),
                 Text(
-                  '${_selectedCurrency == 'CUP' ? '\$' : ''}${(_total - _amountPaidForeign).toStringAsFixed(2)} $_selectedCurrency',
+                  '${_selectedCurrency == 'CUP' ? '\$' : ''}${(_total - _amountPaidForeign).toStringAsFixed(2)}',
                   style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orange),
                 ),
               ])
@@ -684,9 +732,9 @@ class _PosPageState extends State<PosPage> {
             child: ElevatedButton.icon(
               onPressed: _cart.isEmpty ? null : _completeSale,
               icon: const Icon(Icons.check_circle, size: 26),
-              label: const Text('CONFIRMAR VENTA', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
+              label: const Text('CONFIRMAR VENTA', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,                foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.all(16),
               ),
@@ -733,9 +781,9 @@ class _PosPageState extends State<PosPage> {
           : Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.all(16),                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
+                  padding: const EdgeInsets.all(16),
+                  child: TextField(
+                    controller: _searchController,                    decoration: InputDecoration(
                       hintText: 'Buscar por código o nombre...',
                       prefixIcon: const Icon(Icons.search),
                       border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
@@ -782,9 +830,9 @@ class _PosPageState extends State<PosPage> {
                   ),
                 ),
                 if (_cart.isNotEmpty)
-                  Container(                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(                      color: Colors.white,
                       boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8, offset: const Offset(0, -2))],
                     ),
                     child: Column(
@@ -831,9 +879,9 @@ class _PosPageState extends State<PosPage> {
                                 ),
                               ),
                             ),
-                          ],                        ),
-                      ],
-                    ),
+                          ],
+                        ),
+                      ],                    ),
                   ),
               ],
             ),
@@ -877,4 +925,4 @@ class CartItem {
       stockDisponible: map['stockDisponible'] as int,
     );
   }
-}
+}             
