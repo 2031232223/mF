@@ -308,21 +308,26 @@ class _PurchasePageState extends State<PurchasePage> {
                if (!_isQuickPurchase)
                  Padding(
                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                   child: DropdownButtonFormField<Supplier>(
-                     decoration: InputDecoration(
-                       labelText: 'Proveedor *',
-                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                       filled: true,
-                       fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[850] : Colors.grey[100],
-                     ),
-                     items: [
-                       const DropdownMenuItem(value: null, child: Text('Seleccionar proveedor')),
-                       ..._suppliers.map((s) => DropdownMenuItem(value: s, child: Text(s.nombre))),
-                     ],
-                     value: _selectedSupplier,
-                     onChanged: (v) => setState(() => _selectedSupplier = v),
-                   ),
-                 ),
+                  child: DropdownButtonFormField<int?>(
+  decoration: InputDecoration(
+    labelText: 'Proveedor *',
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+    filled: true,
+    fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[850] : Colors.grey[100],
+  ),
+  items: [
+    const DropdownMenuItem(value: null, child: Text('Seleccionar proveedor')),
+    ..._suppliers.map((s) => DropdownMenuItem(value: s.id, child: Text(s.nombre))),
+  ],
+  value: _selectedSupplier?.id,
+  onChanged: (int? supplierId) {
+    setState(() {
+      _selectedSupplier = supplierId == null 
+          ? null 
+          : _suppliers.firstWhere((s) => s.id == supplierId, orElse: () => _suppliers.first);
+    });
+  },
+),
 
                const SizedBox(height: 16),
 
