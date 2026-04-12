@@ -13,17 +13,17 @@ import 'supplier_page.dart';
 import 'customer_page.dart';
 import 'credit_payments_page.dart';
 import 'dashboard_page.dart';
-import 'dashboard_page.dart'; // ✅ Nueva pantalla independiente
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
-  
+
   final List<Widget> _pages = [
     const PosPage(),
     const ProductListPage(),
@@ -64,6 +64,7 @@ class _HomePageState extends State<HomePage> {
                   ],
                 ),
               ),
+              // ✅ DASHBOARD AGREGADO AL MENÚ
               ListTile(
                 leading: const Icon(Icons.dashboard),
                 title: const Text('📊 Panel de Control'),
@@ -72,6 +73,7 @@ class _HomePageState extends State<HomePage> {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const DashboardPage()));
                 },
               ),
+              const Divider(),
               ListTile(leading: const Icon(Icons.supervisor_account), title: const Text('Clientes'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerPage()))),
               ListTile(leading: const Icon(Icons.store), title: const Text('Proveedores'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SupplierPage()))),
               ListTile(leading: const Icon(Icons.account_balance_wallet), title: const Text('Pagos Fiados'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreditPaymentsPage()))),
