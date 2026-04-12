@@ -244,50 +244,75 @@ class _PosPageState extends State<PosPage> {
     }
   }
 
-  Future<void> _completeSale() async {
-    if (_cart.isEmpty) {
+ Future<void> _completeSale() async {
+  if (_cart.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('⚠️ Carrito vacío'), backgroundColor: Colors.orange),
+    );
+    return;
+  }
+
+  try {
+    // Calcular totales en CUP para guardar en base de datos (siempre internamente en CUP)
+    final totalCUP = _totalCUP;
+    final paidCUP = _selectedCurrency == 'CUP' 
+        ? _amountPaid 
+        : _amountPaid * (_selectedCurrency == 'MLC' ? _mlcRate : _usdRate);
+
+    // Validar pago si no es crédito
+    if (!_isCredit && paidCUP < totalCUP) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('⚠️ Carrito vacío'), backgroundColor: Colors.orange),
+        SnackBar(content: Text('⚠️ Pago insuficiente: faltan ${(totalCUP - paidCUP).toStringAsFixed(2)} CUP'), 
+        backgroundColor: Colors.orange),
       );
       return;
     }
-   // ✅ CORRECCIÓN 1: Calcular el total en la moneda seleccionada (no CUP)
-final totalInSelectedCurrency = _selectedCurrency == 'CUP' 
-    ? _total 
-    : _total / (_selectedCurrency == 'MLC' ? _mlcRate : _usdRate);
 
-// ✅ CORRECCIÓN 2: Calcular el monto pagado en la moneda seleccionada
-final paidInSelectedCurrency = _selectedCurrency == 'CUP' 
-    ? _amountPaid 
-    : _amountPaid / (_selectedCurrency == 'MLC' ? _mlcRate : _usdRate);
+    // Guardar la venta en la base de datos
+    final sale = Sale(
+      clienteId: _selectedCustomer?.id,
+      total: totalCUP,
+      montoPagado: paidCUP,
+      esCredito: _isCredit,
+      fecha: DateTime.now(),
+      productos: jsonEncode(_cart.map((c) => c.toMap()).toList()),
+      monedaVisualizacion: _selectedCurrency,
+      tasaMlc: _mlcRate,
+      tasaUsd: _usdRate,
+    );
 
-// ✅ CORRECCIÓN 3: Validar usando CUP (solo para comparación interna)
-final totalCUPToPay = _selectedCurrency == 'CUP' ? _total : _total * (_selectedCurrency == 'MLC' ? _mlcRate : _usdRate);
-final paidCUP = _selectedCurrency == 'CUP' ? _amountPaid : _amountPaid * (_selectedCurrency == 'MLC' ? _mlcRate : _usdRate);
+    await _saleRepo.createSale(sale);
 
-// ✅ CORRECCIÓN 4: Validar con CUP (correcto)
-final totalCUPToPay = _totalCUP;
-final paidCUP = _selectedCurrency == 'CUP' 
-    ? _amountPaid 
-    : _amountPaid * (_selectedCurrency == 'MLC' ? _mlcRate : _usdRate);
+    // Actualizar stock de productos
+    for (final item in _cart) {
+      await _productRepo.updateStock(item.productoId, item.stockDisponible - item.cantidad);
+    }
 
-if (!_isCredit && paidCUP < totalCUPToPay) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text('⚠️ Pago insuficiente'), backgroundColor: Colors.orange),
-  );
-  return;
-}
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✅ Venta registrada'), backgroundColor: Colors.green),
-      );
-      if (widget.onSaleCompleted != null) widget.onSaleCompleted!();
-      _clearCart();
-      _amountPaid = 0.0;
-      _isCredit = false;
-      _applyDiscount = false;
-      _discountPercent = 0.0;
-      _loadData();
-    } catch (e) {
+    // Feedback al usuario
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('✅ Venta registrada: ${totalCUP.toStringAsFixed(2)} CUP'), 
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+
+    // Resetear formulario
+    if (widget.onSaleCompleted != null) widget.onSaleCompleted!();
+    _clearCart();
+    _amountPaid = 0.0;
+    _isCredit = false;
+    _applyDiscount = false;
+    _discountPercent = 0.0;
+    _selectedCustomer = null;
+    _loadData();
+
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('❌ Error al registrar venta: $e'), backgroundColor: Colors.red),
+    );
+  }
+} catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ $e'), backgroundColor: Colors.red));
     }
   }
@@ -316,7 +341,7 @@ if (!_isCredit && paidCUP < totalCUPToPay) {
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
           ElevatedButton(
             onPressed: () async {
-              if (nc.text.isEmpty || cc.text.isEmpty || tc.text.isEmpty) {
+             if (nc.text.isEmpty || cc.text.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('⚠️ Complete campos'), backgroundColor: Colors.orange),
                 );
@@ -555,10 +580,9 @@ if (!_isCredit && paidCUP < totalCUPToPay) {
           const SizedBox(height: 8),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             const Text('TOTAL:', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-           Text(
-  '${_selectedCurrency == 'CUP' ? '\$' : ''}${_total.toStringAsFixed(2)} $_selectedCurrency',
-  style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.green),
-),
+           Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_total.toStringAsFixed(2)} $_selectedCurrency',
+  style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.green),),
+]),
           const SizedBox(height: 12),
           const Divider(),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
