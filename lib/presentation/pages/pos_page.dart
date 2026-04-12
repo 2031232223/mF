@@ -64,7 +64,6 @@ class _PosPageState extends State<PosPage> {
     return CurrencyHelper.convertFromCUP(cupAmount, _selectedCurrency, _mlcRate, _usdRate);
   }
 
-  // RF 53: Buscar producto por código de barras
   Product? _findByBarcode(String barcode) {
     try {
       return _products.firstWhere(
@@ -114,8 +113,6 @@ class _PosPageState extends State<PosPage> {
               },
             ),
             const SizedBox(height: 16),
-            // Nota: Para escáner real con cámara, se requiere mobile_scanner
-            // Aquí implementamos la versión manual que funciona en todas las plataformas
             ElevatedButton.icon(
               onPressed: () {
                 if (_barcodeController.text.isNotEmpty) {
@@ -244,7 +241,7 @@ class _PosPageState extends State<PosPage> {
     }
   }
 
-  // ✅ CORRECCIÓN 1: Método _completeSale corregido (sin catch duplicado, Sale con parámetros válidos)
+  // ✅ CORRECCIÓN PRINCIPAL: Método _completeSale con firmas correctas
   Future<void> _completeSale() async {
     if (_cart.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -254,7 +251,7 @@ class _PosPageState extends State<PosPage> {
     }
 
     try {
-      // Calcular totales en CUP para guardar en base de datos (siempre internamente en CUP)
+      // Calcular totales en CUP (la BD siempre guarda en CUP)
       final totalCUP = _totalCUP;
       final paidCUP = _selectedCurrency == 'CUP' 
           ? _amountPaid 
@@ -263,32 +260,33 @@ class _PosPageState extends State<PosPage> {
       // Validar pago si no es crédito
       if (!_isCredit && paidCUP < totalCUP) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('⚠️ Pago insuficiente: faltan ${(totalCUP - paidCUP).toStringAsFixed(2)} CUP'), 
-          backgroundColor: Colors.orange),
+          SnackBar(content: Text('⚠️ Pago insuficiente'), backgroundColor: Colors.orange),
         );
         return;
       }
 
-      // ✅ Guardar la venta con parámetros CORRECTOS del modelo Sale
-      final sale = Sale(
-        clienteId: _selectedCustomer?.id,
-        fecha: DateTime.now().toIso8601String(),  // String ISO, no DateTime
-        total: totalCUP,                           // Siempre en CUP
-        montoPagado: paidCUP,                      // Siempre en CUP
-        montoPendiente: _isCredit ? (totalCUP - paidCUP) : 0.0,
-        esFiado: _isCredit,                        // ✅ Nombre correcto: esFiado (no esCredito)
-        notasCredito: _isCredit ? 'Venta fiada' : null,
+      // ✅ Convertir CartItem → SaleLine (con los parámetros que espera el repo)
+      final saleLines = _cart.map((item) => SaleLine(
+        ventaId: 0, // El repo asigna el ID real después de insertar la venta
+        productoId: item.productoId,
+        cantidad: item.cantidad,
+        precioUnitario: item.precioCUP, // Precio unitario en CUP
+        subtotal: item.subtotalCUP,     // Subtotal en CUP
+      )).toList();
+
+      // ✅ Guardar venta con los 8 parámetros POSICIONALES que espera createSale
+      await _saleRepo.createSale(
+        _selectedCustomer?.id,                              // 1: clienteId
+        saleLines,                                          // 2: List<SaleLine> (NO JSON)
+        totalCUP,                                           // 3: total en CUP
+        paidCUP,                                            // 4: montoPagado en CUP
+        _isCredit ? (totalCUP - paidCUP) : 0.0,            // 5: montoPendiente
+        _isCredit ? 'Venta fiada' : null,                  // 6: notasCredito
+        _selectedCurrency,                                  // 7: moneda de visualización
+        _selectedCurrency == 'MLC' ? _mlcRate : (_selectedCurrency == 'USD' ? _usdRate : 1.0), // 8: tasaCambio
       );
 
-      await _saleRepo.createSale(sale);
-
-      // ✅ Actualizar stock usando método existente: updateProduct con copyWith
-      for (final item in _cart) {
-        final producto = _products.firstWhere((p) => p.id == item.productoId);
-        await _productRepo.updateProduct(producto.copyWith(
-          stockActual: producto.stockActual - item.cantidad,
-        ));
-      }
+      // ✅ El repositorio YA actualiza el stock automáticamente (no hay que hacerlo aquí)
 
       // Feedback al usuario
       ScaffoldMessenger.of(context).showSnackBar(
@@ -311,10 +309,10 @@ class _PosPageState extends State<PosPage> {
 
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('❌ Error al registrar venta: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('❌ $e'), backgroundColor: Colors.red),
       );
     }
-  } // ✅ CORRECCIÓN: Esta llave CIERRA correctamente el método _completeSale
+  }
 
   void _showNewCustomerDialog() {
     final nc = TextEditingController();
@@ -340,7 +338,7 @@ class _PosPageState extends State<PosPage> {
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
           ElevatedButton(
             onPressed: () async {
-              // ✅ CORRECCIÓN 2: Teléfono ya no es obligatorio (quitado || tc.text.isEmpty)
+              // Teléfono ya no es obligatorio
               if (nc.text.isEmpty || cc.text.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('⚠️ Complete campos'), backgroundColor: Colors.orange),
@@ -583,7 +581,7 @@ class _PosPageState extends State<PosPage> {
             Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_total.toStringAsFixed(2)} $_selectedCurrency',
               style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.green),
             ),
-          ]), // ✅ CORRECCIÓN 3: Cerrado correcto del Row del TOTAL
+          ]),
           const SizedBox(height: 12),
           const Divider(),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
@@ -657,12 +655,11 @@ class _PosPageState extends State<PosPage> {
           children: [
             const Text('Punto de Venta'),
             const SizedBox(width: 12),
-            // ✅ CORRECCIÓN 4: DropdownButton con parámetro 'items' obligatorio
             DropdownButton<String>(
               value: _selectedCurrency,
               dropdownColor: Theme.of(context).appBarTheme.backgroundColor,
               underline: const SizedBox(),
-              items: const [  // ← Agregado: parámetro 'items' requerido
+              items: const [
                 DropdownMenuItem(value: 'CUP', child: Text('🇨🇺 CUP')),
                 DropdownMenuItem(value: 'MLC', child: Text('💳 MLC')),
                 DropdownMenuItem(value: 'USD', child: Text('🇺🇸 USD')),
@@ -795,7 +792,7 @@ class _PosPageState extends State<PosPage> {
             ),
     );
   }
-} // ✅ Esta llave CIERRA la clase _PosPageState (debe ser la última del archivo)
+}
 
 class CartItem {
   final int productoId;
