@@ -30,7 +30,10 @@ dependencies:
   # PDF y impresión (compatibles con Flutter 3.19.0)
   pdf: ^3.10.4
   printing: ^5.11.0
-  
+    # ✅ Para exportar y compartir PDF
+  share_plus: ^7.2.1
+  pdf: ^3.10.8
+  path_provider: ^2.1.2
   # Compresión de respaldos
   archive: ^3.4.10
   
