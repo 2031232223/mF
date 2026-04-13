@@ -5,23 +5,12 @@ import 'product_repository.dart';
 class SaleRepository {
   final ProductRepository _productRepo = ProductRepository();
 
-  Future<int> createSale(
-    int? clienteId,
-    List<SaleLine> saleLines,
-    double total,
-    double montoPagado,
-    double montoPendiente,
-    String? notasCredito,
-    String moneda,
-    double tasaCambio,
-  ) async {
+  Future<int> createSale(int? clienteId, List<SaleLine> saleLines, double total, double montoPagado, double montoPendiente, String? notasCredito, String moneda, double tasaCambio) async {
     final db = await DatabaseHelper.instance.database;
     
     try {
       return await db.transaction((txn) async {
-        int? ventaId;
-        
-        ventaId = await txn.insert('ventas', {
+        int? ventaId = await txn.insert('ventas', {
           'cliente_id': clienteId,
           'fecha': DateTime.now().toIso8601String(),
           'total': total,
@@ -41,7 +30,7 @@ class SaleRepository {
             'precio_unitario': line.precioUnitario,
             'subtotal': line.subtotal,
           });
-
+          
           await _productRepo.updateProductStock(line.productoId, line.cantidad);
         }
 
@@ -128,7 +117,6 @@ class SaleRepository {
     return result;
   }
 
-  // ✅ MÉTODO NUEVO: Registrar pago parcial/total de fiado (RF 57 + 18)
   Future<bool> registrarPagoFiado(int ventaId, double montoPagado, String notas) async {
     final db = await DatabaseHelper.instance.database;
     
@@ -164,7 +152,6 @@ class SaleRepository {
     }
   }
 
-  // ✅ MÉTODO NUEVO: Obtener deudas pendientes (RF 58)
   Future<List<Sale>> getDeudasPendientes() async {
     final db = await DatabaseHelper.instance.database;
     final result = await db.rawQuery('''
@@ -176,23 +163,20 @@ class SaleRepository {
     ''');
     
     return result.map((m) => Sale.fromMap(m)).toList();
-  // ✅ MÉTODO NUEVO: Flujo de caja (RF 64
-Future<Map<String, dynamic>> getFlujoDeCaja(DateTime start, DateTime end) async {
-  final db = await DatabaseHelper.instance.database;
-  final salesResult = await db.rawQuery(
-    'SELECT DATE(v.fecha) as fecha, SUM(CASE WHEN v.moneda = "CUP" THEN v.total ELSE 0 END) as cup FROM ventas v WHERE v.fecha BETWEEN ? AND ? GROUP BY DATE(v.fecha)',
-    [start.toIso8601String(), end.toIso8601String()]
-  );
-  
-  return {
-    'ventas': salesResult,
-    'costos': <Map<String, dynamic>>[],
-  };
-}
-  // ✅ MÉTODO MEJORADO: Rotación de productos (RF 62)
+  }
+
+  Future<Map<String, dynamic>> getFlujoDeCaja(DateTime start, DateTime end) async {
+    final db = await DatabaseHelper.instance.database;
+    final salesResult = await db.rawQuery(
+      'SELECT DATE(v.fecha) as fecha, SUM(CASE WHEN v.moneda = "CUP" THEN v.total ELSE 0 END) as cup FROM ventas v WHERE v.fecha BETWEEN ? AND ? GROUP BY DATE(v.fecha)',
+      [start.toIso8601String(), end.toIso8601String()]
+    );
+    
+    return {'ventas': salesResult, 'costos': []};
+  }
+
   Future<List<Map<String, dynamic>>> getRotacionProductos() async {
     final db = await DatabaseHelper.instance.database;
-    
     return await db.rawQuery('''
       SELECT 
         p.nombre,
@@ -210,10 +194,8 @@ Future<Map<String, dynamic>> getFlujoDeCaja(DateTime start, DateTime end) async 
     ''');
   }
 
-  // ✅ MÉTODO MEJORADO: Margen por producto (RF 63)
   Future<List<Map<String, dynamic>>> getMargenPorProducto() async {
     final db = await DatabaseHelper.instance.database;
-    
     return await db.rawQuery('''
       SELECT 
         p.id,
@@ -228,14 +210,11 @@ Future<Map<String, dynamic>> getFlujoDeCaja(DateTime start, DateTime end) async 
     ''');
   }
 
-  // ✅ MÉTODO CORREGIDO: Reporte de ganancias (sin errores null)
   Future<Map<String, dynamic>> getProfitReport() async {
     final db = await DatabaseHelper.instance.database;
     
     try {
-      final ingresosResult = await db.rawQuery(
-        'SELECT SUM(total) as total FROM ventas',
-      );
+      final ingresosResult = await db.rawQuery('SELECT SUM(total) as total FROM ventas');
       final totalIngresos = (ingresosResult.first['total'] as num?)?.toDouble() ?? 0.0;
       
       final costoResult = await db.rawQuery('''
