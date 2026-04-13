@@ -14,8 +14,11 @@ class NumericKeypad extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Container(
-      color: Colors.grey[200],
+      color: isDark ? Colors.grey[900] : Colors.grey[200],
       padding: const EdgeInsets.all(8),
       child: Column(
         children: [
@@ -38,16 +41,23 @@ class NumericKeypad extends StatelessWidget {
   }
 
   Widget _buildNumButton(String text) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Padding(
       padding: const EdgeInsets.all(4),
       child: ElevatedButton(
         onPressed: () => onNumberPressed(text),
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white,
+          backgroundColor: isDark ? Colors.grey[800] : Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 20),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          foregroundColor: isDark ? Colors.white : Colors.black,
         ),
-        child: Text(text, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        child: Text(
+          text, 
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }
@@ -61,8 +71,12 @@ class NumericKeypad extends StatelessWidget {
           backgroundColor: bgColor,
           padding: const EdgeInsets.symmetric(vertical: 20),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          foregroundColor: Colors.white,
         ),
-        child: Text(text, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        child: Text(
+          text, 
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }
