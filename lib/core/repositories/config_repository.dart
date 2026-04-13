@@ -2,12 +2,9 @@ import 'package:sqflite/sqflite.dart';
 import '../database/database_helper.dart';
 
 class ConfigRepository {
-  // ✅ Guardar nota diaria actualizada automáticamente
   Future<void> guardarNotaDiaria(String nota) async {
     try {
       final db = await DatabaseHelper.instance.database;
-      
-      // Insertamos una configuración especial 'nota_diaria_actual' con timestamp
       await db.insert(
         'config',
         {
@@ -15,14 +12,13 @@ class ConfigRepository {
           'value': nota,
           'updated_at': DateTime.now().toIso8601String(),
         },
-        conflictAlgorithm: ConflictAlgorithm.replace, // Sobreescribe si ya existe
+        conflictAlgorithm: ConflictAlgorithm.replace,
       );
     } catch (e) {
       print('Error guardando nota diaria: $e');
     }
   }
 
-  // ✅ Obtener última nota diaria
   Future<String?> obtenerNotaDiaria() async {
     try {
       final db = await DatabaseHelper.instance.database;
@@ -31,17 +27,13 @@ class ConfigRepository {
         where: 'key = ?',
         whereArgs: ['nota_diaria_actual'],
       );
-      if (result.isNotEmpty) {
-        return result.first['value'] as String?;
-      }
-      return null;
+      return result.isNotEmpty ? result.first['value'] as String? : null;
     } catch (e) {
       print('Error leyendo nota diaria: $e');
       return null;
     }
   }
 
-  // ✅ Limpiar nota diaria (ej. al iniciar nueva sesión)
   Future<void> limpiarNotaDiaria() async {
     try {
       final db = await DatabaseHelper.instance.database;
