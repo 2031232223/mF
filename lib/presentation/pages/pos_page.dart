@@ -936,7 +936,7 @@ class _PosPageState extends State<PosPage> {
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            Expanded(
+                           Expanded(
   child: CheckboxListTile(
     title: const Text('Venta Fiada', style: TextStyle(fontWeight: FontWeight.bold)),
     subtitle: const Text('El cliente pagará después'),
@@ -944,7 +944,7 @@ class _PosPageState extends State<PosPage> {
     onChanged: (v) => setState(() => _isCredit = v ?? false),
     controlAffinity: ListTileControlAffinity.leading,
     contentPadding: EdgeInsets.zero,
-    // ✅ PARÁMETROS EN INGLÉS - NO TRADUCIR:
+    // ✅ PARÁMETROS EN INGLÉS - NO TRADUCIR BAJO NINGÚN CONCEPTO:
     titleTextStyle: TextStyle(
       fontWeight: FontWeight.bold,
       color: Theme.of(context).brightness == Brightness.dark 
