@@ -16,35 +16,43 @@ class SaleRepository {
     double tasaCambio,
   ) async {
     final db = await DatabaseHelper.instance.database;
+    
     return await db.transaction((txn) async {
-      // Insertar venta principal
-      final ventaId = await txn.insert('ventas', {
-        'cliente_id': clienteId,
-        'fecha': DateTime.now().toIso8601String(),
-        'total': total,
-        'monto_pagado': montoPagado,
-        'monto_pendiente': montoPendiente,
-        'notas_credito': notasCredito,
-        'es_fiado': montoPendiente > 0 ? 1 : 0,
-        'moneda': moneda,
-        'tasa_cambio': tasaCambio,
-      });
-
-      // Insertar líneas de venta en detalle_ventas
-      for (var line in saleLines) {
-        await txn.insert('detalle_ventas', {
-          'venta_id': ventaId,
-          'producto_id': line.productoId,
-          'cantidad': line.cantidad,
-          'precio_unitario': line.precioUnitario,
-          'subtotal': line.subtotal,
+      int? ventaId;
+      
+      try {
+        // Insertar venta principal
+        ventaId = await txn.insert('ventas', {
+          'cliente_id': clienteId,
+          'fecha': DateTime.now().toIso8601String(),
+          'total': total,
+          'monto_pagado': montoPagado,
+          'monto_pendiente': montoPendiente,
+          'notas_credito': notasCredito,
+          'es_fiado': montoPendiente > 0 ? 1 : 0,
+          'moneda': moneda,
+          'tasa_cambio': tasaCambio,
         });
 
-        // Actualizar stock
-        await _productRepo.updateProductStock(line.productoId, line.cantidad);
-      }
+        // Insertar líneas de venta en detalle_ventas
+        for (var line in saleLines) {
+          await txn.insert('detalle_ventas', {
+            'venta_id': ventaId,
+            'producto_id': line.productoId,
+            'cantidad': line.cantidad,
+            'precio_unitario': line.precioUnitario,
+            'subtotal': line.subtotal,
+          });
 
-      return ventaId;
+          // Actualizar stock
+          await _productRepo.updateProductStock(line.productoId, line.cantidad);
+        }
+
+        return ventaId;
+      } catch (e) {
+        print('❌ Error en createSale: $e');
+        rethrow;
+      }
     });
   }
 
@@ -68,7 +76,7 @@ class SaleRepository {
   Future<List<SaleLine>> getSaleLines(int ventaId) async {
     final db = await DatabaseHelper.instance.database;
     final List<Map<String, dynamic>> maps = await db.query(
-      'detalle_ventas', // ✅ Nombre correcto
+      'detalle_ventas',
       where: 'venta_id = ?',
       whereArgs: [ventaId],
     );
