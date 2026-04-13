@@ -175,20 +175,39 @@ class SaleRepository {
       ORDER BY v.fecha DESC
     ''');
     
-    return result.map((m) => Sale.fromMap(m)).toList(),}
-  // ✅ MÉTODO NUEVO: Flujo de caja (RF 64
-Future<Map<String, dynamic>> getFlujoDeCaja(DateTime start, DateTime end) async {
-  final db = await DatabaseHelper.instance.database;
-  final salesResult = await db.rawQuery(
-    'SELECT DATE(v.fecha) as fecha, SUM(CASE WHEN v.moneda = "CUP" THEN v.total ELSE 0 END) as cup FROM ventas v WHERE v.fecha BETWEEN ? AND ? GROUP BY DATE(v.fecha)',
-    [start.toIso8601String(), end.toIso8601String()]
-  );
-  
-  return {
-    'ventas': salesResult,
-    'costos': <Map<String, dynamic>>[],
-  };
-}
+    return result.map((m) => Sale.fromMap(m)).toList();
+  }
+
+  // ✅ MÉTODO NUEVO: Flujo de caja (RF 64)
+  Future<List<Map<String, dynamic>>> getFlujoDeCaja(DateTime start, DateTime end) async {
+    final db = await DatabaseHelper.instance.database;
+    
+    final salesResult = await db.rawQuery('''
+      SELECT 
+        DATE(v.fecha) as fecha,
+        SUM(CASE WHEN v.moneda = 'CUP' THEN v.total ELSE 0 END) as cup,
+        SUM(CASE WHEN v.moneda = 'MLC' THEN v.total ELSE 0 END) as mlc
+      FROM ventas v
+      WHERE v.fecha BETWEEN ? AND ?
+      GROUP BY DATE(v.fecha)
+    ''', [start.toIso8601String(), end.toIso8601String()]);
+
+    final costsResult = await db.rawQuery('''
+      SELECT 
+        DATE(c.fecha) as fecha,
+        SUM(cd.cantidad * cd.precio_unitario) as costo
+      FROM compra_detalles cd
+      INNER JOIN compras c ON cd.compra_id = c.id
+      WHERE c.fecha BETWEEN ? AND ?
+      GROUP BY DATE(c.fecha)
+    ''', [start.toIso8601String(), end.toIso8601String()]);
+
+    return {
+      'ventas': salesResult,
+      'costos': costsResult,
+    };
+  }
+
   // ✅ MÉTODO MEJORADO: Rotación de productos (RF 62)
   Future<List<Map<String, dynamic>>> getRotacionProductos() async {
     final db = await DatabaseHelper.instance.database;

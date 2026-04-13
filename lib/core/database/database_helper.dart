@@ -19,226 +19,48 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 6, // ✅ Versión establecida para migración
+      version: 6, // ✅ VERSIÓN CRÍTICA
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
   }
 
   void _createDB(Database db, int version) async {
-    await db.execute('''
-      CREATE TABLE config (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        key TEXT UNIQUE,
-        value TEXT,
-        updated_at TEXT
-      )
-    ''');
-
-    await db.execute('''
-      CREATE TABLE clientes (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT NOT NULL,
-        carnet_identidad TEXT,
-        telefono TEXT,
-        es_habitual INTEGER DEFAULT 0,
-        fecha_registro TEXT
-      )
-    ''');
-
-    await db.execute('''
-      CREATE TABLE proveedores (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT NOT NULL,
-        ci_identidad TEXT,
-        telefono TEXT,
-        created_at TEXT
-      )
-    ''');
-
-    await db.execute('''
-      CREATE TABLE productos (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT NOT NULL,
-        codigo TEXT UNIQUE NOT NULL,
-        costo REAL,
-        precio_venta REAL NOT NULL,
-        stock_actual INTEGER DEFAULT 0,
-        stock_minimo INTEGER DEFAULT 0,
-        categoria TEXT,
-        es_favorito INTEGER DEFAULT 0,
-        stock_critico INTEGER,
-        margen_ganancia REAL,
-        unidad_medida TEXT DEFAULT 'und',
-        activo INTEGER DEFAULT 1,
-        notas TEXT,
-        created_at TEXT,
-        updated_at TEXT
-      )
-    ''');
-
-    await db.execute('''
-      CREATE TABLE ventas (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        cliente_id INTEGER,
-        total REAL NOT NULL,
-        total_cup REAL,
-        fecha TEXT NOT NULL,
-        metodo_pago TEXT,
-        moneda TEXT DEFAULT 'CUP',
-        tasa_cambio REAL DEFAULT 1.0,
-        es_fiado INTEGER DEFAULT 0,
-        monto_pagado REAL DEFAULT 0,
-        monto_pendiente REAL DEFAULT 0,
-        notas_credito TEXT,
-        descuento REAL DEFAULT 0,
-        created_at TEXT,
-        FOREIGN KEY (cliente_id) REFERENCES clientes (id)
-      )
-    ''');
-
-    await db.execute('''
-      CREATE TABLE detalle_ventas (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        venta_id INTEGER NOT NULL,
-        producto_id INTEGER NOT NULL,
-        cantidad INTEGER NOT NULL,
-        precio_unitario REAL NOT NULL,
-        subtotal REAL NOT NULL,
-        FOREIGN KEY (venta_id) REFERENCES ventas (id),
-        FOREIGN KEY (producto_id) REFERENCES productos (id)
-      )
-    ''');
-
-    await db.execute('''
-      CREATE TABLE compras (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        proveedor_id INTEGER,
-        total REAL NOT NULL,
-        fecha TEXT NOT NULL,
-        created_at TEXT,
-        FOREIGN KEY (proveedor_id) REFERENCES proveedores (id)
-      )
-    ''');
-
-    await db.execute('''
-      CREATE TABLE compra_detalles (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        compra_id INTEGER NOT NULL,
-        producto_id INTEGER NOT NULL,
-        cantidad INTEGER NOT NULL,
-        precio_unitario REAL NOT NULL,
-        subtotal REAL NOT NULL,
-        FOREIGN KEY (compra_id) REFERENCES compras (id),
-        FOREIGN KEY (producto_id) REFERENCES productos (id)
-      )
-    ''');
-
-    await db.execute('''
-      CREATE TABLE mermas (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        producto_id INTEGER NOT NULL,
-        cantidad INTEGER NOT NULL,
-        motivo TEXT,
-        fecha TEXT NOT NULL,
-        FOREIGN KEY (producto_id) REFERENCES productos (id)
-      )
-    ''');
-
-    await db.execute('''
-      CREATE TABLE ventas_pausadas (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT,
-        fecha_creacion TEXT,
-        cliente_id INTEGER,
-        productos TEXT,
-        total REAL
-      )
-    ''');
-
+    await db.execute('''CREATE TABLE config (id INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT UNIQUE, value TEXT, updated_at TEXT)''');
+    await db.execute('''CREATE TABLE clientes (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT NOT NULL, carnet_identidad TEXT, telefono TEXT, es_habitual INTEGER DEFAULT 0, fecha_registro TEXT)''');
+    await db.execute('''CREATE TABLE proveedores (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT NOT NULL, ci_identidad TEXT, telefono TEXT, created_at TEXT)''');
+    await db.execute('''CREATE TABLE productos (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT NOT NULL, codigo TEXT UNIQUE NOT NULL, costo REAL, precio_venta REAL NOT NULL, stock_actual INTEGER DEFAULT 0, stock_minimo INTEGER DEFAULT 0, categoria TEXT, es_favorito INTEGER DEFAULT 0, stock_critico INTEGER, margen_ganancia REAL, unidad_medida TEXT DEFAULT 'und', activo INTEGER DEFAULT 1, notas TEXT, created_at TEXT, updated_at TEXT)''');
+    await db.execute('''CREATE TABLE ventas (id INTEGER PRIMARY KEY AUTOINCREMENT, cliente_id INTEGER, total REAL NOT NULL, total_cup REAL, fecha TEXT NOT NULL, metodo_pago TEXT, moneda TEXT DEFAULT 'CUP', tasa_cambio REAL DEFAULT 1.0, es_fiado INTEGER DEFAULT 0, monto_pagado REAL DEFAULT 0, monto_pendiente REAL DEFAULT 0, notas_credito TEXT, descuento REAL DEFAULT 0, created_at TEXT, FOREIGN KEY (cliente_id) REFERENCES clientes (id))''');
+    await db.execute('''CREATE TABLE detalle_ventas (id INTEGER PRIMARY KEY AUTOINCREMENT, venta_id INTEGER NOT NULL, producto_id INTEGER NOT NULL, cantidad INTEGER NOT NULL, precio_unitario REAL NOT NULL, subtotal REAL NOT NULL, FOREIGN KEY (venta_id) REFERENCES ventas (id), FOREIGN KEY (producto_id) REFERENCES productos (id))''');
+    await db.execute('''CREATE TABLE compras (id INTEGER PRIMARY KEY AUTOINCREMENT, proveedor_id INTEGER, total REAL NOT NULL, fecha TEXT NOT NULL, created_at TEXT, FOREIGN KEY (proveedor_id) REFERENCES proveedores (id))''');
+    await db.execute('''CREATE TABLE compra_detalles (id INTEGER PRIMARY KEY AUTOINCREMENT, compra_id INTEGER NOT NULL, producto_id INTEGER NOT NULL, cantidad INTEGER NOT NULL, precio_unitario REAL NOT NULL, subtotal REAL NOT NULL, FOREIGN KEY (compra_id) REFERENCES compras (id), FOREIGN KEY (producto_id) REFERENCES productos (id))''');
+    await db.execute('''CREATE TABLE mermas (id INTEGER PRIMARY KEY AUTOINCREMENT, producto_id INTEGER NOT NULL, cantidad INTEGER NOT NULL, motivo TEXT, fecha TEXT NOT NULL, FOREIGN KEY (producto_id) REFERENCES productos (id))''');
+    await db.execute('''CREATE TABLE ventas_pausadas (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT, fecha_creacion TEXT, cliente_id INTEGER, productos TEXT, total REAL)''');
+    
     await db.execute('CREATE INDEX idx_productos_codigo ON productos (codigo)');
     await db.execute('CREATE INDEX idx_ventas_fecha ON ventas (fecha)');
     await db.execute('CREATE INDEX idx_detalle_ventas_venta ON detalle_ventas (venta_id)');
   }
 
   void _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
-      try {
-        await db.execute('ALTER TABLE proveedores ADD COLUMN ci_identidad TEXT');
-      } catch (e) { print('Columna ya existe: $e'); }
+    if (oldVersion < 2) { try { await db.execute('ALTER TABLE proveedores ADD COLUMN ci_identidad TEXT'); } catch(e){} }
+    if (oldVersion < 3) { try { await db.execute('ALTER TABLE clientes ADD COLUMN es_habitual INTEGER DEFAULT 0'); } catch(e){} }
+    if (oldVersion < 4) { 
+      try { await db.execute('ALTER TABLE clientes ADD COLUMN fecha_registro TEXT'); } catch(e){} 
+      try { await db.execute('''CREATE TABLE IF NOT EXISTS detalle_ventas (id INTEGER PRIMARY KEY AUTOINCREMENT, venta_id INTEGER NOT NULL, producto_id INTEGER NOT NULL, cantidad INTEGER NOT NULL, precio_unitario REAL NOT NULL, subtotal REAL NOT NULL, FOREIGN KEY (venta_id) REFERENCES ventas (id), FOREIGN KEY (producto_id) REFERENCES productos (id))'''); } catch(e){}
     }
-    
-    if (oldVersion < 3) {
-      try {
-        await db.execute('ALTER TABLE clientes ADD COLUMN es_habitual INTEGER DEFAULT 0');
-      } catch (e) { print('Columna es_habitual ya existe: $e'); }
+    if (oldVersion < 5) { 
+      try { await db.execute('''CREATE TABLE IF NOT EXISTS mermas (id INTEGER PRIMARY KEY AUTOINCREMENT, producto_id INTEGER NOT NULL, cantidad INTEGER NOT NULL, motivo TEXT, fecha TEXT NOT NULL, FOREIGN KEY (producto_id) REFERENCES productos (id))'''); } catch(e){}
     }
-    
-    if (oldVersion < 4) {
-      try {
-        await db.execute('ALTER TABLE clientes ADD COLUMN fecha_registro TEXT');
-      } catch (e) { print('Columna fecha_registro ya existe: $e'); }
-      
-      try {
-        await db.execute('''
-          CREATE TABLE IF NOT EXISTS detalle_ventas (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            venta_id INTEGER NOT NULL,
-            producto_id INTEGER NOT NULL,
-            cantidad INTEGER NOT NULL,
-            precio_unitario REAL NOT NULL,
-            subtotal REAL NOT NULL,
-            FOREIGN KEY (venta_id) REFERENCES ventas (id),
-            FOREIGN KEY (producto_id) REFERENCES productos (id)
-          )
-        ''');
-      } catch (e) { print('Tabla detalle_ventas ya existe: $e'); }
-    }
-    
-    if (oldVersion < 5) {
-      try {
-        await db.execute('''
-          CREATE TABLE IF NOT EXISTS mermas (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            producto_id INTEGER NOT NULL,
-            cantidad INTEGER NOT NULL,
-            motivo TEXT,
-            fecha TEXT NOT NULL,
-            FOREIGN KEY (producto_id) REFERENCES productos (id)
-          )
-        ''');
-      } catch (e) { print('Tabla mermas ya existe: $e'); }
-    }
-    
-    if (oldVersion < 6) {
-      try {
-        await db.execute('''
-          CREATE TABLE IF NOT EXISTS detalle_ventas (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            venta_id INTEGER NOT NULL,
-            producto_id INTEGER NOT NULL,
-            cantidad INTEGER NOT NULL,
-            precio_unitario REAL NOT NULL,
-            subtotal REAL NOT NULL,
-            FOREIGN KEY (venta_id) REFERENCES ventas(id),
-            FOREIGN KEY (producto_id) REFERENCES productos(id)
-          )
-        ''');
-      } catch (e) { print('Tabla detalle_ventas ya existe o error crítico: $e'); }
+    if (oldVersion < 6) { 
+      try { await db.execute('''CREATE TABLE IF NOT EXISTS detalle_ventas (id INTEGER PRIMARY KEY AUTOINCREMENT, venta_id INTEGER NOT NULL, producto_id INTEGER NOT NULL, cantidad INTEGER NOT NULL, precio_unitario REAL NOT NULL, subtotal REAL NOT NULL, FOREIGN KEY (venta_id) REFERENCES ventas(id), FOREIGN KEY (producto_id) REFERENCES productos(id))'''); } catch(e) { print('Tabla detalle_ventas ya existe o error crítico: $e'); }
     }
   }
 
   Future<void> updateConfig(String key, dynamic value) async {
     final db = await database;
-    await db.insert(
-      'config',
-      {'key': key, 'value': value.toString(), 'updated_at': DateTime.now().toIso8601String()},
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await db.insert('config', {'key': key, 'value': value.toString(), 'updated_at': DateTime.now().toIso8601String()}, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  Future close() async {
-    final db = await database;
-    db.close();
-  }
+  Future close() async => (await database).close();
 }

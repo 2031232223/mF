@@ -1,69 +1,77 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'core/utils/theme_provider.dart';
-import 'core/database/database_helper.dart';
-import 'presentation/pages/splash_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // ✅ INICIALIZAR BASE DE DATOS ANTES DE CUALQUIER WIDGET
-  await DatabaseHelper.instance.database;
-  print('✅ Base de datos inicializada correctamente');
-  
-  FlutterError.onError = (details) {
-    print('❌ Error: ${details.exception}');
-    FlutterError.presentError(details);
-  };
-
-  runApp(const NovaAdenApp());
+  runApp(const MyApp());
 }
 
-class NovaAdenApp extends StatelessWidget {
-  const NovaAdenApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => ThemeProvider(),
-      child: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, _) {
-          return MaterialApp(
-            title: 'Nova ADEN',
-            debugShowCheckedModeBanner: false,
-            theme: themeProvider.themeData,
-            darkTheme: themeProvider.darkThemeData,
-            themeMode: themeProvider.themeMode,
-            home: const SplashPage(),
-            
-            // Manejo mejorado de errores
-            errorBuilder: (context, exception) {
-              return Scaffold(
-                backgroundColor: Colors.red[50],
-                body: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error, color: Colors.red, size: 64),
-                      const SizedBox(height: 16),
-                      Text(
-                        "Error al cargar: ${exception.toString().split('.').last}",
-                        style: const TextStyle(fontSize: 16, color: Colors.black87),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton.icon(
-                        onPressed: () => Navigator.of(context).popAndPushNamed('/'),
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Reintentar'),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
-        },
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(statusBarColor: Colors.transparent));
+    
+    return MaterialApp(
+      title: 'Nova Aden',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        brightness: Brightness.light,
+        useMaterial3: true,
+      ),
+      darkTheme: ThemeData(
+        primarySwatch: Colors.blue,
+        brightness: Brightness.dark,
+        useMaterial3: true,
+        scaffoldBackgroundColor: const Color(0xFF121212),
+        appBarTheme: const AppBarTheme(backgroundColor: Color(0xFF1E1E1E)),
+      ),
+      themeMode: ThemeMode.system,
+      home: const BottomNavMainPage(),
+      routes: {
+        '/pos': (context) => PosPage(),
+        '/inventory': (context) => InventoryPage(),
+        '/purchases': (context) => PurchasesPage(),
+        '/reports': (context) => ReportsPage(),
+        '/settings': (context) => ConfigPage(),
+      },
+    );
+  }
+}
+
+class BottomNavMainPage extends StatefulWidget {
+  const BottomNavMainPage({super.key});
+
+  @override
+  State<BottomNavMainPage> createState() => _BottomNavMainPageState();
+}
+
+class _BottomNavMainPageState extends State<BottomNavMainPage> {
+  int _currentIndex = 0;
+
+  final List<Widget> _pages = const [
+    Placeholder(),
+    Placeholder(),
+    Placeholder(),
+    Placeholder(),
+    Placeholder(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: IndexedStack(index: _currentIndex, children: _pages),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: (index) { setState(() => _currentIndex = index); },
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.point_of_sale), selectedIcon: Icon(Icons.point_of_sale_rounded), label: 'POS'),
+          NavigationDestination(icon: Icon(Icons.inventory_2), selectedIcon: Icon(Icons.inventory_2_rounded), label: 'Inventario'),
+          NavigationDestination(icon: Icon(Icons.shopping_cart), selectedIcon: Icon(Icons.shopping_cart_rounded), label: 'Purchases'),
+          NavigationDestination(icon: Icon(Icons.bar_chart), selectedIcon: Icon(Icons.bar_chart_rounded), label: 'Reports'),
+          NavigationDestination(icon: Icon(Icons.settings), selectedIcon: Icon(Icons.settings_rounded), label: 'Settings'),
+        ],
       ),
     );
   }
