@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class CommonDialogs {
-  // ✅ DIÁLOGO DE ELIMINACIÓN CON POSICIÓN CORREGIDA (SÍ IZQ - NO DER)
+  // ✅ DIÁLOGO DE ELIMINACIÓN (SÍ IZQ - NO DER)
   static Future<bool?> showDeleteConfirmation({
     required BuildContext context,
     required String itemName,
@@ -19,7 +19,7 @@ class CommonDialogs {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // ✅ SÍ A LA IZQUIERDA (Verde - Acción Principal/Riesgosa)
+                // ✅ SÍ A LA IZQUIERDA
                 SizedBox(
                   width: 80,
                   child: ElevatedButton(
@@ -31,8 +31,8 @@ class CommonDialogs {
                     child: const Text('Sí'),
                   ),
                 ),
-                const SizedBox(width: 16), // Separación entre botones
-                // ✅ NO A LA DERECHA (Rojo - Cancelar)
+                const SizedBox(width: 16),
+                // ✅ NO A LA DERECHA
                 SizedBox(
                   width: 80,
                   child: OutlinedButton(
@@ -53,10 +53,8 @@ class CommonDialogs {
     );
   }
 
-  // ✅ DIÁLOGO CONFIRMACIÓN GENERAR PDF (Ticket Venta)
-  static Future<bool?> showTicketGenerationConfirmation({
-    required BuildContext context,
-  }) async {
+  // ✅ CONFIRMACIÓN GENERAR PDF
+  static Future<bool?> showTicketGenerationConfirmation({required BuildContext context}) async {
     return await showDialog<bool>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
@@ -68,7 +66,6 @@ class CommonDialogs {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // ✅ SÍ A LA IZQUIERDA
                 SizedBox(
                   width: 100,
                   child: ElevatedButton(
@@ -81,7 +78,6 @@ class CommonDialogs {
                   ),
                 ),
                 const SizedBox(width: 16),
-                // ✅ NO A LA DERECHA
                 SizedBox(
                   width: 100,
                   child: OutlinedButton(
