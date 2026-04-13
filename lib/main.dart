@@ -1,27 +1,22 @@
-import 'dart:async';
-import 'dart:ui'; // ✅ Importación necesaria para Flutter bajo nivel
-import 'presentation/pages/splash_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/utils/theme_provider.dart';
-import 'presentation/pages/home_page.dart';
+import 'core/database/database_helper.dart';
+import 'presentation/pages/splash_page.dart';
 
-void main() {
-  // 1. Inicializar Flutter primero (CRÍTICO para plugins y DB)
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // 2. Manejo global de errores para que no cierre la app sin aviso
+  // ✅ INICIALIZAR BASE DE DATOS ANTES DE CUALQUIER WIDGET
+  await DatabaseHelper.instance.database;
+  print('✅ Base de datos inicializada correctamente');
+  
   FlutterError.onError = (details) {
+    print('❌ Error: ${details.exception}');
     FlutterError.presentError(details);
   };
 
-  // 3. Ejecutar la app con Provider
-  runApp(
-    ChangeNotifierProvider(
-      create: (_) => ThemeProvider(),
-      child: const NovaAdenApp(),
-    ),
-  );
+  runApp(const NovaAdenApp());
 }
 
 class NovaAdenApp extends StatelessWidget {
@@ -29,45 +24,47 @@ class NovaAdenApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
-        return MaterialApp(
-          title: 'Nova ADEN',
-          debugShowCheckedModeBanner: false,
-          theme: themeProvider.themeData,
-          home: const SplashPage(),
-          // Intercepta errores de UI para mostrarlos en pantalla
-          builder: (context, child) {
-            ErrorWidget.builder = (details) {
-              return MaterialApp(
-                home: Scaffold(
-                  backgroundColor: Colors.red[50],
-                  body: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.error, color: Colors.red, size: 48),
-                          const SizedBox(height: 16),
-                          const Text("Error Fatal", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 18)),
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(color: Colors.white, border: Border.all(color: Colors.red)),
-                            child: SelectableText("${details.exception}", style: const TextStyle(fontSize: 12)),
-                          ),
-                        ],
+    return ChangeNotifierProvider(
+      create: (_) => ThemeProvider(),
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, _) {
+          return MaterialApp(
+            title: 'Nova ADEN',
+            debugShowCheckedModeBanner: false,
+            theme: themeProvider.themeData,
+            darkTheme: themeProvider.darkThemeData,
+            themeMode: themeProvider.themeMode,
+            home: const SplashPage(),
+            
+            // Manejo mejorado de errores
+            errorBuilder: (context, exception) {
+              return Scaffold(
+                backgroundColor: Colors.red[50],
+                body: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error, color: Colors.red, size: 64),
+                      const SizedBox(height: 16),
+                      Text(
+                        "Error al cargar: ${exception.toString().split('.').last}",
+                        style: const TextStyle(fontSize: 16, color: Colors.black87),
+                        textAlign: TextAlign.center,
                       ),
-                    ),
+                      const SizedBox(height: 16),
+                      ElevatedButton.icon(
+                        onPressed: () => Navigator.of(context).popAndPushNamed('/'),
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Reintentar'),
+                      ),
+                    ],
                   ),
                 ),
               );
-            };
-            return child!;
-          },
-        );
-      },
+            },
+          );
+        },
+      ),
     );
   }
 }
