@@ -19,7 +19,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 2, // ✅ Aumentamos versión para forzar migración
+      version: 3, //  Actualizado a v3 para migración de es_habitual
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -36,18 +36,19 @@ class DatabaseHelper {
       )
     ''');
 
-    // Tabla: Clientes
+    // Tabla: Clientes  Agregada columna es_habitual
     await db.execute('''
       CREATE TABLE clientes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nombre TEXT NOT NULL,
         carnet_identidad TEXT,
         telefono TEXT,
+        es_habitual INTEGER DEFAULT 0,
         created_at TEXT
       )
     ''');
 
-    // Tabla: Proveedores (CON ci_identidad)
+    // Tabla: Proveedores
     await db.execute('''
       CREATE TABLE proveedores (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -58,7 +59,7 @@ class DatabaseHelper {
       )
     ''');
 
-    // Tabla: Productos (HU_GP - Gestionar Producto)
+    // Tabla: Productos
     await db.execute('''
       CREATE TABLE productos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -80,7 +81,7 @@ class DatabaseHelper {
       )
     ''');
 
-        // Tabla: Ventas (HU_RV - Registrar Venta)
+    // Tabla: Ventas
     await db.execute('''
       CREATE TABLE ventas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -101,7 +102,7 @@ class DatabaseHelper {
       )
     ''');
 
-    // Tabla: Detalles de Venta
+    // Tabla: Detalles de Venta Nombre consistente: venta_detalles
     await db.execute('''
       CREATE TABLE venta_detalles (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -126,7 +127,8 @@ class DatabaseHelper {
         FOREIGN KEY (proveedor_id) REFERENCES proveedores (id)
       )
     ''');
-  // Tabla: Detalles de Compra
+    
+    // Tabla: Detalles de Compra
     await db.execute('''
       CREATE TABLE compra_detalles (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -139,6 +141,7 @@ class DatabaseHelper {
         FOREIGN KEY (producto_id) REFERENCES productos (id)
       )
     ''');
+    
     // Tabla: Ventas Pausadas
     await db.execute('''
       CREATE TABLE ventas_pausadas (
@@ -151,13 +154,13 @@ class DatabaseHelper {
       )
     ''');
 
-    // Índices para mejor rendimiento
+    // Índices
     await db.execute('CREATE INDEX idx_productos_codigo ON productos (codigo)');
     await db.execute('CREATE INDEX idx_ventas_fecha ON ventas (fecha)');
   }
 
   void _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // Migración de versión 1 a 2: Agregar ci_identidad a proveedores
+    // Migración v1 → v2: ci_identidad en proveedores
     if (oldVersion < 2) {
       try {
         await db.execute('ALTER TABLE proveedores ADD COLUMN ci_identidad TEXT');
@@ -165,9 +168,16 @@ class DatabaseHelper {
         print('Columna ya existe o error: $e');
       }
     }
+    // Migración v2 → v3: es_habitual en clientes
+    if (oldVersion < 3) {
+      try {
+        await db.execute('ALTER TABLE clientes ADD COLUMN es_habitual INTEGER DEFAULT 0');
+      } catch (e) {
+        print('Columna es_habitual ya existe o error: $e');
+      }
+    }
   }
 
-  // Método para actualizar configuración
   Future<void> updateConfig(String key, dynamic value) async {
     final db = await database;
     await db.insert(
