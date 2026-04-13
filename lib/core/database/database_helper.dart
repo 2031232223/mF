@@ -19,7 +19,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 5, // ✅ Actualizado a v5 para asegurar migración completa
+      version: 6, // ✅ ACTUALIZADO A v6 PARA MIGRACIÓN DETALLE_VENTAS
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -223,6 +223,26 @@ class DatabaseHelper {
           )
         ''');
       } catch (e) { print('Tabla mermas ya existe: $e'); }
+    }
+    
+    // ✅ MIGRACIÓN CRÍTICA v5 -> v6: Asegura creación de tabla detalle_ventas
+    if (oldVersion < 6) {
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS detalle_ventas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            venta_id INTEGER NOT NULL,
+            producto_id INTEGER NOT NULL,
+            cantidad INTEGER NOT NULL,
+            precio_unitario REAL NOT NULL,
+            subtotal REAL NOT NULL,
+            FOREIGN KEY (venta_id) REFERENCES ventas(id),
+            FOREIGN KEY (producto_id) REFERENCES productos(id)
+          )
+        ''');
+      } catch (e) {
+        print('Tabla detalle_ventas ya existe o error crítico: $e');
+      }
     }
   }
 
