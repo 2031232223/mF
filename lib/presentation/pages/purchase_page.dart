@@ -223,7 +223,7 @@ class _PurchasePageState extends State<PurchasePage> {
                         )),
                       ],
                       value: _selectedSupplier?.id,
-                      // ✅ CORREGIDO: Manejo seguro de null safety en firstWhere
+                      // ✅ CORREGIDO: Manejo seguro de null safety
                       onChanged: (int? supplierId) {
                         setState(() {
                           if (supplierId == null) {
