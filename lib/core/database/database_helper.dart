@@ -19,7 +19,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 3, //  Actualizado a v3 para migración de es_habitual
+      version: 4, // ✅ Actualizado para forzar migración
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -36,7 +36,7 @@ class DatabaseHelper {
       )
     ''');
 
-    // Tabla: Clientes  Agregada columna es_habitual
+    // ✅ Tabla Clientes CON fecha_registro
     await db.execute('''
       CREATE TABLE clientes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,7 +44,7 @@ class DatabaseHelper {
         carnet_identidad TEXT,
         telefono TEXT,
         es_habitual INTEGER DEFAULT 0,
-        created_at TEXT
+        fecha_registro TEXT
       )
     ''');
 
@@ -102,9 +102,9 @@ class DatabaseHelper {
       )
     ''');
 
-    // Tabla: Detalles de Venta Nombre consistente: venta_detalles
+    // ✅ Tabla detalle_ventas (nombre consistente)
     await db.execute('''
-      CREATE TABLE venta_detalles (
+      CREATE TABLE detalle_ventas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         venta_id INTEGER NOT NULL,
         producto_id INTEGER NOT NULL,
@@ -127,7 +127,7 @@ class DatabaseHelper {
         FOREIGN KEY (proveedor_id) REFERENCES proveedores (id)
       )
     ''');
-    
+
     // Tabla: Detalles de Compra
     await db.execute('''
       CREATE TABLE compra_detalles (
@@ -141,7 +141,19 @@ class DatabaseHelper {
         FOREIGN KEY (producto_id) REFERENCES productos (id)
       )
     ''');
-    
+
+    // Tabla: Mermas
+    await db.execute('''
+      CREATE TABLE mermas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        producto_id INTEGER NOT NULL,
+        cantidad INTEGER NOT NULL,
+        motivo TEXT,
+        fecha TEXT NOT NULL,
+        FOREIGN KEY (producto_id) REFERENCES productos (id)
+      )
+    ''');
+
     // Tabla: Ventas Pausadas
     await db.execute('''
       CREATE TABLE ventas_pausadas (
@@ -157,6 +169,7 @@ class DatabaseHelper {
     // Índices
     await db.execute('CREATE INDEX idx_productos_codigo ON productos (codigo)');
     await db.execute('CREATE INDEX idx_ventas_fecha ON ventas (fecha)');
+    await db.execute('CREATE INDEX idx_detalle_ventas_venta ON detalle_ventas (venta_id)');
   }
 
   void _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -165,15 +178,43 @@ class DatabaseHelper {
       try {
         await db.execute('ALTER TABLE proveedores ADD COLUMN ci_identidad TEXT');
       } catch (e) {
-        print('Columna ya existe o error: $e');
+        print('Columna ya existe: $e');
       }
     }
+    
     // Migración v2 → v3: es_habitual en clientes
     if (oldVersion < 3) {
       try {
         await db.execute('ALTER TABLE clientes ADD COLUMN es_habitual INTEGER DEFAULT 0');
       } catch (e) {
-        print('Columna es_habitual ya existe o error: $e');
+        print('Columna ya existe: $e');
+      }
+    }
+    
+    // ✅ Migración v3 → v4: fecha_registro en clientes + tabla detalle_ventas
+    if (oldVersion < 4) {
+      try {
+        await db.execute('ALTER TABLE clientes ADD COLUMN fecha_registro TEXT');
+      } catch (e) {
+        print('Columna fecha_registro ya existe o error: $e');
+      }
+      
+      // Crear tabla detalle_ventas si no existe
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS detalle_ventas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            venta_id INTEGER NOT NULL,
+            producto_id INTEGER NOT NULL,
+            cantidad INTEGER NOT NULL,
+            precio_unitario REAL NOT NULL,
+            subtotal REAL NOT NULL,
+            FOREIGN KEY (venta_id) REFERENCES ventas (id),
+            FOREIGN KEY (producto_id) REFERENCES productos (id)
+          )
+        ''');
+      } catch (e) {
+        print('Tabla detalle_ventas ya existe o error: $e');
       }
     }
   }
