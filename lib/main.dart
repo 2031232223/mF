@@ -1,4 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // ✅ Importante para SystemChrome
+
+// IMPORTS DE PÁGINAS (USANDO settings_page CORRECTO)
+import 'presentation/pages/pos_page.dart';
+import 'presentation/pages/inventory_page.dart';
+import 'presentation/pages/purchases_page.dart';
+import 'presentation/pages/reports_page.dart';
+import 'presentation/pages/settings_page.dart'; // ✅ Nombre correcto verificado
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,7 +42,7 @@ class MyApp extends StatelessWidget {
         '/inventory': (context) => InventoryPage(),
         '/purchases': (context) => PurchasesPage(),
         '/reports': (context) => ReportsPage(),
-        '/settings': (context) => ConfigPage(),
+        '/settings': (context) => SettingsPage(), // ✅ Usa settings_page
       },
     );
   }
