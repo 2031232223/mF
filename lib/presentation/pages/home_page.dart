@@ -1,18 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../core/utils/theme_provider.dart';
-import 'pos_page.dart';
-import 'product_list_page.dart';
-import 'purchase_page.dart';
-import 'reports_page.dart';
-import 'settings_page.dart';
-import 'inventory_adjustments_page.dart';
-import 'waste_page.dart';
-import 'backup_page.dart';
-import 'supplier_page.dart';
-import 'customer_page.dart';
-import 'credit_payments_page.dart';
-import 'dashboard_page.dart';
+import '../core/database/database_helper.dart';
+import '../pages/pos_page.dart';
+import '../pages/inventory_page.dart';
+import '../pages/purchases_page.dart';
+import '../pages/reports_page.dart';
+import '../pages/config_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -22,71 +14,89 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _selectedIndex = 0;
+  int _currentIndex = 0;
+  
+  // Variables globales para mantener estado limpio
+  bool _isTransitioning = false;
 
   final List<Widget> _pages = [
-    const PosPage(),
-    const ProductListPage(),
-    const PurchasePage(),
+    const PosPage(onSaleCompleted: _onSaleCompleted),
+    const InventoryPage(),
+    const PurchasesPage(),
     const ReportsPage(),
-    SettingsPage(),
+    const ConfigPage(),
   ];
+
+  // ✅ Limpieza al cambiar de pestaña
+  void _onSaleCompleted() {
+    setState(() {});
+  }
+
+  void _onTabChanged(int index) {
+    // ✅ Resetear estado previo
+    if (_isTransitioning) return;
+    setState(() => _isTransitioning = true);
+    
+    if (index != _currentIndex) {
+      // Forzar reset de DB entre transiciones importantes
+      if (index == 1  index == 2  index == 3) {
+        // Volver a Inventario/Compras/Reportes
+        Future.microtask(() => DatabaseHelper.instance.reset());
+      }
+      
+      setState(() => _currentIndex = index);
+      
+      // ✅ Dejar tiempo para cleanup
+      Future.delayed(const Duration(milliseconds: 100), () {        if (mounted) {
+          setState(() => _isTransitioning = false);
+        }
+      });
+    } else {
+      setState(() => _isTransitioning = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ThemeProvider>(
-      builder: (context, theme, _) => Scaffold(
-        body: _pages[_selectedIndex],
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: _selectedIndex >= 0 && _selectedIndex < _pages.length ? _selectedIndex : 0,
-          onDestinationSelected: (index) => setState(() => _selectedIndex = index),
-          destinations: const [
-            NavigationDestination(icon: Icon(Icons.point_of_sale), label: 'POS'),
-            NavigationDestination(icon: Icon(Icons.inventory_2), label: 'Inventario'),
-            NavigationDestination(icon: Icon(Icons.shopping_cart), label: 'Compras'),
-            NavigationDestination(icon: Icon(Icons.analytics), label: 'Reportes'),
-            NavigationDestination(icon: Icon(Icons.settings), label: 'Config'),
-          ],
-        ),
-        drawer: Drawer(
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              DrawerHeader(
-                decoration: BoxDecoration(color: Theme.of(context).primaryColor),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.shopping_bag, size: 40, color: Colors.white),
-                    const SizedBox(height: 10),
-                    Text('Nova ADEN', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white)),
-                    Text('v1.0.0', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white70)),
-                  ],
-                ),
-              ),
-              // ✅ DASHBOARD AGREGADO AL MENÚ
-              ListTile(
-                leading: const Icon(Icons.dashboard),
-                title: const Text('📊 Panel de Control'),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const DashboardPage()));
-                },
-              ),
-              const Divider(),
-              ListTile(leading: const Icon(Icons.supervisor_account), title: const Text('Clientes'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerPage()))),
-              ListTile(leading: const Icon(Icons.store), title: const Text('Proveedores'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SupplierPage()))),
-              ListTile(leading: const Icon(Icons.account_balance_wallet), title: const Text('Pagos Fiados'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreditPaymentsPage()))),
-              ListTile(leading: const Icon(Icons.adjust), title: const Text('Ajustes Inventario'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InventoryAdjustmentsPage()))),
-              ListTile(leading: const Icon(Icons.delete_sweep), title: const Text('Mermas'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WastePage()))),
-              ListTile(leading: const Icon(Icons.cloud_upload), title: const Text('Backup'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BackupPage()))),
-              const Divider(),
-              ListTile(leading: const Icon(Icons.help), title: const Text('Ayuda'), onTap: () => Navigator.pop(context)),
-              ListTile(leading: const Icon(Icons.feedback), title: const Text('Feedback'), onTap: () => Navigator.pop(context)),
-            ],
-          ),
-        ),
+    return Scaffold(
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _pages.map((page) {
+          // Agregar disposal listener a cada página
+          return WillPopScope(
+            onWillPop: () async => false, // Deshabilitar back button
+            child: Stack(
+              children: [
+                page,
+                if (_isTransitioning)
+                  Positioned.fill(
+                    child: Container(
+                      color: Colors.black.withOpacity(0.3),
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          );
+        }).toList(),
       ),
+      
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: _onTabChanged,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Theme.of(context).primaryColor,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.receipt_long), label: 'POS'),
+          BottomNavigationBarItem(icon: Icon(Icons.inventory_2), label: 'Inventario'),
+          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Compras'),
+          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Reportes'),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Config'),
+        ],      ),
     );
   }
 }
