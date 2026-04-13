@@ -3,8 +3,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
-import '../models/sale.dart'; // Importa solo una vez
-// ✅ IMPORTANTE: No definas class SaleLine aquí. Usa la que está en sale.dart
+import '../models/sale.dart'; // ✅ IMPORTANTE: Solo importa desde models, NO definas clase local
 
 class PdfGenerator {
   static Future<File?> generateSaleTicket({
