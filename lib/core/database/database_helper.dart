@@ -19,7 +19,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 6, // ✅ VERSIÓN v6 COMPLETA
+      version: 6, // ✅ Versión establecida para migración
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -210,7 +210,6 @@ class DatabaseHelper {
       } catch (e) { print('Tabla mermas ya existe: $e'); }
     }
     
-    // ✅ MIGRACIÓN CRÍTICA v5→v6
     if (oldVersion < 6) {
       try {
         await db.execute('''
@@ -225,9 +224,7 @@ class DatabaseHelper {
             FOREIGN KEY (producto_id) REFERENCES productos(id)
           )
         ''');
-      } catch (e) {
-        print('Tabla detalle_ventas ya existe o error crítico: $e');
-      }
+      } catch (e) { print('Tabla detalle_ventas ya existe o error crítico: $e'); }
     }
   }
 
