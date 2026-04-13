@@ -3,8 +3,8 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
-import '../models/sale.dart';
-// ✅ IMPORTANTE: Usa SaleLine DE SALE.DART, no definas otro
+import '../models/sale.dart'; // Importa solo una vez
+// ✅ IMPORTANTE: No definas class SaleLine aquí. Usa la que está en sale.dart
 
 class PdfGenerator {
   static Future<File?> generateSaleTicket({
@@ -28,16 +28,14 @@ class PdfGenerator {
                 pw.Divider(),
                 pw.SizedBox(height: 5),
                 
-                // Información de la venta
                 pw.Text('No. Venta: ${sale.id}'),
                 pw.Text('Fecha: ${_formatDate(sale.fecha)}'),
                 if (sale.clienteId != null) pw.Text('Cliente ID: ${sale.clienteId}'),
-                
                 pw.SizedBox(height: 10),
+                
                 pw.Divider(),
                 pw.SizedBox(height: 5),
                 
-                // Tabla de productos
                 pw.Table(
                   border: pw.TableBorder.all(),
                   children: [
@@ -59,9 +57,6 @@ class PdfGenerator {
                 
                 pw.SizedBox(height: 10),
                 pw.Divider(),
-                pw.SizedBox(height: 5),
-                
-                // Totales
                 pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
                   pw.Text('TOTAL:', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
                   pw.Text('\$${sale.total.toStringAsFixed(2)}', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
@@ -69,27 +64,17 @@ class PdfGenerator {
                 
                 if (sale.montoPagado > 0) ...[
                   pw.SizedBox(height: 5),
-                  pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
-                    pw.Text('Pagado:'),
-                    pw.Text('\$${sale.montoPagado.toStringAsFixed(2)}'),
-                  ]),
+                  pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [pw.Text('Pagado:'), pw.Text('\$${sale.montoPagado.toStringAsFixed(2)}')]),
                 ],
                 
                 if (sale.montoPendiente > 0) ...[
                   pw.SizedBox(height: 5),
-                  pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
-                    pw.Text('Pendiente:', style: pw.TextStyle(color: PdfColors.red)),
-                    pw.Text('\$${sale.montoPendiente.toStringAsFixed(2)}', style: pw.TextStyle(color: PdfColors.red)),
-                  ]),
+                  pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [pw.Text('Pendiente:', style: pw.TextStyle(color: PdfColors.red)), pw.Text('\$${sale.montoPendiente.toStringAsFixed(2)}', style: pw.TextStyle(color: PdfColors.red))]),
                 ],
                 
                 pw.SizedBox(height: 15),
                 pw.Divider(),
-                pw.SizedBox(height: 10),
-                
-                // Pie
                 pw.Center(child: pw.Text('Gracias por su compra!')),
-                pw.SizedBox(height: 5),
                 pw.Center(child: pw.Text("nova-ADEN - Sistema de Gestion", style: pw.TextStyle(fontSize: 8, color: PdfColors.grey))),
               ],
             );
