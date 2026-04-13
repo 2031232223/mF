@@ -944,10 +944,20 @@ class _PosPageState extends State<PosPage> {
                                 onChanged: (v) => setState(() => _isCredit = v ?? false),
                                 controlAffinity: ListTileControlAffinity.leading,
                                 contentPadding: EdgeInsets.zero,
-                                // ✅ Colores de texto adaptables
-                                textColor: Theme.of(context).brightness == Brightness.dark 
-                                    ? Colors.grey[300] 
-                                    : null,
+                                // ✅ CORREGIDO: titleTextStyle y subtitleTextStyle para Flutter 3.22+
+                                titleTextStyle: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).brightness == Brightness.dark 
+                                      ? Colors.grey[300] 
+                                      : null,
+                                ),
+                                subtitleTextStyle: TextStyle(
+                                  color: Theme.of(context).brightness == Brightness.dark 
+                                      ? Colors.grey[400] 
+                                      : null,
+                                ),
+                                activeColor: Colors.blue,
+                                checkColor: Colors.white,
                               ),
                             ),
                             SizedBox(
