@@ -945,15 +945,25 @@ class _PosPageState extends State<PosPage> {
                                 controlAffinity: ListTileControlAffinity.leading,
                                 contentPadding: EdgeInsets.zero,
                                 // ✅ Colores de texto adaptables
-                                textColor: Theme.of(context).brightness == Brightness.dark 
-                                    ? Colors.grey[300] 
-                                    : null,
+                               titleTextStyle: TextStyle(
+                                 fontWeight: FontWeight.bold,
+                                 color: Theme.of(context).brightness == Brightness.dark 
+                                     ? Colors.grey[300] 
+                                     : null,
+                               ),
+                               subtitleTextStyle: TextStyle(
+                                 color: Theme.of(context).brightness == Brightness.dark 
+                                     ? Colors.grey[400] 
+                                     : null,
                               ),
+                              activeColor: Colors.blue,
+                              checkColor: Colors.white,
                             ),
+                        ),
                             SizedBox(
                               width: 180,
                               height: 50,
-                              child: ElevatedButton.icon(
+                            child: ElevatedButton.icon(
                                 onPressed: _showCartBottomSheet,
                                 icon: const Icon(Icons.shopping_cart, size: 20),
                                 label: const Text('VER CARRITO', style: TextStyle(fontWeight: FontWeight.bold)),
