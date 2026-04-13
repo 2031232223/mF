@@ -46,6 +46,7 @@ class Sale {
   }
 }
 
+// ✅ Verifica que esta clase exista SOLO UNA vez en todo el proyecto (no dupliquarla en pdf_generator)
 class SaleLine {
   final int? id;
   final int ventaId;
