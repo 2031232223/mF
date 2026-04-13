@@ -37,15 +37,15 @@ class ProductRepository {
   Future<List<Product>> searchProducts(String q) async {
     final db = await _db;
     final results = await db.query('productos',
-      where: 'nombre LIKE ? OR codigo LIKE ?',
-      whereArgs: ['%$q%', '%$q%']);
+        where: 'nombre LIKE ? OR codigo LIKE ?',
+        whereArgs: ['%$q%', '%$q%']);
     return results.map((m) => Product.fromMap(m)).toList();
   }
 
   Future<List<Product>> getLowStockProducts() async {
     final db = await _db;
     final results = await db.query('productos',
-      where: 'stockActual <= stockMinimo');
+        where: 'stockActual <= stockMinimo');
     return results.map((m) => Product.fromMap(m)).toList();
   }
 
@@ -99,14 +99,14 @@ class ProductRepository {
     final fechaLimite = DateTime.now().subtract(Duration(days: dias));
     return await db.rawQuery(
       '''SELECT p.id, p.nombre, p.codigo,
-         SUM(CASE WHEN vd.cantidad > 0 THEN vd.cantidad ELSE 0 END) as vendidas,
-         p.stockActual
-         FROM productos p
-         LEFT JOIN venta_detalles vd ON p.id = vd.producto_id
-         LEFT JOIN ventas v ON vd.venta_id = v.id AND v.fecha >= ?
-         WHERE p.activo = 1
-         GROUP BY p.id, p.nombre, p.codigo, p.stockActual
-         ORDER BY vendidas DESC''',
+      SUM(CASE WHEN vd.cantidad > 0 THEN vd.cantidad ELSE 0 END) as vendidas,
+      p.stockActual
+      FROM productos p
+      LEFT JOIN venta_detalles vd ON p.id = vd.producto_id
+      LEFT JOIN ventas v ON vd.venta_id = v.id AND v.fecha >= ?
+      WHERE p.activo = 1
+      GROUP BY p.id, p.nombre, p.codigo, p.stockActual
+      ORDER BY vendidas DESC''',
       [fechaLimite.toIso8601String()],
     );
   }
@@ -116,18 +116,20 @@ class ProductRepository {
     final db = await _db;
     return await db.rawQuery(
       '''SELECT id, nombre, codigo, costo, precioVenta,
-         ((precioVenta - COALESCE(costo, 0)) / NULLIF(precioVenta, 0)) * 100 as margenPorcentaje,
-         (precioVenta - COALESCE(costo, 0)) as margenAbsoluto,
-         stockActual
-         FROM productos WHERE activo = 1
-         ORDER BY margenPorcentaje DESC''',
+      ((precioVenta - COALESCE(costo, 0)) / NULLIF(precioVenta, 0)) * 100 as margenPorcentaje,
+      (precioVenta - COALESCE(costo, 0)) as margenAbsoluto,
+      stockActual
+      FROM productos WHERE activo = 1
+      ORDER BY margenPorcentaje DESC''',
     );
   }
+
   // RF 71, 73, 74
   Future<void> cambiarUnidadMedida(int productId, String nuevaUnidad) async {
     final db = await _db;
     await db.update('productos', {'unidadMedida': nuevaUnidad}, where: 'id = ?', whereArgs: [productId]);
   }
+
   Future<int> duplicarProducto(int productId) async {
     final p = await getProductById(productId);
     if (p != null) {
@@ -135,10 +137,12 @@ class ProductRepository {
     }
     return -1;
   }
+
   Future<void> archivarProducto(int productId, bool activo) async {
     final db = await _db;
     await db.update('productos', {'activo': activo ? 1 : 0}, where: 'id = ?', whereArgs: [productId]);
   }
+
   // RF 36
   Future<int> actualizarPreciosMasivo(List<int> ids, double porc, bool aumento) async {
     final db = await _db;
@@ -146,11 +150,28 @@ class ProductRepository {
     for (var id in ids) {
       final p = await getProductById(id);
       if (p != null) {
-        final nuevo = aumento ? p.precioVenta * (1 + porc/100) : p.precioVenta * (1 - porc/100);
+        final nuevo = aumento ? p.precioVenta * (1 + porc / 100) : p.precioVenta * (1 - porc / 100);
         await db.update('productos', {'precioVenta': nuevo}, where: 'id = ?', whereArgs: [id]);
         count++;
       }
     }
     return count;
+  }
+
+  // [NUEVO] Método requerido por SaleRepository para actualizar stock tras una venta
+  Future<void> updateProductStock(int productId, int cantidad) async {
+    final db = await _db;
+    final product = await getProductById(productId);
+    if (product == null) throw Exception('Producto no encontrado');
+    
+    final nuevoStock = product.stockActual - cantidad;
+    if (nuevoStock < 0) throw Exception('Stock insuficiente para producto ID $productId');
+    
+    await db.update(
+      'productos',
+      {'stockActual': nuevoStock, 'updated_at': DateTime.now().toIso8601String()},
+      where: 'id = ?',
+      whereArgs: [productId],
+    );
   }
 }
