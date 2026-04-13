@@ -17,10 +17,10 @@ class SaleRepository {
   ) async {
     final db = await DatabaseHelper.instance.database;
     
-    return await db.transaction((txn) async {
-      int? ventaId;
-      
-      try {
+    try {
+      return await db.transaction((txn) async {
+        int? ventaId;
+        
         // Insertar venta principal
         ventaId = await txn.insert('ventas', {
           'cliente_id': clienteId,
@@ -49,11 +49,11 @@ class SaleRepository {
         }
 
         return ventaId;
-      } catch (e) {
-        print('❌ Error en createSale: $e');
-        rethrow;
-      }
-    });
+      });
+    } catch (e) {
+      print('❌ Error en createSale: $e');
+      rethrow;
+    }
   }
 
   Future<List<Sale>> getAllSales() async {
