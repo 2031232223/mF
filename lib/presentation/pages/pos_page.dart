@@ -40,17 +40,41 @@ class _PosPageState extends State<PosPage> {
   bool _applyDiscount = false;
   double _discountPercent = 0.0;
   int? _lastSaleId;
+  
+  // ✅ Variable para nombre de empresa configurable
+  String _nombreEmpresa = 'Nova Aden';
 
   @override
   void initState() {
     super.initState();
     _loadData();
+    _cargarConfigEmpresa();
   }
 
-  @override  void dispose() {
+  @override
+  void dispose() {
     _searchController.dispose();
     _barcodeController.dispose();
     super.dispose();
+  }
+
+  // ✅ Cargar nombre de empresa desde configuración
+  Future<void> _cargarConfigEmpresa() async {
+    try {
+      final db = await DatabaseHelper.instance.database;
+      final result = await db.query(
+        'config',
+        where: 'key = ?',
+        whereArgs: ['nombre_empresa'],
+      );
+      if (result.isNotEmpty && result.first['value'] != null) {
+        setState(() {
+          _nombreEmpresa = result.first['value'] as String;
+        });
+      }
+    } catch (e) {
+      // Mantener valor por defecto 'Nova Aden'
+    }
   }
 
   Future<void> _loadData() async {
@@ -96,7 +120,8 @@ class _PosPageState extends State<PosPage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('📷 Escanear Código de Barras'),        content: Column(
+        title: const Text('📷 Escanear Código de Barras'),
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text('Ingrese el código manualmente o use el escáner:', style: TextStyle(fontSize: 14)),
@@ -145,7 +170,8 @@ class _PosPageState extends State<PosPage> {
     setState(() {
       final idx = _cart.indexWhere((c) => c.productoId == product.id);
       if (idx >= 0) {
-        if (_cart[idx].cantidad < product.stockActual) {          _cart[idx].cantidad++;
+        if (_cart[idx].cantidad < product.stockActual) {
+          _cart[idx].cantidad++;
         }
       } else {
         _cart.add(CartItem(
@@ -194,7 +220,8 @@ class _PosPageState extends State<PosPage> {
         const SnackBar(content: Text('⚠️ Agrega productos'), backgroundColor: Colors.orange),
       );
       return;
-    }    final name = await showDialog<String>(
+    }
+    final name = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('⏸️ Pausar Venta'),
@@ -240,25 +267,21 @@ class _PosPageState extends State<PosPage> {
     }
   }
 
-  // ✅ MÉTODO CORREGIDO: Todas las variables con 'final' LOCALMENTE
   Future<void> _completeSale() async {
     if (_cart.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(        const SnackBar(content: Text('⚠️ Carrito vacío'), backgroundColor: Colors.orange),
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('⚠️ Carrito vacío'), backgroundColor: Colors.orange),
       );
       return;
     }
 
     try {
-      // Variables LOCALES con final - ¡NO usar sin 'final'!
       final totalCUP = _totalCUP;
-      
       final paidCUP = _selectedCurrency == 'CUP' 
           ? _amountPaid 
           : _amountPaid * (_selectedCurrency == 'MLC' ? _mlcRate : _usdRate);
-      
       final pendingCUP = _isCredit ? (totalCUP - paidCUP) : 0.0;
 
-      // Validar pago con cálculo correcto del faltante
       if (!_isCredit && paidCUP < (totalCUP - 0.01)) {
         final faltanteEnMoneda = _selectedCurrency == 'CUP' 
             ? (totalCUP - _amountPaid)
@@ -273,7 +296,6 @@ class _PosPageState extends State<PosPage> {
         return;
       }
 
-      // Crear líneas de venta
       final saleLines = _cart.map((item) => SaleLine(
         ventaId: 0,
         productoId: item.productoId,
@@ -282,7 +304,6 @@ class _PosPageState extends State<PosPage> {
         subtotal: item.subtotalCUP,
       )).toList();
 
-      // Guardar venta con moneda y tasa
       final saleId = await _saleRepo.createSale(
         _selectedCustomer?.id,
         saleLines,
@@ -295,7 +316,6 @@ class _PosPageState extends State<PosPage> {
       );
       _lastSaleId = saleId is int ? saleId : null;
 
-      // Mostrar confirmación en moneda correcta
       String mensaje = _selectedCurrency == 'CUP'
           ? '✅ Venta: ${totalCUP.toStringAsFixed(2)} CUP'
           : '✅ Venta: ${_amountPaid.toStringAsFixed(2)} $_selectedCurrency (${totalCUP.toStringAsFixed(2)} CUP)';
@@ -308,7 +328,7 @@ class _PosPageState extends State<PosPage> {
         ),
       );
 
-      // Preguntar por PDF - usar método original existente
+      // ✅ Diálogo de confirmación PDF: Sí (izq) / No (der), centrados con separación
       if (mounted) {
         final shouldGeneratePdf = await showDialog<bool>(
           context: context,
@@ -316,14 +336,34 @@ class _PosPageState extends State<PosPage> {
             title: const Text('🧾 Ticket de Venta'),
             content: const Text('¿Desea generar y compartir el ticket en PDF?'),
             actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('No'),
-              ),
-              ElevatedButton.icon(
-                onPressed: () => Navigator.pop(ctx, true),
-                icon: const Icon(Icons.picture_as_pdf),
-                label: const Text('Generar'),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // ✅ SÍ a la izquierda
+                    SizedBox(
+                      width: 100,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text('Sí'),
+                      ),
+                    ),
+                    const SizedBox(width: 16), // ✅ Separación entre botones
+                    // ✅ NO a la derecha
+                    SizedBox(
+                      width: 100,
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: const Text('No'),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -333,15 +373,20 @@ class _PosPageState extends State<PosPage> {
           final sale = await _saleRepo.getSaleById(_lastSaleId!);
           if (sale != null) {
             final saleLines = await _saleRepo.getSaleLines(sale.id!);
-            await PdfGenerator.generateSaleTicket(sale, saleLines);
+            // ✅ Pasar nombre de empresa configurable al generador de PDF
+            await PdfGenerator.generateSaleTicket(
+              sale, 
+              saleLines, 
+              nombreEmpresa: _nombreEmpresa,
+            );
           }
         }
       }
 
-      // Resetear formulario
       if (widget.onSaleCompleted != null) widget.onSaleCompleted!();
       _clearCart();
-      _amountPaid = 0.0;      _isCredit = false;
+      _amountPaid = 0.0;
+      _isCredit = false;
       _applyDiscount = false;
       _discountPercent = 0.0;
       _selectedCustomer = null;
@@ -390,7 +435,8 @@ class _PosPageState extends State<PosPage> {
                   nombre: nc.text.trim(),
                   carnetIdentidad: cc.text.trim(),
                   telefono: tc.text.trim(),
-                ));                await _loadData();
+                ));
+                await _loadData();
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('✅ Cliente registrado'), backgroundColor: Colors.green),
                 );
@@ -439,11 +485,12 @@ class _PosPageState extends State<PosPage> {
             children: [
               DropdownButton<String>(
                 value: _selectedCurrency,
-                dropdownColor: Colors.blue[800],                underline: const SizedBox(),
+                dropdownColor: Colors.blue[800],
+                underline: const SizedBox(),
                 items: const [
                   DropdownMenuItem(value: 'CUP', child: Text('🇨🇺 CUP', style: TextStyle(color: Colors.white))),
                   DropdownMenuItem(value: 'MLC', child: Text('💳 MLC', style: TextStyle(color: Colors.white))),
-                  DropdownMenuItem(value: 'USD', child: Text('🇺 USD', style: TextStyle(color: Colors.white))),
+                  DropdownMenuItem(value: 'USD', child: Text('🇺🇸 USD', style: TextStyle(color: Colors.white))),
                 ],
                 onChanged: (v) {
                   if (v != null) {
@@ -488,7 +535,8 @@ class _PosPageState extends State<PosPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text('Cliente:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              TextButton.icon(onPressed: _showNewCustomerDialog, icon: const Icon(Icons.person_add), label: const Text('Nuevo')),            ],
+              TextButton.icon(onPressed: _showNewCustomerDialog, icon: const Icon(Icons.person_add), label: const Text('Nuevo')),
+            ],
           ),
           const SizedBox(height: 8),
           DropdownButtonFormField<Customer>(
@@ -537,8 +585,9 @@ class _PosPageState extends State<PosPage> {
     );
   }
 
-  Widget _buildDiscountSection(Function setModalState) {    return Card(
-      color: Colors.purple[50],
+  Widget _buildDiscountSection(Function setModalState) {
+    return Card(
+      color: Theme.of(context).brightness == Brightness.dark ? Colors.purple[900] : Colors.purple[50],
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -581,12 +630,13 @@ class _PosPageState extends State<PosPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Ahorro:', style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.bold)),
-                  Text('-${_selectedCurrency == 'CUP' ? '\$' : ''}${_discountAmount.toStringAsFixed(2)}', style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text('Ahorro:', style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.green[300] : Colors.green[700], fontWeight: FontWeight.bold)),
+                  Text('-${_selectedCurrency == 'CUP' ? '\$' : ''}${_discountAmount.toStringAsFixed(2)}', style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.green[300] : Colors.green[700], fontWeight: FontWeight.bold, fontSize: 16)),
                 ],
               ),
             ],
-          ],        ),
+          ],
+        ),
       ),
     );
   }
@@ -595,20 +645,47 @@ class _PosPageState extends State<PosPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        // ✅ Modo oscuro: fondo blanco → gris oscuro
+        color: Theme.of(context).brightness == Brightness.dark 
+            ? const Color(0xFF1E1E1E) 
+            : Colors.grey[100],
         boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4, offset: const Offset(0, -2))],
       ),
       child: Column(
         children: [
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            const Text('Subtotal:', style: TextStyle(fontSize: 16)),
-            Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_subtotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 16)),
+            Text('Subtotal:', style: TextStyle(
+              fontSize: 16,
+              // ✅ Texto visible en modo oscuro
+              color: Theme.of(context).brightness == Brightness.dark 
+                  ? Colors.grey[300] 
+                  : Colors.black,
+            )),
+            Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_subtotal.toStringAsFixed(2)}', 
+              style: TextStyle(
+                fontSize: 16,
+                color: Theme.of(context).brightness == Brightness.dark 
+                    ? Colors.white 
+                    : Colors.black,
+              ),
+            ),
           ]),
           const SizedBox(height: 8),
           if (_applyDiscount)
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Text('Descuento:', style: TextStyle(color: Colors.green[700])),
-              Text('-${_selectedCurrency == 'CUP' ? '\$' : ''}${_discountAmount.toStringAsFixed(2)}', style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.bold)),
+              Text('Descuento:', style: TextStyle(
+                color: Theme.of(context).brightness == Brightness.dark 
+                    ? Colors.green[300] 
+                    : Colors.green[700],
+              )),
+              Text('-${_selectedCurrency == 'CUP' ? '\$' : ''}${_discountAmount.toStringAsFixed(2)}', 
+                style: TextStyle(
+                  color: Theme.of(context).brightness == Brightness.dark 
+                      ? Colors.green[300] 
+                      : Colors.green[700], 
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ]),
           const SizedBox(height: 8),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
@@ -620,7 +697,13 @@ class _PosPageState extends State<PosPage> {
           const SizedBox(height: 12),
           const Divider(),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text('Pagado:', style: TextStyle(fontSize: 16, color: Colors.grey[700])),
+            Text('Pagado:', style: TextStyle(
+              fontSize: 16, 
+              // ✅ Color de texto adaptable
+              color: Theme.of(context).brightness == Brightness.dark 
+                  ? Colors.grey[400] 
+                  : Colors.grey[700],
+            )),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: TextField(
@@ -630,14 +713,34 @@ class _PosPageState extends State<PosPage> {
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                   prefixIcon: const Icon(Icons.payments, color: Colors.blue),
                   hintText: '0.00',
+                  // ✅ Hint visible en modo oscuro
+                  hintStyle: TextStyle(
+                    color: Theme.of(context).brightness == Brightness.dark 
+                        ? Colors.grey[500] 
+                        : Colors.grey,
+                  ),
+                ),
+                style: TextStyle(
+                  // ✅ Texto del input visible en modo oscuro
+                  color: Theme.of(context).brightness == Brightness.dark 
+                      ? Colors.white 
+                      : Colors.black,
                 ),
                 onChanged: (val) {
                   setState(() {
                     _amountPaid = double.tryParse(val) ?? 0.0;
                   });
-                },              ),
+                },
+              ),
             ),
-            Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_amountPaidForeign.toStringAsFixed(2)}', style: TextStyle(fontSize: 16, color: Colors.grey[700])),
+            Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_amountPaidForeign.toStringAsFixed(2)}', 
+              style: TextStyle(
+                fontSize: 16, 
+                color: Theme.of(context).brightness == Brightness.dark 
+                    ? Colors.grey[400] 
+                    : Colors.grey[700],
+              ),
+            ),
           ]),
           const SizedBox(height: 8),
           if (!_isCredit) ...[
@@ -684,7 +787,8 @@ class _PosPageState extends State<PosPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(        title: Row(
+      appBar: AppBar(
+        title: Row(
           children: [
             const Text('Punto de Venta'),
             const SizedBox(width: 12),
@@ -733,7 +837,8 @@ class _PosPageState extends State<PosPage> {
                 Expanded(
                   child: ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: _products.where((p) =>                        p.nombre.toLowerCase().contains(_searchController.text.toLowerCase()) ||
+                    itemCount: _products.where((p) => 
+                        p.nombre.toLowerCase().contains(_searchController.text.toLowerCase()) ||
                         p.codigo.toLowerCase().contains(_searchController.text.toLowerCase())).length,
                     itemBuilder: (ctx, i) {
                       final filtered = _products.where((prod) =>
@@ -747,12 +852,32 @@ class _PosPageState extends State<PosPage> {
                             backgroundColor: p.stockActual > 0 ? Colors.blue : Colors.grey,
                             child: Icon(Icons.inventory_2, color: Colors.white),
                           ),
-                          title: Text(p.nombre, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          title: Text(p.nombre, style: TextStyle(
+                            fontWeight: FontWeight.bold, 
+                            fontSize: 16,
+                            // ✅ Título visible en modo oscuro
+                            color: Theme.of(context).brightness == Brightness.dark 
+                                ? Colors.white 
+                                : Colors.black,
+                          )),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Stock: ${p.stockActual}'),
-                              Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_convert(p.precioVenta).toStringAsFixed(2)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                              Text('Stock: ${p.stockActual}', 
+                                style: TextStyle(
+                                  color: Theme.of(context).brightness == Brightness.dark 
+                                      ? Colors.grey[400] 
+                                      : Colors.black54,
+                                ),
+                              ),
+                              Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_convert(p.precioVenta).toStringAsFixed(2)}', 
+                                style: TextStyle(
+                                  color: Theme.of(context).brightness == Brightness.dark 
+                                      ? Colors.green[300] 
+                                      : Colors.green, 
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ],
                           ),
                           trailing: ElevatedButton(
@@ -768,7 +893,10 @@ class _PosPageState extends State<PosPage> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      // ✅ Fondo adaptable: blanco → gris oscuro en modo oscuro
+                      color: Theme.of(context).brightness == Brightness.dark 
+                          ? const Color(0xFF1E1E1E) 
+                          : Colors.white,
                       boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8, offset: const Offset(0, -2))],
                     ),
                     child: Column(
@@ -780,9 +908,27 @@ class _PosPageState extends State<PosPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('${_cart.length} productos', style: const TextStyle(fontSize: 14, color: Colors.grey)),
-                                  Text('Total: ${_selectedCurrency == 'CUP' ? '\$' : ''}${_total.toStringAsFixed(2)} $_selectedCurrency', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green)),
-                                ],                              ),
+                                  Text('${_cart.length} productos', 
+                                    style: TextStyle(
+                                      fontSize: 14, 
+                                      // ✅ Texto gris visible en modo oscuro
+                                      color: Theme.of(context).brightness == Brightness.dark 
+                                          ? Colors.grey[400] 
+                                          : Colors.grey,
+                                    ),
+                                  ),
+                                  Text('Total: ${_selectedCurrency == 'CUP' ? '\$' : ''}${_total.toStringAsFixed(2)} $_selectedCurrency', 
+                                    style: TextStyle(
+                                      fontSize: 20, 
+                                      fontWeight: FontWeight.bold, 
+                                      // ✅ Total visible en modo oscuro
+                                      color: Theme.of(context).brightness == Brightness.dark 
+                                          ? Colors.green[300] 
+                                          : Colors.green,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                             IconButton(icon: const Icon(Icons.pause_circle, size: 32), onPressed: _pauseSale, tooltip: 'Pausar venta'),
                           ],
@@ -798,6 +944,10 @@ class _PosPageState extends State<PosPage> {
                                 onChanged: (v) => setState(() => _isCredit = v ?? false),
                                 controlAffinity: ListTileControlAffinity.leading,
                                 contentPadding: EdgeInsets.zero,
+                                // ✅ Colores de texto adaptables
+                                textColor: Theme.of(context).brightness == Brightness.dark 
+                                    ? Colors.grey[300] 
+                                    : null,
                               ),
                             ),
                             SizedBox(
@@ -861,4 +1011,3 @@ class CartItem {
     );
   }
 }
-    
