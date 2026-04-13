@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../../core/models/product.dart';
 import '../../core/models/supplier.dart';
 import '../../core/database/database_helper.dart';
@@ -176,14 +175,10 @@ class _PurchasePageState extends State<PurchasePage> {
                             context,
                             MaterialPageRoute(builder: (_) => const SupplierPage()),
                           );
-                          if (result != null && result is Supplier && mounted) {
+                          // ✅ RECARGAR PROVEEDORES después de crear uno nuevo
+                          if (result != null && mounted) {
                             await _loadData();
-                            setState(() {
-                              _selectedSupplier = _suppliers.firstWhere(
-                                (s) => s.id == result.id,
-                                orElse: () => result,
-                              );
-                            });
+                            setState(() {});
                           }
                         },
                         icon: const Icon(Icons.add_business),
@@ -196,54 +191,41 @@ class _PurchasePageState extends State<PurchasePage> {
                 if (!_isQuickPurchase)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: DropdownButtonFormField<int?>(
+                    child: DropdownButtonFormField<Supplier?>(
                       decoration: InputDecoration(
                         labelText: 'Proveedor *',
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         filled: true,
                         fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[850] : Colors.grey[100],
-                        labelStyle: TextStyle(
-                          color: Theme.of(context).brightness == Brightness.dark 
-                              ? Colors.grey[400] 
-                              : null,
-                        ),
                       ),
+                      // ✅ Items del dropdown
                       items: [
-                        const DropdownMenuItem(value: null, child: Text('Seleccionar proveedor')),
-                        ..._suppliers.map((s) => DropdownMenuItem(
-                          value: s.id, 
-                          child: Text(
-                            s.nombre,
-                            style: TextStyle(
-                              color: Theme.of(context).brightness == Brightness.dark 
-                                  ? Colors.white 
-                                  : null,
-                            ),
-                          ),
-                        )),
+                        const DropdownMenuItem<Supplier?>(
+                          value: null,
+                          child: Text('Seleccionar proveedor'),
+                        ),
+                        ..._suppliers.map((supplier) {
+                          return DropdownMenuItem<Supplier?>(
+                            value: supplier,
+                            child: Text(supplier.nombre),
+                          );
+                        }).toList(),
                       ],
-                      value: _selectedSupplier?.id,
-                      onChanged: (int? supplierId) {
+                      // ✅ Valor seleccionado
+                      value: _selectedSupplier,
+                      // ✅ onChanged corregido
+                      onChanged: (Supplier? newSupplier) {
                         setState(() {
-                          if (supplierId == null) {
-                            _selectedSupplier = null;
-                          } else {
-                            try {
-                              _selectedSupplier = _suppliers.firstWhere(
-                                (s) => s.id == supplierId,
-                              );
-                            } catch (e) {
-                              _selectedSupplier = null;
-                            }
-                          }
+                          _selectedSupplier = newSupplier;
                         });
                       },
+                      // ✅ Hint para modo oscuro
                       hint: Text(
                         'Seleccionar proveedor',
                         style: TextStyle(
                           color: Theme.of(context).brightness == Brightness.dark 
                               ? Colors.grey[500] 
-                              : null,
+                              : Colors.grey,
                         ),
                       ),
                     ),
