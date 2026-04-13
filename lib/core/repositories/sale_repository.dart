@@ -175,7 +175,7 @@ class SaleRepository {
       ORDER BY v.fecha DESC
     ''');
     
-    return result.map((m) => Sale.fromMap(m)).toList(),}
+    return result.map((m) => Sale.fromMap(m)).toList();
   // ✅ MÉTODO NUEVO: Flujo de caja (RF 64
 Future<Map<String, dynamic>> getFlujoDeCaja(DateTime start, DateTime end) async {
   final db = await DatabaseHelper.instance.database;

@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // ✅ Importante para SystemChrome
+import 'package:flutter/services.dart';
 
-// IMPORTS DE PÁGINAS (USANDO settings_page CORRECTO)
+// IMPORTAR PÁGINAS QUE EXISTAN REALMENTE
 import 'presentation/pages/pos_page.dart';
-import 'presentation/pages/inventory_page.dart';
-import 'presentation/pages/purchases_page.dart';
-import 'presentation/pages/reports_page.dart';
-import 'presentation/pages/settings_page.dart'; // ✅ Nombre correcto verificado
+import 'presentation/pages/settings_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,26 +20,13 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Nova Aden',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        brightness: Brightness.light,
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        primarySwatch: Colors.blue,
-        brightness: Brightness.dark,
-        useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFF121212),
-        appBarTheme: const AppBarTheme(backgroundColor: Color(0xFF1E1E1E)),
-      ),
+      theme: ThemeData(primarySwatch: Colors.blue, brightness: Brightness.light, useMaterial3: true),
+      darkTheme: ThemeData(primarySwatch: Colors.blue, brightness: Brightness.dark, useMaterial3: true, scaffoldBackgroundColor: const Color(0xFF121212)),
       themeMode: ThemeMode.system,
       home: const BottomNavMainPage(),
       routes: {
         '/pos': (context) => PosPage(),
-        '/inventory': (context) => InventoryPage(),
-        '/purchases': (context) => PurchasesPage(),
-        '/reports': (context) => ReportsPage(),
-        '/settings': (context) => SettingsPage(), // ✅ Usa settings_page
+        '/settings': (context) => SettingsPage(),
       },
     );
   }
@@ -57,14 +41,7 @@ class BottomNavMainPage extends StatefulWidget {
 
 class _BottomNavMainPageState extends State<BottomNavMainPage> {
   int _currentIndex = 0;
-
-  final List<Widget> _pages = const [
-    Placeholder(),
-    Placeholder(),
-    Placeholder(),
-    Placeholder(),
-    Placeholder(),
-  ];
+  final List<Widget> _pages = const [Placeholder(), Placeholder(), Placeholder(), Placeholder(), Placeholder()];
 
   @override
   Widget build(BuildContext context) {
