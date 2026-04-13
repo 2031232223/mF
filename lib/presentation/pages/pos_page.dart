@@ -937,27 +937,29 @@ class _PosPageState extends State<PosPage> {
                         Row(
                           children: [
                             Expanded(
-                              child: CheckboxListTile(
-                                title: const Text('Venta Fiada', style: TextStyle(fontWeight: FontWeight.bold)),
-                                subtitle: const Text('El cliente pagará después'),
-                                value: _isCredit,
-                                onChanged: (v) => setState(() => _isCredit = v ?? false),
-                                controlAffinity: ListTileControlAffinity.leading,
-                                contentPadding: EdgeInsets.zero,
-                              Expanded(
-                                child: CheckboxListTile(
-                                  title: const Text('Venta Fiada', style: TextStyle(fontWeight: FontWeight.bold)),
-                                  subtitle: const Text('El cliente pagará después'),
-                                  value: _isCredit,
-                                  onChanged: (v) => setState(() => _isCredit = v ?? false),
-                                  controlAffinity: ListTileControlAffinity.leading,
-                                  contentPadding: EdgeInsets.zero,
-                                  titleTextStyle: TextStyle(
-                                   fontWeight: FontWeight.bold,
-                                   color: Theme.of(context).brightness == Brightness.dark 
-                                       ? Colors.grey[300] 
-                                       : null,
-                                  ),
+  child: CheckboxListTile(
+    title: const Text('Venta Fiada', style: TextStyle(fontWeight: FontWeight.bold)),
+    subtitle: const Text('El cliente pagará después'),
+    value: _isCredit,
+    onChanged: (v) => setState(() => _isCredit = v ?? false),
+    controlAffinity: ListTileControlAffinity.leading,
+    contentPadding: EdgeInsets.zero,
+    // ✅ PARÁMETROS EN INGLÉS - NO TRADUCIR:
+    titleTextStyle: TextStyle(
+      fontWeight: FontWeight.bold,
+      color: Theme.of(context).brightness == Brightness.dark 
+          ? Colors.grey[300] 
+          : null,
+    ),
+    subtitleTextStyle: TextStyle(
+      color: Theme.of(context).brightness == Brightness.dark 
+          ? Colors.grey[400] 
+          : null,
+    ),
+    activeColor: Colors.blue,
+    checkColor: Colors.white,
+  ),
+),
                                   subtitleTextStyle: TextStyle(
                                     color: Theme.of(context).brightness == Brightness.dark 
                                         ? Colors.grey[400] 
