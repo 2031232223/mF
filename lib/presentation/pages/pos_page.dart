@@ -944,22 +944,29 @@ class _PosPageState extends State<PosPage> {
                                 onChanged: (v) => setState(() => _isCredit = v ?? false),
                                 controlAffinity: ListTileControlAffinity.leading,
                                 contentPadding: EdgeInsets.zero,
-                                // ✅ Colores de texto adaptables
-                               titleTextStyle: TextStyle(
-                                 fontWeight: FontWeight.bold,
-                                 color: Theme.of(context).brightness == Brightness.dark 
-                                     ? Colors.grey[300] 
-                                     : null,
+                              Expanded(
+                                child: CheckboxListTile(
+                                  title: const Text('Venta Fiada', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  subtitle: const Text('El cliente pagará después'),
+                                  value: _isCredit,
+                                  onChanged: (v) => setState(() => _isCredit = v ?? false),
+                                  controlAffinity: ListTileControlAffinity.leading,
+                                  contentPadding: EdgeInsets.zero,
+                                  titleTextStyle: TextStyle(
+                                   fontWeight: FontWeight.bold,
+                                   color: Theme.of(context).brightness == Brightness.dark 
+                                       ? Colors.grey[300] 
+                                       : null,
+                                  ),
+                                  subtitleTextStyle: TextStyle(
+                                    color: Theme.of(context).brightness == Brightness.dark 
+                                        ? Colors.grey[400] 
+                                        : null,
+                                  ),
+                                  activeColor: Colors.blue,
+                                  checkColor: Colors.white,
                                ),
-                               subtitleTextStyle: TextStyle(
-                                 color: Theme.of(context).brightness == Brightness.dark 
-                                     ? Colors.grey[400] 
-                                     : null,
-                              ),
-                              activeColor: Colors.blue,
-                              checkColor: Colors.white,
                             ),
-                        ),
                             SizedBox(
                               width: 180,
                               height: 50,
