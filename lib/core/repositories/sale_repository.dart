@@ -135,29 +135,46 @@ class SaleRepository {
     return result;
   }
 
+  // ✅ CORREGIDO: Manejo seguro de valores nulos para evitar toStringAsFixed(null)
   Future<Map<String, dynamic>> getProfitReport() async {
     final db = await DatabaseHelper.instance.database;
     
-    final ingresosResult = await db.rawQuery(
-      'SELECT SUM(total) as total FROM ventas',
-    );
-    final totalIngresos = (ingresosResult.first['total'] as num?)?.toDouble() ?? 0.0;
-    
-    final costoResult = await db.rawQuery('''
-      SELECT SUM(dv.cantidad * p.costo) as total_costo
-      FROM detalle_ventas dv
-      INNER JOIN productos p ON dv.producto_id = p.id
-      WHERE p.costo IS NOT NULL
-    ''');
-    final totalCosto = (costoResult.first['total_costo'] as num?)?.toDouble() ?? 0.0;
-    
-    final ganancia = totalIngresos - totalCosto;
-    
-    return {
-      'totalIngresos': totalIngresos,
-      'totalCosto': totalCosto,
-      'gananciaNeta': ganancia,
-      'margenPorcentaje': totalIngresos > 0 ? (ganancia / totalIngresos) * 100 : 0.0,
-    };
+    try {
+      // ✅ Evitar null -> usar operador ?? para asignar 0.0
+      final ingresosResult = await db.rawQuery(
+        'SELECT SUM(total) as total FROM ventas',
+      );
+      final totalIngresos = (ingresosResult.first['total'] as num?)?.toDouble() ?? 0.0;
+      
+      final costoResult = await db.rawQuery('''
+        SELECT SUM(dv.cantidad * p.costo) as total_costo
+        FROM detalle_ventas dv
+        INNER JOIN productos p ON dv.producto_id = p.id
+        WHERE p.costo IS NOT NULL
+      ''');
+      
+      // ✅ Evitar null -> usar operador ?? para asignar 0.0
+      final totalCosto = (costoResult.first['total_costo'] as num?)?.toDouble() ?? 0.0;
+      
+      final gananciaNeta = totalIngresos - totalCosto;
+      // ✅ Calcular margen solo si totalIngresos > 0 para evitar división por cero
+      final margenPorcentaje = totalIngresos > 0 ? (gananciaNeta / totalIngresos) * 100 : 0.0;
+
+      return {
+        'totalIngresos': totalIngresos,
+        'totalCosto': totalCosto,
+        'gananciaNeta': gananciaNeta,
+        'margenPorcentaje': margenPorcentaje,
+      };
+    } catch (e) {
+      print('Error al obtener reporte de ganancias: $e');
+      // Retorna ceros seguros en caso de falla crítica
+      return {
+        'totalIngresos': 0.0,
+        'totalCosto': 0.0,
+        'gananciaNeta': 0.0,
+        'margenPorcentaje': 0.0,
+      };
+    }
   }
 }
