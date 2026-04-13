@@ -19,7 +19,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 4,
+      version: 5, // ✅ Actualizado a v5 para asegurar migración completa
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -36,7 +36,7 @@ class DatabaseHelper {
       )
     ''');
 
-    // Tabla Clientes
+    // ✅ Tabla Clientes CON todas las columnas necesarias
     await db.execute('''
       CREATE TABLE clientes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -73,7 +73,7 @@ class DatabaseHelper {
         es_favorito INTEGER DEFAULT 0,
         stock_critico INTEGER,
         margen_ganancia REAL,
-        unidad_medida TEXT DEFAULT 'UND',
+        unidad_medida TEXT DEFAULT 'und',
         activo INTEGER DEFAULT 1,
         notas TEXT,
         created_at TEXT,
@@ -102,7 +102,7 @@ class DatabaseHelper {
       )
     ''');
 
-    // ✅ Tabla detalle_ventas (CORRECTA)
+    // ✅ Tabla DETALLE_VENTAS (NOMBRE COINCIDE CON CÓDIGO)
     await db.execute('''
       CREATE TABLE detalle_ventas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -166,35 +166,32 @@ class DatabaseHelper {
       )
     ''');
 
-    // Índices
+    // Índices para rendimiento
     await db.execute('CREATE INDEX idx_productos_codigo ON productos (codigo)');
     await db.execute('CREATE INDEX idx_ventas_fecha ON ventas (fecha)');
     await db.execute('CREATE INDEX idx_detalle_ventas_venta ON detalle_ventas (venta_id)');
   }
 
   void _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    // Migración v1 → v2: ci_identidad en proveedores
     if (oldVersion < 2) {
       try {
         await db.execute('ALTER TABLE proveedores ADD COLUMN ci_identidad TEXT');
-      } catch (e) {
-        print('Columna ya existe: $e');
-      }
+      } catch (e) { print('Columna ya existe: $e'); }
     }
     
+    // Migración v2 → v3: es_habitual en clientes
     if (oldVersion < 3) {
       try {
         await db.execute('ALTER TABLE clientes ADD COLUMN es_habitual INTEGER DEFAULT 0');
-      } catch (e) {
-        print('Columna ya existe: $e');
-      }
+      } catch (e) { print('Columna es_habitual ya existe: $e'); }
     }
     
+    // Migración v3 → v4: fecha_registro en clientes + crear detalle_ventas
     if (oldVersion < 4) {
       try {
         await db.execute('ALTER TABLE clientes ADD COLUMN fecha_registro TEXT');
-      } catch (e) {
-        print('Columna fecha_registro ya existe o error: $e');
-      }
+      } catch (e) { print('Columna fecha_registro ya existe: $e'); }
       
       try {
         await db.execute('''
@@ -209,9 +206,23 @@ class DatabaseHelper {
             FOREIGN KEY (producto_id) REFERENCES productos (id)
           )
         ''');
-      } catch (e) {
-        print('Tabla detalle_ventas ya existe o error: $e');
-      }
+      } catch (e) { print('Tabla detalle_ventas ya existe: $e'); }
+    }
+    
+    // Migración v4 → v5: Crear mermas si no existe
+    if (oldVersion < 5) {
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS mermas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            producto_id INTEGER NOT NULL,
+            cantidad INTEGER NOT NULL,
+            motivo TEXT,
+            fecha TEXT NOT NULL,
+            FOREIGN KEY (producto_id) REFERENCES productos (id)
+          )
+        ''');
+      } catch (e) { print('Tabla mermas ya existe: $e'); }
     }
   }
 
