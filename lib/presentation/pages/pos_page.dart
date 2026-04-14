@@ -17,6 +17,20 @@ class PosPage extends StatefulWidget {
   final VoidCallback? onSaleCompleted;
   const PosPage({super.key, this.onSaleCompleted});
 
+
+  Future<void> _confirmSale() async {
+    if (_cart.isEmpty) return;
+    final amountPaid = double.tryParse(_amountPaidController.text) ?? 0.0;
+    try {
+      final saleId = await _saleRepo.createSale(_selectedCustomer?.id, _cart, _totalAmount, _isCredit ? 0.0 : amountPaid, _isCredit ? _totalAmount : (_totalAmount - amountPaid), _isCredit ? "Venta fiada" : null, _selectedCurrency, _exchangeRate);
+      final shouldPdf = await CommonDialogs.showTicketGenerationConfirmation(context: context, mensaje: "¿Generar ticket PDF?");
+      if (shouldPdf == true) await _generatePdfTicket(saleId);
+      setState(() { _cart.clear(); _amountPaidController.clear(); _selectedCustomer = null; _isCredit = false; });
+      _loadProducts();
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("✅ Venta completada"), backgroundColor: Colors.green));
+    } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("❌ Error: $e"), backgroundColor: Colors.red)); }
+  }
+
   @override
   State<PosPage> createState() => _PosPageState();
 }
@@ -43,11 +57,39 @@ class _PosPageState extends State<PosPage> {
   
   String _nombreEmpresa = 'Nova Aden';
 
+
+  Future<void> _confirmSale() async {
+    if (_cart.isEmpty) return;
+    final amountPaid = double.tryParse(_amountPaidController.text) ?? 0.0;
+    try {
+      final saleId = await _saleRepo.createSale(_selectedCustomer?.id, _cart, _totalAmount, _isCredit ? 0.0 : amountPaid, _isCredit ? _totalAmount : (_totalAmount - amountPaid), _isCredit ? "Venta fiada" : null, _selectedCurrency, _exchangeRate);
+      final shouldPdf = await CommonDialogs.showTicketGenerationConfirmation(context: context, mensaje: "¿Generar ticket PDF?");
+      if (shouldPdf == true) await _generatePdfTicket(saleId);
+      setState(() { _cart.clear(); _amountPaidController.clear(); _selectedCustomer = null; _isCredit = false; });
+      _loadProducts();
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("✅ Venta completada"), backgroundColor: Colors.green));
+    } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("❌ Error: $e"), backgroundColor: Colors.red)); }
+  }
+
   @override
   void initState() {
     super.initState();
     _loadData();
     _cargarConfigEmpresa();
+  }
+
+
+  Future<void> _confirmSale() async {
+    if (_cart.isEmpty) return;
+    final amountPaid = double.tryParse(_amountPaidController.text) ?? 0.0;
+    try {
+      final saleId = await _saleRepo.createSale(_selectedCustomer?.id, _cart, _totalAmount, _isCredit ? 0.0 : amountPaid, _isCredit ? _totalAmount : (_totalAmount - amountPaid), _isCredit ? "Venta fiada" : null, _selectedCurrency, _exchangeRate);
+      final shouldPdf = await CommonDialogs.showTicketGenerationConfirmation(context: context, mensaje: "¿Generar ticket PDF?");
+      if (shouldPdf == true) await _generatePdfTicket(saleId);
+      setState(() { _cart.clear(); _amountPaidController.clear(); _selectedCustomer = null; _isCredit = false; });
+      _loadProducts();
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("✅ Venta completada"), backgroundColor: Colors.green));
+    } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("❌ Error: $e"), backgroundColor: Colors.red)); }
   }
 
   @override
@@ -794,6 +836,20 @@ class _PosPageState extends State<PosPage> {
     );
   }
 
+
+  Future<void> _confirmSale() async {
+    if (_cart.isEmpty) return;
+    final amountPaid = double.tryParse(_amountPaidController.text) ?? 0.0;
+    try {
+      final saleId = await _saleRepo.createSale(_selectedCustomer?.id, _cart, _totalAmount, _isCredit ? 0.0 : amountPaid, _isCredit ? _totalAmount : (_totalAmount - amountPaid), _isCredit ? "Venta fiada" : null, _selectedCurrency, _exchangeRate);
+      final shouldPdf = await CommonDialogs.showTicketGenerationConfirmation(context: context, mensaje: "¿Generar ticket PDF?");
+      if (shouldPdf == true) await _generatePdfTicket(saleId);
+      setState(() { _cart.clear(); _amountPaidController.clear(); _selectedCustomer = null; _isCredit = false; });
+      _loadProducts();
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("✅ Venta completada"), backgroundColor: Colors.green));
+    } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("❌ Error: $e"), backgroundColor: Colors.red)); }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -998,3 +1054,82 @@ class CartItem {
     );
   }
 }
+
+// Widget de teclado numérico para montos
+Widget _buildNumericKeypadDialog(String label, Function(String) onValueSet) {
+  String currentValue = '';
+  
+  return AlertDialog(
+    title: Text(label),
+    content: NumericKeypad(
+      currentValue: currentValue,
+      label: label,
+      showDecimal: true,
+      onDigitPressed: (digit) {
+        if (digit == '.' && currentValue.contains('.')) return;
+        currentValue += digit;
+      },
+      onBackspacePressed: () {
+        if (currentValue.isNotEmpty) {
+          currentValue = currentValue.substring(0, currentValue.length - 1);
+        }
+      },
+      onClearPressed: () {
+        currentValue = '';
+      },
+      onDonePressed: () {
+        onValueSet(currentValue);
+        Navigator.pop(context);
+      },
+    ),
+  );
+}
+
+  // ✅ MÉTODO PARA OBTENER PRECIO EN MONEDA SELECCIONADA
+  double _getPriceInCurrency(double priceCUP) {
+    if (_selectedCurrency == 'CUP') return priceCUP;
+    return priceCUP / _exchangeRate;
+  }
+
+  // ✅ MÉTODO PARA ACTUALIZAR EL CARRITO CON PRECIOS CONVERTIDOS
+  void _addToCart(Map<String, dynamic> product) {
+    if ((product['stock'] as int) <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('⚠️ Producto sin stock'), backgroundColor: Colors.orange),
+      );
+      return;
+    }
+
+    final existingIndex = _cart.indexWhere((item) => item.productoId == product['id']);
+    final priceInCurrency = _getPriceInCurrency(product['precio_venta'] as double);
+    
+    if (existingIndex >= 0) {
+      final currentQty = _cart[existingIndex].cantidad;
+      if (currentQty >= (product['stock'] as int)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('⚠️ No hay más stock disponible'), backgroundColor: Colors.orange),
+        );
+        return;
+      }
+      
+      setState(() {
+        _cart[existingIndex] = SaleLine(
+          productoId: _cart[existingIndex].productoId,
+          cantidad: currentQty + 1,
+          precioUnitario: priceInCurrency,
+          subtotal: _cart[existingIndex].subtotal + priceInCurrency,
+        );
+      });
+    } else {
+      setState(() {
+        _cart.add(SaleLine(
+          productoId: product['id'] as int,
+          productoNombre: product['nombre'] as String,
+          productoNombre: product['nombre'] as String,
+          cantidad: 1,
+          precioUnitario: priceInCurrency,
+          subtotal: priceInCurrency,
+        ));
+      });
+    }
+  }

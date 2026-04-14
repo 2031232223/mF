@@ -1,248 +1,215 @@
+import 'package:sqflite/sqflite.dart';
 import '../database/database_helper.dart';
 import '../models/sale.dart';
-import 'product_repository.dart';
+import '../models/product.dart';
 
 class SaleRepository {
-  final ProductRepository _productRepo = ProductRepository();
+  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
-  Future<int> createSale(int? clienteId, List<SaleLine> saleLines, double total, double montoPagado, double montoPendiente, String? notasCredito, String moneda, double tasaCambio) async {
-    final db = await DatabaseHelper.instance.database;
+  Future<int> createSale(
+    int? clienteId,
+    List<SaleLine> saleLines,
+    double total,
+    double montoPagado,
+    double montoPendiente,
+    String? notasCredito,
+    String moneda,
+    double tasaCambio, {
+    double descuento = 0.0,
+  }) async {
+    final db = await _dbHelper.database;
     
-    try {
-      return await db.transaction((txn) async {
-        int? ventaId = await txn.insert('ventas', {
-          'cliente_id': clienteId,
-          'fecha': DateTime.now().toIso8601String(),
-          'total': total,
-          'monto_pagado': montoPagado,
-          'monto_pendiente': montoPendiente,
-          'notas_credito': notasCredito,
-          'es_fiado': montoPendiente > 0 ? 1 : 0,
-          'moneda': moneda,
-          'tasa_cambio': tasaCambio,
+    return await db.transaction((txn) async {
+      // Insertar venta
+      final saleId = await txn.insert('ventas', {
+        'cliente_id': clienteId,
+        'total': total,
+        'total_cup': total * tasaCambio,
+        'descuento': descuento,
+        'subtotal': total + descuento,
+        'fecha': DateTime.now().toIso8601String(),
+        'metodo_pago': notasCredito,
+        'moneda': moneda,
+        'tasa_cambio': tasaCambio,
+        'es_fiado': montoPendiente > 0 ? 1 : 0,
+        'monto_pagado': montoPagado,
+        'monto_pendiente': montoPendiente,
+        'notas_credito': notasCredito,
+        'created_at': DateTime.now().toIso8601String(),
+      });
+
+      // Insertar detalles
+      for (var line in saleLines) {
+        await txn.insert('detalle_ventas', {
+          'venta_id': saleId,
+          'producto_id': line.productoId,
+          'cantidad': line.cantidad,
+          'precio_unitario': line.precioUnitario,
+          'subtotal': line.subtotal,
         });
 
-        for (var line in saleLines) {
-          await txn.insert('detalle_ventas', {
-            'venta_id': ventaId,
-            'producto_id': line.productoId,
-            'cantidad': line.cantidad,
-            'precio_unitario': line.precioUnitario,
-            'subtotal': line.subtotal,
-          });
-          
-          await _productRepo.updateProductStock(line.productoId, line.cantidad);
-        }
+        // Actualizar stock
+        await txn.rawUpdate(
+          'UPDATE productos SET stock_actual = stock_actual - ? WHERE id = ?',
+          [line.cantidad, line.productoId],
+        );
+      }
 
-        return ventaId;
-      });
-    } catch (e) {
-      print('❌ Error en createSale: $e');
-      rethrow;
-    }
+      return saleId;
+    });
   }
 
-  Future<List<Sale>> getAllSales() async {
-    final db = await DatabaseHelper.instance.database;
-    final List<Map<String, dynamic>> maps = await db.query('ventas', orderBy: 'fecha DESC');
-    return maps.map((m) => Sale.fromMap(m)).toList();
+  Future<List<Sale>> getAllSales({DateTime? startDate, DateTime? endDate}) async {
+    final db = await _dbHelper.database;
+    
+    String where = '';
+    List<dynamic> args = [];
+    
+    if (startDate != null) {
+      where += ' AND fecha >= ?';
+      args.add(startDate.toIso8601String());
+    }
+    if (endDate != null) {
+      where += ' AND fecha <= ?';
+      args.add(endDate.toIso8601String());
+    }
+    
+    final result = await db.rawQuery(
+      'SELECT * FROM ventas WHERE 1=1 $where ORDER BY fecha DESC',
+      args,
+    );
+    
+    return result.map((map) => Sale.fromMap(map)).toList();
   }
 
   Future<Sale?> getSaleById(int id) async {
-    final db = await DatabaseHelper.instance.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'ventas',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-    if (maps.isEmpty) return null;
-    return Sale.fromMap(maps.first);
+    final db = await _dbHelper.database;
+    final result = await db.query('ventas', where: 'id = ?', whereArgs: [id]);
+    if (result.isEmpty) return null;
+    return Sale.fromMap(result.first);
   }
 
-  Future<List<SaleLine>> getSaleLines(int ventaId) async {
-    final db = await DatabaseHelper.instance.database;
-    final List<Map<String, dynamic>> maps = await db.query(
+  Future<List<SaleLine>> getSaleLines(int saleId) async {
+    final db = await _dbHelper.database;
+    final result = await db.query(
       'detalle_ventas',
       where: 'venta_id = ?',
-      whereArgs: [ventaId],
+      whereArgs: [saleId],
     );
-    return maps.map((m) => SaleLine.fromMap(m)).toList();
-  }
-
-  Future<void> updateSale(Sale sale) async {
-    final db = await DatabaseHelper.instance.database;
-    await db.update(
-      'ventas',
-      sale.toMap(),
-      where: 'id = ?',
-      whereArgs: [sale.id],
-    );
-  }
-
-  Future<void> deleteSale(int id) async {
-    final db = await DatabaseHelper.instance.database;
-    await db.delete('ventas', where: 'id = ?', whereArgs: [id]);
+    return result.map((map) => SaleLine.fromMap(map)).toList();
   }
 
   Future<List<Sale>> getTodaySales() async {
-    final db = await DatabaseHelper.instance.database;
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final tomorrow = today.add(const Duration(days: 1));
-    
-    final maps = await db.query(
-      'ventas',
-      where: 'fecha >= ? AND fecha < ?',
-      whereArgs: [today.toIso8601String(), tomorrow.toIso8601String()],
-      orderBy: 'fecha DESC',
-    );
-    return maps.map((m) => Sale.fromMap(m)).toList();
-  }
-
-  Future<List<Map<String, dynamic>>> getTop10Products() async {
-    final db = await DatabaseHelper.instance.database;
-    final result = await db.rawQuery('''
-      SELECT 
-        p.id,
-        p.nombre,
-        p.codigo,
-        SUM(dv.cantidad) as total_vendido,
-        SUM(dv.subtotal) as total_ingresos
-      FROM detalle_ventas dv
-      INNER JOIN productos p ON dv.producto_id = p.id
-      GROUP BY p.id, p.nombre, p.codigo
-      ORDER BY total_vendido DESC
-      LIMIT 10
-    ''');
-    return result;
-  }
-
-  Future<bool> registrarPagoFiado(int ventaId, double montoPagado, String notas) async {
-    final db = await DatabaseHelper.instance.database;
-    
-    try {
-      final saleMap = await db.rawQuery('SELECT * FROM ventas WHERE id = ?', [ventaId]);
-      if (saleMap.isEmpty) throw Exception('Venta no encontrada');
-      
-      final venta = Sale.fromMap(saleMap.first);
-      final pendienteRestante = venta.montoPendiente - montoPagado;
-      
-      if (pendienteRestante < 0) {
-        throw Exception('Pago excede monto pendiente');
-      }
-
-      await db.update(
-        'ventas',
-        {
-          'monto_pagado': venta.montoPagado + montoPagado,
-          'monto_pendiente': pendienteRestante.abs(),
-          'notas_credito': notas.isNotEmpty 
-              ? '${venta.notasCredito ?? ''}\nPago registrado: $notas' 
-              : venta.notasCredito,
-          'fecha': DateTime.now().toIso8601String(),
-        },
-        where: 'id = ?',
-        whereArgs: [ventaId],
-      );
-
-      return pendienteRestante == 0;
-    } catch (e) {
-      print('Error pagando fiado: $e');
-      return false;
-    }
+    final startOfDay = DateTime(now.year, now.month, now.day);
+    return await getAllSales(startDate: startOfDay, endDate: now);
   }
 
   Future<List<Sale>> getDeudasPendientes() async {
-    final db = await DatabaseHelper.instance.database;
-    final result = await db.rawQuery('''
-      SELECT v.*, c.nombre as cliente_nombre
-      FROM ventas v
-      LEFT JOIN clientes c ON v.cliente_id = c.id
-      WHERE v.es_fiado = 1 AND v.monto_pendiente > 0
-      ORDER BY v.fecha DESC
-    ''');
-    
-    return result.map((m) => Sale.fromMap(m)).toList();
-  }
-
-  Future<Map<String, dynamic>> getFlujoDeCaja(DateTime start, DateTime end) async {
-    final db = await DatabaseHelper.instance.database;
-    final salesResult = await db.rawQuery(
-      'SELECT DATE(v.fecha) as fecha, SUM(CASE WHEN v.moneda = "CUP" THEN v.total ELSE 0 END) as cup FROM ventas v WHERE v.fecha BETWEEN ? AND ? GROUP BY DATE(v.fecha)',
-      [start.toIso8601String(), end.toIso8601String()]
+    final db = await _dbHelper.database;
+    final result = await db.query(
+      'ventas',
+      where: 'monto_pendiente > 0',
+      orderBy: 'fecha DESC',
     );
+    return result.map((map) => Sale.fromMap(map)).toList();
+  }
+
+  Future<void> registrarPagoFiado(int saleId, double monto) async {
+    final db = await _dbHelper.database;
+    final sale = await getSaleById(saleId);
+    if (sale == null) throw Exception('Venta no encontrada');
     
-    return {'ventas': salesResult, 'costos': []};
-  }
-
-  Future<List<Map<String, dynamic>>> getRotacionProductos() async {
-    final db = await DatabaseHelper.instance.database;
-    return await db.rawQuery('''
-      SELECT 
-        p.nombre,
-        p.codigo,
-        COUNT(dv.id) as veces_vendido,
-        SUM(dv.cantidad) as total_cantidad,
-        SUM(dv.subtotal) as total_ingresos,
-        CAST(COUNT(dv.id) AS FLOAT) / 30 as promedio_dia
-      FROM productos p
-      LEFT JOIN detalle_ventas dv ON dv.producto_id = p.id
-      WHERE p.activo = 1
-      GROUP BY p.id
-      ORDER BY promedio_dia DESC
-      LIMIT 10
-    ''');
-  }
-
-  Future<List<Map<String, dynamic>>> getMargenPorProducto() async {
-    final db = await DatabaseHelper.instance.database;
-    return await db.rawQuery('''
-      SELECT 
-        p.id,
-        p.nombre,
-        p.costo,
-        p.precio_venta,
-        (p.precio_venta - p.costo) as margen_unidad,
-        ((p.precio_venta - p.costo) / p.precio_venta * 100) as porcentaje_margen
-      FROM productos p
-      WHERE p.activo = 1 AND p.costo IS NOT NULL
-      ORDER BY porcentaje_margen DESC
-    ''');
-  }
-
-  Future<Map<String, dynamic>> getProfitReport() async {
-    final db = await DatabaseHelper.instance.database;
+    final nuevoPendiente = sale.montoPendiente - monto;
+    final nuevoPagado = sale.montoPagado + monto;
     
-    try {
-      final ingresosResult = await db.rawQuery('SELECT SUM(total) as total FROM ventas');
-      final totalIngresos = (ingresosResult.first['total'] as num?)?.toDouble() ?? 0.0;
-      
-      final costoResult = await db.rawQuery('''
-        SELECT SUM(dv.cantidad * p.costo) as total_costo
-        FROM detalle_ventas dv
-        INNER JOIN productos p ON dv.producto_id = p.id
-        WHERE p.costo IS NOT NULL
-      ''');
-      
-      final totalCosto = (costoResult.first['total_costo'] as num?)?.toDouble() ?? 0.0;
-      
-      final gananciaNeta = totalIngresos - totalCosto;
-      final margenPorcentaje = totalIngresos > 0 ? (gananciaNeta / totalIngresos) * 100 : 0.0;
+    await db.update(
+      'ventas',
+      {
+        'monto_pagado': nuevoPagado,
+        'monto_pendiente': nuevoPendiente > 0 ? nuevoPendiente : 0,
+        'es_fiado': nuevoPendiente > 0 ? 1 : 0,
+      },
+      where: 'id = ?',
+      whereArgs: [saleId],
+    );
+  }
 
+  // RF 51: Sugerir precio por margen
+  Future<double> suggestPriceByMargin(double costo, double margenDeseada) {
+    if (costo <= 0) return 0.0;
+    return costo * (1 + (margenDeseada / 100));
+  }
+
+  // RF 51: Calcular margen actual de producto
+  Future<Map<String, dynamic>> calculateProductMargin(Product product) async {
+    final margen = product.precioVenta - product.costo;
+    final porcentajeMargen = product.costo > 0 ? (margen / product.costo) * 100 : 0.0;
+    
+    return {
+      'producto': product.nombre,
+      'costo': product.costo,
+      'precioVenta': product.precioVenta,
+      'margen': margen,
+      'porcentajeMargen': porcentajeMargen,
+      'sugerido20': suggestPriceByMargin(product.costo, 20),
+      'sugerido30': suggestPriceByMargin(product.costo, 30),
+      'sugerido50': suggestPriceByMargin(product.costo, 50),
+    };
+  }
+
+  // RF 20: Ventas del día
+  Future<Map<String, dynamic>> getTodaySalesSummary() async {
+    final db = await _dbHelper.database;
+    final now = DateTime.now();
+    final startOfDay = DateTime(now.year, now.month, now.day);
+    
+    final result = await db.rawQuery('''
+      SELECT 
+        COUNT(*) as cantidad,
+        SUM(total) as total,
+        SUM(monto_pagado) as pagado,
+        SUM(monto_pendiente) as pendiente
+      FROM ventas
+      WHERE fecha >= ?
+    ''', [startOfDay.toIso8601String()]);
+    
+    if (result.isNotEmpty) {
       return {
-        'totalIngresos': totalIngresos,
-        'totalCosto': totalCosto,
-        'gananciaNeta': gananciaNeta,
-        'margenPorcentaje': margenPorcentaje,
-      };
-    } catch (e) {
-      print('Error al obtener reporte de ganancias: $e');
-      return {
-        'totalIngresos': 0.0,
-        'totalCosto': 0.0,
-        'gananciaNeta': 0.0,
-        'margenPorcentaje': 0.0,
+        'cantidad': result.first['cantidad'] as int? ?? 0,
+        'total': (result.first['total'] as num?)?.toDouble() ?? 0.0,
+        'pagado': (result.first['pagado'] as num?)?.toDouble() ?? 0.0,
+        'pendiente': (result.first['pendiente'] as num?)?.toDouble() ?? 0.0,
       };
     }
+    
+    return {'cantidad': 0, 'total': 0.0, 'pagado': 0.0, 'pendiente': 0.0};
+  }
+
+  // RF 64: Flujo de caja (ingresos por ventas)
+  Future<List<Map<String, dynamic>>> getCashFlowByDate({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    final db = await _dbHelper.database;
+    
+    final result = await db.rawQuery('''
+      SELECT 
+        DATE(fecha) as fecha,
+        SUM(monto_pagado) as ingresos,
+        COUNT(*) as ventas
+      FROM ventas
+      WHERE fecha >= ? AND fecha <= ? AND es_fiado = 0
+      GROUP BY DATE(fecha)
+      ORDER BY fecha
+    ''', [startDate.toIso8601String(), endDate.toIso8601String()]);
+    
+    return result;
+  }
+
+  // Eliminar venta (solo si no tiene detalles)
+  Future<void> deleteSale(int id) async {
+    final db = await _dbHelper.database;
+    await db.delete('ventas', where: 'id = ?', whereArgs: [id]);
   }
 }

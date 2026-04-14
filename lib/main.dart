@@ -6,9 +6,13 @@ import 'presentation/pages/splash_page.dart';
 import 'presentation/pages/dashboard_page.dart';
 import 'presentation/pages/pos_page.dart';
 import 'presentation/pages/product_list_page.dart';
+import 'presentation/pages/product_management_page.dart';
 import 'presentation/pages/purchase_page.dart';
 import 'presentation/pages/reports_page.dart';
+import 'presentation/pages/advanced_reports_page.dart';
 import 'presentation/pages/settings_page.dart';
+        '/backup': (context) => const BackupPage(),
+import 'presentation/pages/backup_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,6 +52,7 @@ class MyApp extends StatelessWidget {
         '/purchases': (context) => const PurchasePage(),
         '/reports': (context) => const ReportsPage(),
         '/settings': (context) => const SettingsPage(),
+        '/backup': (context) => const BackupPage(),
       },
     );
   }

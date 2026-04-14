@@ -7,6 +7,7 @@ environment:
   sdk: '>=3.2.0 <4.0.0'
 
 dependencies:
+  fl_chart: ^0.66.0
   flutter:
     sdk: flutter
   
@@ -22,6 +23,7 @@ dependencies:
   # Archivos y preferencias (multiplataforma)
   shared_preferences: ^2.2.2
   path_provider: ^2.1.2  # ✅ Actualizado a versión más reciente
+  url_launcher: ^6.2.4
   
   # CSV para exportar/importar
   csv: ^5.1.1
@@ -44,6 +46,7 @@ dependencies:
   file_picker: ^6.1.1
 
 dev_dependencies:
+  fl_chart: ^0.66.0
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.1

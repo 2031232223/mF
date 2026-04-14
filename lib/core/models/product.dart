@@ -1,73 +1,103 @@
 class Product {
-  final int? id;
+  final int id;
   final String nombre;
-  final String codigo;
-  final double? costo;
+  final String? codigo;
+  final String? categoria;
+  final double costo;
   final double precioVenta;
   final int stockActual;
   final int stockMinimo;
-  final String? categoria;
+  final String? unidadMedida;
   final bool esFavorito;
-  final int? stockCritico;
-  final double? margenGanancia;
-  final String unidadMedida;
-  final bool activo;
-  final String? notas;
+  final bool estaActivo;
+  final DateTime? fechaRegistro;
+  final DateTime? fechaActualizacion;
 
   Product({
-    this.id,
+    required this.id,
     required this.nombre,
-    required this.codigo,
-    this.costo,
+    this.codigo,
+    this.categoria,
+    required this.costo,
     required this.precioVenta,
     required this.stockActual,
-    required this.stockMinimo,
-    this.categoria,
+    this.stockMinimo = 5,
+    this.unidadMedida = 'unidad',
     this.esFavorito = false,
-    this.stockCritico,
-    this.margenGanancia,
-    this.unidadMedida = 'UND',
-    this.activo = true,
-    this.notas,
+    this.estaActivo = true,
+    this.fechaRegistro,
+    this.fechaActualizacion,
   });
-
-  bool get esStockCritico => stockCritico != null && stockActual <= stockCritico!;
 
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'nombre': nombre,
       'codigo': codigo,
+      'categoria': categoria,
       'costo': costo,
       'precio_venta': precioVenta,
       'stock_actual': stockActual,
       'stock_minimo': stockMinimo,
-      'categoria': categoria,
-      'es_favorito': esFavorito ? 1 : 0,
-      'stock_critico': stockCritico,
-      'margen_ganancia': margenGanancia,
       'unidad_medida': unidadMedida,
-      'activo': activo ? 1 : 0,
-      'notas': notas,
+      'es_favorito': esFavorito ? 1 : 0,
+      'esta_activo': estaActivo ? 1 : 0,
+      'fecha_registro': fechaRegistro?.toIso8601String(),
+      'fecha_actualizacion': fechaActualizacion?.toIso8601String(),
     };
   }
 
   factory Product.fromMap(Map<String, dynamic> map) {
     return Product(
-      id: map['id'] as int?,
+      id: map['id'] as int,
       nombre: map['nombre'] as String,
-      codigo: map['codigo'] as String,
-      costo: map['costo'] as double?,
-      precioVenta: map['precio_venta'] as double,
-      stockActual: map['stock_actual'] as int,
-      stockMinimo: map['stock_minimo'] as int,
+      codigo: map['codigo'] as String?,
       categoria: map['categoria'] as String?,
-      esFavorito: map['es_favorito'] == 1,
-      stockCritico: map['stock_critico'] as int?,
-      margenGanancia: map['margen_ganancia'] as double?,
-      unidadMedida: map['unidad_medida'] as String? ?? 'UND',
-      activo: map['activo'] == 1,
-      notas: map['notas'] as String?,
+      costo: (map['costo'] as num?)?.toDouble() ?? 0.0,
+      precioVenta: (map['precio_venta'] as num?)?.toDouble() ?? 0.0,
+      stockActual: (map['stock_actual'] as int?) ?? 0,
+      stockMinimo: (map['stock_minimo'] as int?) ?? 5,
+      unidadMedida: map['unidad_medida'] as String? ?? 'unidad',
+      esFavorito: (map['es_favorito'] as int?) == 1,
+      estaActivo: (map['esta_activo'] as int?) != 0,
+      fechaRegistro: map['fecha_registro'] != null 
+          ? DateTime.tryParse(map['fecha_registro'] as String) 
+          : null,
+      fechaActualizacion: map['fecha_actualizacion'] != null 
+          ? DateTime.tryParse(map['fecha_actualizacion'] as String) 
+          : null,
+    );
+  }
+
+  Product copyWith({
+    int? id,
+    String? nombre,
+    String? codigo,
+    String? categoria,
+    double? costo,
+    double? precioVenta,
+    int? stockActual,
+    int? stockMinimo,
+    String? unidadMedida,
+    bool? esFavorito,
+    bool? estaActivo,
+    DateTime? fechaRegistro,
+    DateTime? fechaActualizacion,
+  }) {
+    return Product(
+      id: id ?? this.id,
+      nombre: nombre ?? this.nombre,
+      codigo: codigo ?? this.codigo,
+      categoria: categoria ?? this.categoria,
+      costo: costo ?? this.costo,
+      precioVenta: precioVenta ?? this.precioVenta,
+      stockActual: stockActual ?? this.stockActual,
+      stockMinimo: stockMinimo ?? this.stockMinimo,
+      unidadMedida: unidadMedida ?? this.unidadMedida,
+      esFavorito: esFavorito ?? this.esFavorito,
+      estaActivo: estaActivo ?? this.estaActivo,
+      fechaRegistro: fechaRegistro ?? this.fechaRegistro,
+      fechaActualizacion: fechaActualizacion ?? DateTime.now(),
     );
   }
 }
