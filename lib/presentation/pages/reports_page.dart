@@ -129,7 +129,7 @@ class _ReportsPageState extends State<ReportsPage> {
         ),
         child: Row(
           children: [
-            CircleAvatar(backgroundColor: Colors.blue, child: Icon(icon, color: Colors.white)),
+            CircleAvatar(backgroundColor: Colors.blue, child: Icon(icon, color: Colors.black87)),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -399,7 +399,7 @@ class _ReportsPageState extends State<ReportsPage> {
                         backgroundColor: i < 3 ? Colors.amber : Colors.blue,
                         child: Text(
                           '${i + 1}',
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
                         ),
                       ),
                       title: Text((top10[i]['nombre'] as String?) ?? 'Sin nombre'),
@@ -449,7 +449,7 @@ class _ReportsPageState extends State<ReportsPage> {
                     return ListTile(
                       leading: CircleAvatar(
                         backgroundColor: Colors.teal,
-                        child: const Icon(Icons.receipt_long, color: Colors.white, size: 20),
+                        child: const Icon(Icons.receipt_long, color: Colors.black87, size: 20),
                       ),
                       title: Text('Venta #${s['id']}'),
                       subtitle: Text('${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.parse(s['fecha'] as String))}'),
@@ -565,7 +565,7 @@ class _ReportsPageState extends State<ReportsPage> {
                     return ListTile(
                       leading: CircleAvatar(
                         backgroundColor: Colors.indigo,
-                        child: const Icon(Icons.store, color: Colors.white),
+                        child: const Icon(Icons.store, color: Colors.black87),
                       ),
                       title: Text(sup['nombre'] as String? ?? 'Sin proveedor'),
                       subtitle: Text('${sup['total_compras']} compras'),
@@ -715,7 +715,7 @@ class _ReportsPageState extends State<ReportsPage> {
                     return ListTile(
                       leading: CircleAvatar(
                         backgroundColor: isEntrada ? Colors.green : Colors.red,
-                        child: Icon(isEntrada ? Icons.add : Icons.remove, color: Colors.white, size: 20),
+                        child: Icon(isEntrada ? Icons.add : Icons.remove, color: Colors.black87, size: 20),
                       ),
                       title: Text(m['tipo'] as String),
                       subtitle: Text('${DateFormat('dd/MM/yyyy').format(DateTime.parse(m['fecha'] as String))}'),
