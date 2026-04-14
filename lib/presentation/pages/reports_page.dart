@@ -855,6 +855,7 @@ class _ReportsPageState extends State<ReportsPage> {
   }
 
   Future<void> _showProfit() async {
+    try {
     final report = <String, dynamic>{}; // Temporalmente desactivado
     if (!mounted) return;
 
@@ -963,4 +964,10 @@ class _ReportsPageState extends State<ReportsPage> {
       ),
     );
   }
-}
+    } catch (e) {
+      print("Error en profit: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+      }
+    }
+  }
