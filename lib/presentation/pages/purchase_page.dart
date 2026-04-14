@@ -390,3 +390,33 @@ class _PurchasePageState extends State<PurchasePage> {
     );
   }
 }
+
+  // ✅ RF 49: Seleccionar proveedor (para v1.0.1)
+  Future<void> _showSupplierSelector() async {
+    final suppliers = await _supplierRepo.getAllSuppliers();
+    if (suppliers.isEmpty) return;
+    final selected = await showDialog<int>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Seleccionar Proveedor'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: suppliers.length,
+            itemBuilder: (ctx, i) => ListTile(
+              title: Text(suppliers[i].nombre),
+              onTap: () => Navigator.pop(ctx, suppliers[i].id),
+            ),
+          ),
+        ),
+      ),
+    );
+    if (selected != null) {
+      final s = suppliers.firstWhere((x) => x.id == selected);
+      setState(() {
+        _selectedSupplierId = s.id;
+        _selectedSupplierName = s.nombre;
+      });
+    }
+  }

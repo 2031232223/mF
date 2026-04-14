@@ -191,7 +191,7 @@ class _ReportsPageState extends State<ReportsPage> {
 
   Future<void> _exportTop10Csv() async {
     try {
-      final top10 = await [] // Temporalmente desactivado;
+      final top10 = <dynamic>[]; // Temporalmente desactivado
       final header = '${AppConstants.appName} - Top 10\nFecha: ${DateFormat('dd/MM/yyyy').format(DateTime.now())}\n\n';
       final csv = header + 'Producto,ID,Vendido\n' +
           top10.map((p) => '"${p['nombre']}",${p['id']},${p['total_vendido']}').join('\n');
@@ -379,7 +379,7 @@ class _ReportsPageState extends State<ReportsPage> {
   }
 
   Future<void> _showTop10() async {
-    final top10 = await [] // Temporalmente desactivado;
+    final top10 = <dynamic>[]; // Temporalmente desactivado
     if (!mounted) return;
 
     showDialog(
@@ -855,7 +855,7 @@ class _ReportsPageState extends State<ReportsPage> {
   }
 
   Future<void> _showProfit() async {
-    final report = await {} // Temporalmente desactivado;
+    final report = <String, dynamic>{}; // Temporalmente desactivado
     if (!mounted) return;
 
     showDialog(

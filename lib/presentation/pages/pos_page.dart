@@ -1,3 +1,4 @@
+import 'package:printing/printing.dart';
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'dart:convert';
@@ -244,7 +245,7 @@ class _PosPageState extends State<PosPage> {
       final lines = await _saleRepo.getSaleLines(saleId);
       final pdfFile = await PdfGenerator.generateSaleTicket(sale: sale, lines: lines);
       if (pdfFile != null && mounted) {
-        await Printing.sharePdf(bytes: await pdfFile.readAsBytes(), filename: 'ticket_venta_$saleId.pdf');
+        await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdfFile.readAsBytes(), name: 'ticket_venta_$saleId.pdf');
       }
     } catch (e) {
       print('Error generando PDF: $e');

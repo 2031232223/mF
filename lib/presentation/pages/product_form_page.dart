@@ -22,7 +22,6 @@ class _ProductFormPageState extends State<ProductFormPage> {
   late TextEditingController _stockController;
   late TextEditingController _stockMinimoController;
   late TextEditingController _categoriaController;
-  late TextEditingController _stockCriticoController;
   
   bool _esFavorito = false;
   bool _loading = false;
@@ -33,12 +32,10 @@ class _ProductFormPageState extends State<ProductFormPage> {
     _nombreController = TextEditingController(text: widget.product?.nombre ?? '');
     _codigoController = TextEditingController(text: widget.product?.codigo ?? '');
     _costoController = TextEditingController(text: widget.product?.costo?.toString() ?? '');
-    _margenController = TextEditingController(text: widget.product?.margenGanancia?.toString() ?? '30');
     _precioController = TextEditingController(text: widget.product?.precioVenta.toString() ?? '');
     _stockController = TextEditingController(text: widget.product?.stockActual.toString() ?? '0');
     _stockMinimoController = TextEditingController(text: widget.product?.stockMinimo.toString() ?? '5');
     _categoriaController = TextEditingController(text: widget.product?.categoria ?? '');
-    _stockCriticoController = TextEditingController(text: widget.product?.stockCritico?.toString() ?? '2');
     _esFavorito = widget.product?.esFavorito ?? false;
   }
 
@@ -52,7 +49,6 @@ class _ProductFormPageState extends State<ProductFormPage> {
     _stockController.dispose();
     _stockMinimoController.dispose();
     _categoriaController.dispose();
-    _stockCriticoController.dispose();
     super.dispose();
   }
 
@@ -63,7 +59,7 @@ class _ProductFormPageState extends State<ProductFormPage> {
     
     try {
       final product = Product(
-        id: widget.product?.id,
+        id: widget.product?.id ?? 0,
         nombre: _nombreController.text.trim(),
         codigo: _codigoController.text.trim(),
         costo: double.tryParse(_costoController.text) ?? 0.0,
@@ -85,7 +81,7 @@ class _ProductFormPageState extends State<ProductFormPage> {
           );
         }
       } else {
-        await _repo.updateProduct(widget.product!.id!, product);
+        await _repo.updateProduct(product);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('✅ Producto actualizado'), backgroundColor: Colors.green),
@@ -196,7 +192,6 @@ class _ProductFormPageState extends State<ProductFormPage> {
             ),
             const SizedBox(height: 12),
             TextFormField(
-              controller: _stockCriticoController,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(labelText: 'Stock Crítico (alerta)', border: OutlineInputBorder()),
             ),
