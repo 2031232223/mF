@@ -208,7 +208,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _buildInputCard({required IconData icon, required String title, required String subtitle, required String hintText, required String initialValue, required Function(String) onSave}) {
     final controller = TextEditingController(text: initialValue);
     return Card(elevation: 2, margin: const EdgeInsets.only(bottom: 8), child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [CircleAvatar(backgroundColor: Colors.blue.withOpacity(0.1), child: Icon(icon, color: Colors.blue)), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)), Text(subtitle, style: TextStyle(color: Colors.black.grey[600], fontSize: 12))]))]),
+      Row(children: [CircleAvatar(backgroundColor: Colors.blue.withOpacity(0.1), child: Icon(icon, color: Colors.blue)), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)), Text(subtitle, style: TextStyle(color: Colors.grey[600], fontSize: 12))]))]),
       const SizedBox(height: 12),
       TextField(decoration: InputDecoration(hintText: hintText, border: const OutlineInputBorder()), controller: controller, onChanged: onSave),
     ])));
@@ -219,7 +219,7 @@ class _SettingsPageState extends State<SettingsPage> {
     return Card(elevation: 2, margin: const EdgeInsets.only(bottom: 8), child: Padding(padding: const EdgeInsets.all(16), child: Row(children: [
       CircleAvatar(backgroundColor: Colors.blue.withOpacity(0.1), child: Icon(icon, color: Colors.blue)),
       const SizedBox(width: 12),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)), Text(subtitle, style: TextStyle(color: Colors.black.grey[600], fontSize: 12))])),
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)), Text(subtitle, style: TextStyle(color: Colors.grey[600], fontSize: 12))])),
       SizedBox(width: 100, child: TextField(keyboardType: TextInputType.number, decoration: InputDecoration(suffixText: suffix, border: const OutlineInputBorder()), controller: controller, onChanged: onSave)),
     ])));
   }
