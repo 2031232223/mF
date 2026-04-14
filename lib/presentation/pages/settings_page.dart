@@ -80,19 +80,19 @@ class _SettingsPageState extends State<SettingsPage> {
               icon: Icons.currency_exchange,
               title: 'Monedas y Tasas',
               subtitle: 'Configurar CUP, MLC, USD',
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CurrencySettingsPage())),
+              onTap: () => Navigator.push(context,  MaterialPageRoute(builder: (_) => const CurrencySettingsPage())),
             ),
             _buildSettingsCard(
               icon: Icons.backup,
               title: 'Respaldos',
               subtitle: 'Crear o restaurar copias',
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BackupPage())),
+              onTap: () => Navigator.push(context,  MaterialPageRoute(builder: (_) => const BackupPage())),
             ),
             _buildSettingsCard(
               icon: Icons.note,
               title: 'Notas Diarias',
               subtitle: 'Registrar notas del día',
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotesPage())),
+              onTap: () => Navigator.push(context,  MaterialPageRoute(builder: (_) => const NotesPage())),
             ),
             const SizedBox(height: 24),
             
@@ -163,7 +163,7 @@ class _SettingsPageState extends State<SettingsPage> {
               icon: Icons.help,
               title: 'Ayuda y Feedback',
               subtitle: 'Preguntas frecuentes y sugerencias',
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpFeedbackPage())),
+              onTap: () => Navigator.push(context,  MaterialPageRoute(builder: (_) => const HelpFeedbackPage())),
             ),
             _buildSettingsCard(
               icon: Icons.info,

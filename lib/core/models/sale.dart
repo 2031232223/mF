@@ -69,9 +69,7 @@ class Sale {
       montoPagado: (map['monto_pagado'] as num?)?.toDouble() ?? 0.0,
       montoPendiente: (map['monto_pendiente'] as num?)?.toDouble() ?? 0.0,
       notasCredito: map['notas_credito'] as String?,
-      createdAt: map['created_at'] != null 
-          ? DateTime.tryParse(map['created_at'] as String) 
-          : null,
+      createdAt: map['created_at'] != null ? DateTime.tryParse(map['created_at'] as String) : null,
     );
   }
 }
@@ -85,7 +83,7 @@ class SaleLine {
 
   SaleLine({
     required this.productoId,
-    this.productoNombre = '',
+    required this.productoNombre,
     required this.cantidad,
     required this.precioUnitario,
     required this.subtotal,

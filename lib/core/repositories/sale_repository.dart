@@ -137,8 +137,8 @@ class SaleRepository {
 
   // RF 51: Sugerir precio por margen
   Future<double> suggestPriceByMargin(double costo, double margenDeseada) {
-    if (costo <= 0) return 0.0;
-    return costo * (1 + (margenDeseada / 100));
+    if (costo <= 0) return Future.value(0.0);
+    return Future.value(costo * (1 + (margenDeseada / 100)));
   }
 
   // RF 51: Calcular margen actual de producto

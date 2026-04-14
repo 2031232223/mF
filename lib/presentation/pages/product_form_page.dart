@@ -67,13 +67,13 @@ class _ProductFormPageState extends State<ProductFormPage> {
         nombre: _nombreController.text.trim(),
         codigo: _codigoController.text.trim(),
         costo: double.tryParse(_costoController.text) ?? 0.0,
-          margenGanancia: double.tryParse(_margenController.text) ?? 0.0,
+          
         precioVenta: double.parse(_precioController.text),
         stockActual: int.tryParse(_stockController.text) ?? 0,
         stockMinimo: int.tryParse(_stockMinimoController.text) ?? 5,
         categoria: _categoriaController.text.trim().isEmpty ? null : _categoriaController.text.trim(),
         esFavorito: _esFavorito,
-        stockCritico: int.tryParse(_stockCriticoController.text),
+        
         unidadMedida: 'und',
       );
 

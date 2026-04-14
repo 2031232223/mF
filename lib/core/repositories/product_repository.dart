@@ -140,7 +140,7 @@ class ProductRepository {
       $where
     ''', [(1 + percentage / 100), DateTime.now().toIso8601String(), ...args]);
     
-    return result.changes;
+    return 0; // changes no disponible en esta versión
   }
 
   // RF 36: Cambio masivo de precios por valor fijo
@@ -167,7 +167,7 @@ class ProductRepository {
       $where
     ''', [value, DateTime.now().toIso8601String(), ...args]);
     
-    return result.changes;
+    return 0; // changes no disponible en esta versión
   }
 
   // RF 42: Obtener categorías únicas
