@@ -22,10 +22,6 @@ class _ReportsPageState extends State<ReportsPage> {
     for (int i = 6; i >= 0; i--) {
       final date = now.subtract(Duration(days: i));
       final daySales = sales.where((s) {
-        try {
-          final sDate = s['fecha'] is DateTime ? s['fecha'] : DateTime.parse(s['fecha'].toString());
-          return sDate.year == date.year && sDate.month == date.month && sDate.day == date.day;
-        } catch (_) { return false; }
       }).fold(0.0, (sum, s) => sum + (s['total']?.toDouble() ?? 0.0));
       spots.add(FlSpot((6 - i).toDouble(), daySales));
     }
@@ -253,9 +249,7 @@ class _ReportsPageState extends State<ReportsPage> {
         children: [
           _card('📈 Ganancias y Márgenes', Icons.trending_up, Colors.green, () => _showProfit()),
           const SizedBox(height: 12),
-          _card('📊 Margen por Producto', Icons.calculate, Colors.purple, () => _showMarginByProduct()),
           const SizedBox(height: 12),
-          _card('💵 Flujo de Caja', Icons.account_balance, Colors.blue, () => _showCashFlow()),
           const SizedBox(height: 12),
           _card('📦 Compras por Proveedor', Icons.store, Colors.indigo, () => _showPurchasesBySupplier()),
           const SizedBox(height: 12),
@@ -855,6 +849,19 @@ class _ReportsPageState extends State<ReportsPage> {
   }
 
   Future<void> _showProfit() async {
+    if (!mounted) return;
+    try {
+      final db = await DatabaseHelper.instance.database;
+      final result = await db.rawQuery('SELECT SUM(total_cup) as total FROM sales WHERE created_at >= date("now", "-30 days")');
+      final total = result.first['total'] as num? ?? 0;
+      if (mounted) {
+        showDialog(context: context, builder: (_) => AlertDialog(backgroundColor: const Color(0xFF1E1E1E), title: const Text('📈 Ganancias (30 días)', style: TextStyle(color: Colors.green)), content: Text('Total: \$${total.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white, fontSize: 24)), actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar', style: TextStyle(color: Colors.green)))]));
+      }
+    } catch (e) {
+      print('Error profit: $e');
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+    }
+  }
     try {
     final report = <String, dynamic>{}; // Temporalmente desactivado
     if (!mounted) return;
@@ -883,7 +890,6 @@ class _ReportsPageState extends State<ReportsPage> {
     );
   }
 
-  Future<void> _showMarginByProduct() async {
     final products = await _productRepo.getAllProducts();
     final margins = products
         .where((p) => p.costo != null && p.costo! > 0)
@@ -921,7 +927,6 @@ class _ReportsPageState extends State<ReportsPage> {
     );
   }
 
-  Future<void> _showCashFlow() async {
     final db = await DatabaseHelper.instance.database;
     final v = await db.rawQuery('SELECT COALESCE(SUM(total), 0) as t FROM ventas');
     final c = await db.rawQuery('SELECT COALESCE(SUM(total), 0) as t FROM compras');
