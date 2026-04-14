@@ -440,11 +440,11 @@ class _PosPageState extends State<PosPage> {
                 return;
               }
               try {
-                await _customerRepo.createCustomer(Customer(
-                  nombre: nc.text.trim(),
-                  carnetIdentidad: cc.text.trim(),
-                  telefono: tc.text.trim(),
-                ));
+                                final customerId = await _customerRepo.createCustomer(
+                  nameController.text.trim(),
+                  idController.text.trim().isEmpty ? null : idController.text.trim(),
+                  phoneController.text.trim().isEmpty ? null : phoneController.text.trim(),
+                );
                 await _loadData();
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('✅ Cliente registrado'), backgroundColor: Colors.green),
