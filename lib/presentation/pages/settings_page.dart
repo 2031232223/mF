@@ -126,7 +126,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  void _showInputDialog(String title, String currentValue, Function(String) onSave) {
+  void _showInputDialog(String title, String currentValue, VoidCallback onSave) {
     final controller = TextEditingController(text: currentValue);
     showDialog(
       context: context,
@@ -142,7 +142,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
             onPressed: () {
-              onSave(controller.text);
+              onSave();
               Navigator.pop(ctx);
             },
             child: const Text('Guardar', style: TextStyle(color: Colors.white)),
