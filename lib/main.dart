@@ -6,12 +6,9 @@ import 'presentation/pages/splash_page.dart';
 import 'presentation/pages/dashboard_page.dart';
 import 'presentation/pages/pos_page.dart';
 import 'presentation/pages/product_list_page.dart';
-import 'presentation/pages/product_management_page.dart';
 import 'presentation/pages/purchase_page.dart';
 import 'presentation/pages/reports_page.dart';
-import 'presentation/pages/advanced_reports_page.dart';
 import 'presentation/pages/settings_page.dart';
-        '/backup': (context) => const BackupPage(),
 import 'presentation/pages/backup_page.dart';
 
 void main() async {
@@ -44,7 +41,7 @@ class MyApp extends StatelessWidget {
         appBarTheme: const AppBarTheme(backgroundColor: Color(0xFF1E1E1E)),
       ),
       themeMode: ThemeMode.system,
-      home: const SplashPage(), // ✅ SPLASH COMO INICIO
+      home: const SplashPage(),
       routes: {
         '/dashboard': (context) => const DashboardPage(),
         '/pos': (context) => const PosPage(),
@@ -69,12 +66,12 @@ class _BottomNavMainPageState extends State<BottomNavMainPage> {
   int _currentIndex = 0;
 
   final List<Widget> _pages = const [
-    DashboardPage(),      // ✅ Dashboard primero
-    PosPage(),            // ✅ POS
-    ProductListPage(),    // ✅ Inventario
-    PurchasePage(),       // ✅ Compras
-    ReportsPage(),        // ✅ Reportes
-    SettingsPage(),       // ✅ Settings funcional
+    DashboardPage(),
+    PosPage(),
+    ProductListPage(),
+    PurchasePage(),
+    ReportsPage(),
+    SettingsPage(),
   ];
 
   @override

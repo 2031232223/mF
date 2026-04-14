@@ -3,8 +3,8 @@ import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:path_provider/path_provider.dart';
 import '../models/sale.dart';
-import '../models/sale_line.dart';
 import '../database/database_helper.dart';
 
 class PdfGenerator {
@@ -69,17 +69,15 @@ class PdfGenerator {
               ),
               pw.Divider(),
 
-              // Líneas de productos - ✅ CORRECCIÓN: Usa productoNombre
+              // Líneas de productos - ✅ MUESTRA NOMBRE REAL DEL PRODUCTO
               ...lines.map((line) => pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Expanded(
                     child: pw.Text(
-                      // ✅ MUESTRA NOMBRE REAL DEL PRODUCTO
                       line.productoNombre.isNotEmpty ? line.productoNombre : 'Producto #${line.productoId}',
                       style: pw.TextStyle(fontSize: 9),
                       maxLines: 2,
-                      overflow: pw.TextOverflow.ellipsis,
                     ),
                   ),
                   pw.Text('${line.cantidad}', style: pw.TextStyle(fontSize: 9)),
@@ -155,22 +153,7 @@ class PdfGenerator {
     }
   }
 
-  // Formatear fecha para ticket
   static String _formatDate(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
-  }
-
-  // ✅ FUNCIÓN AUXILIAR PARA OBTENER NOMBRE DEL PRODUCTO (fallback)
-  static Future<String> getProductName(int productId) async {
-    try {
-      final db = await DatabaseHelper.instance.database;
-      final result = await db.query('productos', where: 'id = ?', whereArgs: [productId]);
-      if (result.isNotEmpty) {
-        return result.first['nombre'] as String;
-      }
-    } catch (e) {
-      print('Error obteniendo nombre del producto: $e');
-    }
-    return 'Producto #$productId';
   }
 }
