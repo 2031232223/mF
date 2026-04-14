@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import '../../main.dart';
 import '../pages/dashboard_page.dart';
 
 class SplashPage extends StatefulWidget {
@@ -22,7 +23,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
     
     Timer(const Duration(seconds: 3), () {
       if (mounted) {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const DashboardPage()));
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const BottomNavMainPage()));
       }
     });
   }
