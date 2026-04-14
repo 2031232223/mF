@@ -46,7 +46,7 @@ class ReminderHelper {
     final result = await db.rawQuery('''
       SELECT id, nombre, stock_actual, stock_minimo
       FROM productos
-      WHERE stock_actual <= ? AND esta_activo = 1
+      WHERE stock_actual <= ? 
       ORDER BY stock_actual ASC
     ''', [threshold]);
 

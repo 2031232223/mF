@@ -12,7 +12,7 @@ class ProductRepository {
 
   Future<List<Product>> getAllProducts({bool onlyActive = true}) async {
     final db = await _dbHelper.database;
-    String where = onlyActive ? 'esta_activo = 1' : '';
+    String where = onlyActive ? '1=1' : '';
     final List<Map<String, dynamic>> maps = await db.query(
       'productos',
       where: where.isEmpty ? null : where,
@@ -88,7 +88,7 @@ class ProductRepository {
     final db = await _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.query(
       'productos',
-      where: 'es_favorito = 1 AND esta_activo = 1',
+      where: 'es_favorito = 1 ',
       orderBy: 'nombre ASC',
     );
     return maps.map((m) => Product.fromMap(m)).toList();
@@ -199,7 +199,7 @@ class ProductRepository {
     final db = await _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.query(
       'productos',
-      where: 'categoria = ? AND esta_activo = 1',
+      where: 'categoria = ? ',
       whereArgs: [categoria],
       orderBy: 'nombre ASC',
     );
@@ -211,7 +211,7 @@ class ProductRepository {
     final db = await _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.query(
       'productos',
-      where: 'stock_actual <= stock_minimo AND esta_activo = 1',
+      where: 'stock_actual <= stock_minimo ',
       orderBy: 'stock_actual ASC',
     );
     return maps.map((m) => Product.fromMap(m)).toList();
@@ -223,7 +223,7 @@ class ProductRepository {
     final result = await db.rawQuery('''
       SELECT SUM(stock_actual * costo) as total 
       FROM productos 
-      WHERE esta_activo = 1
+      WHERE 1=1
     ''');
     if (result.isNotEmpty && result.first['total'] != null) {
       return (result.first['total'] as num).toDouble();
@@ -257,7 +257,7 @@ class ProductRepository {
     final db = await _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.query(
       'productos',
-      where: '(nombre LIKE ? OR codigo LIKE ?) AND esta_activo = 1',
+      where: '(nombre LIKE ? OR codigo LIKE ?) ',
       whereArgs: ['%$query%', '%$query%'],
       orderBy: 'nombre ASC',
     );
