@@ -273,7 +273,6 @@ class _SettingsPageState extends State<SettingsPage> {
 // Método para navegar a página de respaldos (agregar en la sección de Respaldos)
 void _navigateToBackupPage() {
   Navigator.push(
-    context,
     MaterialPageRoute(builder: (context) => const BackupPage()),
   );
 }
