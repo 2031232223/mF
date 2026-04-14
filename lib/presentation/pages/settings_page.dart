@@ -112,7 +112,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildInputCard({required IconData icon, required String title, required String subtitle, required String currentValue, required Function(String) onSave}) {
+  Widget _buildInputCard({required IconData icon, required String title, required String subtitle, required String currentValue, required VoidCallback onSave}) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       elevation: 2,
