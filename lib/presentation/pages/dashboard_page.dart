@@ -77,7 +77,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 children: [
                   const Text('Indicadores Clave', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 16),
-                  _buildIndicatorCard('\$ Ventas Registradas', '\$_totalVentas.toStringAsFixed(2)}', Colors.green, Icons.attach_money),
+                  _buildIndicatorCard('\$ Ventas Registradas', "${_totalVentas.toStringAsFixed(2)}", Colors.green, Icons.attach_money),
                   const SizedBox(height: 12),
                   _buildIndicatorCard('📦 Productos en Stock', '$_productosCount', Colors.orange, Icons.inventory_2),
                   const SizedBox(height: 12),
