@@ -30,7 +30,6 @@ class _SettingsPageState extends State<SettingsPage> {
     _loadAllSettings();
   }
 
-  // Cargar todas las configuraciones
   Future<void> _loadAllSettings() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -53,7 +52,6 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  // Guardar configuración
   Future<void> _saveSetting(String key, dynamic value) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -112,7 +110,8 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildInputCard({required IconData icon, required String title, required String subtitle, required String currentValue, required VoidCallback onSave}) {
+  // _buildInputCard: onTap abre el diálogo, NO recibe onSave
+  Widget _buildInputCard({required IconData icon, required String title, required String subtitle, required String currentValue, required VoidCallback onTap}) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       elevation: 2,
@@ -121,12 +120,13 @@ class _SettingsPageState extends State<SettingsPage> {
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black87)),
         subtitle: Text(subtitle, style: const TextStyle(color: Colors.grey)),
         trailing: Text(currentValue, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-        onTap: () => _showInputDialog(title, currentValue, onSave),
+        onTap: onTap,
       ),
     );
   }
 
-  void _showInputDialog(String title, String currentValue, VoidCallback onSave) {
+  // _showInputDialog: MUESTRA diálogo y llama a onSave con el valor editado
+  void _showInputDialog(String title, String currentValue, Function(String) onSave) {
     final controller = TextEditingController(text: currentValue);
     showDialog(
       context: context,
@@ -142,7 +142,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
             onPressed: () {
-              onSave();
+              onSave(controller.text);  // ✅ Aquí sí pasamos el valor
               Navigator.pop(ctx);
             },
             child: const Text('Guardar', style: TextStyle(color: Colors.white)),
@@ -200,7 +200,6 @@ class _SettingsPageState extends State<SettingsPage> {
             onPressed: () {
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('🔄 Restaurando...'), backgroundColor: Colors.blue));
-              // TODO: Implementar lógica de restauración
             },
             child: const Text('Restaurar', style: TextStyle(color: Colors.white)),
           ),
@@ -241,36 +240,36 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        backgroundColor: Colors.grey,
+        backgroundColor: Color(0xFF1E1E1E),
         body: Center(child: CircularProgressIndicator(color: Colors.blue)),
       );
     }
 
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: const Color(0xFF1E1E1E),
       appBar: AppBar(
         title: const Text('Configuración', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-        backgroundColor: Colors.blue,
+        backgroundColor: const Color(0xFF1E1E1E),
         centerTitle: true,
-        elevation: 2,
+        elevation: 0,
       ),
       body: ListView(
         padding: const EdgeInsets.all(8),
         children: [
           // Sección: Empresa
           _buildSectionTitle('🏢 EMPRESA'),
-          _buildInputCard(icon: Icons.business, title: 'Nombre de la Empresa', subtitle: 'Nombre que aparecerá en tickets y reportes', currentValue: _companyName, onSave: _editCompanyName),
-          _buildInputCard(icon: Icons.percent, title: 'Tasa de Impuesto', subtitle: 'Porcentaje aplicado automáticamente a ventas', currentValue: '${_taxRate.toStringAsFixed(1)}%', onSave: _editTaxRate),
+          _buildInputCard(icon: Icons.business, title: 'Nombre de la Empresa', subtitle: 'Nombre que aparecerá en tickets y reportes', currentValue: _companyName, onTap: _editCompanyName),
+          _buildInputCard(icon: Icons.percent, title: 'Tasa de Impuesto', subtitle: 'Porcentaje aplicado automáticamente a ventas', currentValue: '${_taxRate.toStringAsFixed(1)}%', onTap: _editTaxRate),
 
           // Sección: Moneda
           _buildSectionTitle('💱 MONEDA'),
           _buildCard(icon: Icons.currency_exchange, title: 'Moneda Principal', subtitle: 'Seleccionar: CUP / USD / MLC', onTap: _showCurrencySettings),
-          _buildInputCard(icon: Icons.attach_money, title: 'Tasa de Cambio', subtitle: 'CUP equivalentes a 1 USD', currentValue: _exchangeRate.toStringAsFixed(2), onSave: _editExchangeRate),
+          _buildInputCard(icon: Icons.attach_money, title: 'Tasa de Cambio', subtitle: 'CUP equivalentes a 1 USD', currentValue: _exchangeRate.toStringAsFixed(2), onTap: _editExchangeRate),
 
           // Sección: Inventario
           _buildSectionTitle('📦 INVENTARIO'),
           _buildSwitchCard(icon: Icons.warning_amber, title: 'Recordatorio de Stock', subtitle: 'Alertar cuando productos estén por agotarse', value: _stockReminderEnabled, onChanged: (val) { setState(() => _stockReminderEnabled = val); _saveSetting('stock_reminder_enabled', val); }),
-          _buildInputCard(icon: Icons.calendar_today, title: 'Días para Alerta', subtitle: 'Anticipación en días para recordatorio de stock bajo', currentValue: '$_stockReminderDays días', onSave: _editStockReminderDays),
+          _buildInputCard(icon: Icons.calendar_today, title: 'Días para Alerta', subtitle: 'Anticipación en días para recordatorio de stock bajo', currentValue: '$_stockReminderDays días', onTap: _editStockReminderDays),
 
           // Sección: Notificaciones
           _buildSectionTitle('🔔 NOTIFICACIONES'),
