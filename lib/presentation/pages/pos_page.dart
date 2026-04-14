@@ -441,9 +441,9 @@ class _PosPageState extends State<PosPage> {
               }
               try {
                                 final customerId = await _customerRepo.createCustomer(
-                  nameCtrl.text.trim(),
-                  idCtrl.text.trim().isEmpty ? null : idCtrl.text.trim(),
-                  phoneCtrl.text.trim().isEmpty ? null : phoneCtrl.text.trim(),
+                  nc.text.trim(),
+                  cc.text.trim().isEmpty ? null : cc.text.trim(),
+                  tc.text.trim().isEmpty ? null : tc.text.trim(),
                 );
                 await _loadData();
                 ScaffoldMessenger.of(context).showSnackBar(
