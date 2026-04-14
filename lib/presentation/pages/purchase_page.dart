@@ -76,10 +76,21 @@ class _PurchasePageState extends State<PurchasePage> {
   }
 
   Future<void> _loadData() async {
-    setState(() => _isLoading = true);
+    try {
+      setState(() => _isLoading = true);
     _products = await _productRepo.getAllProducts();
     _suppliers = await _supplierRepo.getAllSuppliers();
-    setState(() => _isLoading = false);
+    
+    } catch (e) {
+      print('Error loading data: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('⚠️ Error: $e'), backgroundColor: Colors.orange),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   void _addToCart(Product product) {
@@ -175,7 +186,7 @@ class _PurchasePageState extends State<PurchasePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Scaffold(backgroundColor: const Color(0xFF1E1E1E),
       appBar: AppBar(
         title: const Text('Compras'),
         centerTitle: true,

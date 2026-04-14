@@ -31,9 +31,19 @@ class _ProductListPageState extends State<ProductListPage> {
   }
 
   Future<void> _loadProducts() async {
-    setState(() => _isLoading = true);
-    _products = await _productRepo.getAllProducts();
-    setState(() => _isLoading = false);
+    try {
+      setState(() => _isLoading = true);
+      _products = await _productRepo.getAllProducts();
+    } catch (e) {
+      print('Error loading products: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('⚠️ Error: $e'), backgroundColor: Colors.orange),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _deleteProduct(int productId) async {
@@ -92,7 +102,7 @@ class _ProductListPageState extends State<ProductListPage> {
       return p.nombre.toLowerCase().contains(_searchController.text.toLowerCase());
     }).toList();
 
-    return Scaffold(
+    return Scaffold(backgroundColor: const Color(0xFF1E1E1E),
       appBar: AppBar(
         title: const Text('Inventario'),
         centerTitle: true,
