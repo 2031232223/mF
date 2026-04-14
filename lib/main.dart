@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-// IMPORTS COMPLETOS (CORREGIDO)
+// IMPORTS COMPLETOS (USANDO SETTING PAGE ORIGINAL)
 import 'presentation/pages/dashboard_page.dart';
 import 'presentation/pages/pos_page.dart';
 import 'presentation/pages/product_list_page.dart';
 import 'presentation/pages/purchase_page.dart';
 import 'presentation/pages/reports_page.dart';
-import 'presentation/pages/config_page.dart';
-import 'presentation/pages/notes_page.dart'; // ✅ NUEVO
+import 'presentation/pages/settings_page.dart'; // ✅ FILE ORIGINAL
+import 'presentation/pages/notes_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,13 +42,13 @@ class MyApp extends StatelessWidget {
       themeMode: ThemeMode.system,
       home: BottomNavMainPage(),
       routes: {
-        '/dashboard': (context) => const DashboardPage(),
+        '/dashboard': (context) => DashboardPage(),
         '/pos': (context) => PosPage(),
         '/inventory': (context) => ProductListPage(),
         '/purchases': (context) => PurchasePage(),
         '/reports': (context) => ReportsPage(),
-        '/settings': (context) => ConfigPage(),
-        '/notes': (context) => NotesPage(), // ✅ NUEVA RUTA
+        '/settings': (context) => SettingsPage(), // ✅ FILE ORIGINAL
+        '/notes': (context) => NotesPage(),
       },
     );
   }
@@ -70,7 +70,7 @@ class _BottomNavMainPageState extends State<BottomNavMainPage> {
     ProductListPage(),
     PurchasePage(),
     ReportsPage(),
-    ConfigPage(),
+    SettingsPage(), // ✅ FILE ORIGINAL
   ];
 
   @override
