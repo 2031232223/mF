@@ -35,7 +35,7 @@ class _PausedSalesPageState extends State<PausedSalesPage> {
     await _loadPausedSales();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✅ Venta pausada eliminada'), backgroundColor: Colors.green),
+        const SnackBar(content: Text('✅ Venta pausada eliminada'), backgroundColor: Colors.black),
       );
     }
   }
@@ -55,7 +55,7 @@ class _PausedSalesPageState extends State<PausedSalesPage> {
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
                   child: ListTile(
-                    leading: const CircleAvatar(backgroundColor: Colors.orange, child: Icon(Icons.pause, color: Colors.white)),
+                    leading: const CircleAvatar(backgroundColor: Colors.black, child: Icon(Icons.pause, color: Colors.white)),
                     title: Text(sale['nombre'], style: const TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

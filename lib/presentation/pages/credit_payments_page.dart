@@ -80,7 +80,7 @@ class _CreditPaymentsPageState extends State<CreditPaymentsPage> with SingleTick
       
       if (amount > currentPending) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('⚠️ El monto supera la deuda pendiente'), backgroundColor: Colors.orange),
+          const SnackBar(content: Text('⚠️ El monto supera la deuda pendiente'), backgroundColor: Colors.black),
         );
         return;
       }
@@ -102,7 +102,7 @@ class _CreditPaymentsPageState extends State<CreditPaymentsPage> with SingleTick
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✅ Pago registrado exitosamente'), backgroundColor: Colors.green),
+        const SnackBar(content: Text('✅ Pago registrado exitosamente'), backgroundColor: Colors.black),
       );
       
       _amountCtrl.clear();
@@ -111,7 +111,7 @@ class _CreditPaymentsPageState extends State<CreditPaymentsPage> with SingleTick
       _loadData();
       
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.black));
     }
   }
 
@@ -199,7 +199,7 @@ class _CreditPaymentsPageState extends State<CreditPaymentsPage> with SingleTick
                               borderRadius: BorderRadius.circular(4),
                               child: LinearProgressIndicator(
                                 value: progress / 100,
-                                backgroundColor: Colors.grey[300],
+                                backgroundColor: Colors.black,
                                 color: pending > total * 0.5 ? Colors.red : Colors.orange,
                                 minHeight: 6,
                               ),
@@ -285,7 +285,7 @@ class _CreditPaymentsPageState extends State<CreditPaymentsPage> with SingleTick
               icon: const Icon(Icons.payment),
               label: const Text('REGISTRAR PAGO', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
+                backgroundColor: Colors.black,
                 foregroundColor: Colors.white,
               ),
             ),
@@ -317,7 +317,7 @@ class _CreditPaymentsPageState extends State<CreditPaymentsPage> with SingleTick
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
                 value: paid / total,
-                backgroundColor: Colors.grey[300],
+                backgroundColor: Colors.black,
                 color: Colors.green,
                 minHeight: 8,
               ),
@@ -373,7 +373,7 @@ class _CreditPaymentsPageState extends State<CreditPaymentsPage> with SingleTick
                   },
                   icon: const Icon(Icons.payment),
                   label: const Text('Registrar Pago'),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
                 ),
               ),
             ],

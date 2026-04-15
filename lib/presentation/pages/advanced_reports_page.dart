@@ -153,7 +153,7 @@ class _AdvancedReportsPageState extends State<AdvancedReportsPage> {
                 margin: const EdgeInsets.all(8),
                 child: ListTile(
                   leading: CircleAvatar(
-                    backgroundColor: Colors.blue,
+                    backgroundColor: Colors.black,
                     child: Text('${i + 1}', style: const TextStyle(color: Colors.white)),
                   ),
                   title: Text(item.productName),

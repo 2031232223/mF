@@ -195,7 +195,7 @@ class _ConfigPageState extends State<ConfigPage> {
         onPressed: () {
           setState(() => _companyName = _empresaController.text);
           _saveSetting('nombre_empresa', _companyName);
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Guardado correctamente'), backgroundColor: Colors.green));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Guardado correctamente'), backgroundColor: Colors.black));
         },
       ),
     ])));
@@ -227,7 +227,7 @@ class _ConfigPageState extends State<ConfigPage> {
         onPressed: () {
           setState(() => _taxRate = double.tryParse(_impuestoController.text) ?? 0.0);
           _saveSetting('tasa_impuesto', _taxRate);
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Impuestos actualizados'), backgroundColor: Colors.green));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Impuestos actualizados'), backgroundColor: Colors.black));
         },
       ),
     ])));
@@ -259,7 +259,7 @@ class _ConfigPageState extends State<ConfigPage> {
         onPressed: () {
           setState(() => _operationLockDays = int.tryParse(_bloquearController.text) ?? 30);
           _saveSetting('dias_bloqueo', _operationLockDays);
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Bloqueo configurado'), backgroundColor: Colors.orange));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Bloqueo configurado'), backgroundColor: Colors.black));
         },
       ),
     ])));
@@ -291,7 +291,7 @@ class _ConfigPageState extends State<ConfigPage> {
         onPressed: () {
           setState(() => _stockAlertThreshold = int.tryParse(_alertaController.text) ?? 5);
           _saveSetting('alerta_stock', _stockAlertThreshold);
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✓ Umbral establecido'), backgroundColor: Colors.green));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✓ Umbral establecido'), backgroundColor: Colors.black));
         },
       ),
     ])));
@@ -323,12 +323,12 @@ class _ConfigPageState extends State<ConfigPage> {
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
                               ElevatedButton(
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
                                 onPressed: () => Navigator.pop(context, true),
                                 child: const Text('Sí', style: TextStyle(fontWeight: FontWeight.w600)),
                               ),
                               ElevatedButton(
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
                                 onPressed: () => Navigator.pop(context, false),
                                 child: const Text('No', style: TextStyle(fontWeight: FontWeight.w600)),
                               ),
@@ -407,12 +407,12 @@ class _ConfigPageState extends State<ConfigPage> {
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
                               ElevatedButton(
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
                                 onPressed: () => Navigator.pop(context, true),
                                 child: const Text('Sí', style: TextStyle(fontWeight: FontWeight.w600)),
                               ),
                               ElevatedButton(
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
                                 onPressed: () => Navigator.pop(context, false),
                                 child: const Text('No', style: TextStyle(fontWeight: FontWeight.w600)),
                               ),

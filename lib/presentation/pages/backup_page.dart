@@ -50,7 +50,7 @@ class _BackupPageState extends State<BackupPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('✅ Respaldo creado: ${path.split('/').last}'),
-            backgroundColor: Colors.green,
+            backgroundColor: Colors.black,
             duration: const Duration(seconds: 3),
           ),
         );
@@ -59,7 +59,7 @@ class _BackupPageState extends State<BackupPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.black),
         );
       }
     } finally {
@@ -80,12 +80,12 @@ class _BackupPageState extends State<BackupPage> {
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
                               ElevatedButton(
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
                                 onPressed: () => Navigator.pop(context, true),
                                 child: const Text('Sí', style: TextStyle(fontWeight: FontWeight.w600)),
                               ),
                               ElevatedButton(
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
                                 onPressed: () => Navigator.pop(context, false),
                                 child: const Text('No', style: TextStyle(fontWeight: FontWeight.w600)),
                               ),
@@ -119,7 +119,7 @@ class _BackupPageState extends State<BackupPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.black),
         );
       }
     } finally {
@@ -140,14 +140,14 @@ class _BackupPageState extends State<BackupPage> {
       await _backupRepo.deleteBackup(backupPath);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Respaldo eliminado'), backgroundColor: Colors.green),
+          const SnackBar(content: Text('✅ Respaldo eliminado'), backgroundColor: Colors.black),
         );
         _loadBackups();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.black),
         );
       }
     }
@@ -160,7 +160,7 @@ class _BackupPageState extends State<BackupPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('✅ Respaldo movido a: $newPath'),
-            backgroundColor: Colors.green,
+            backgroundColor: Colors.black,
             duration: const Duration(seconds: 4),
           ),
         );
@@ -168,7 +168,7 @@ class _BackupPageState extends State<BackupPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.black),
         );
       }
     }
@@ -264,7 +264,7 @@ class _BackupPageState extends State<BackupPage> {
             icon: const Icon(Icons.add),
             label: const Text('Crear Respaldo'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
+              backgroundColor: Colors.black,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),

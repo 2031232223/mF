@@ -130,7 +130,7 @@ class _SupplierHistoryPageState extends State<SupplierHistoryPage> {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: Colors.blue,
+          backgroundColor: Colors.black,
           child: Icon(Icons.shopping_cart, color: Colors.white, size: 20),
         ),
         title: Text('Compra #${purchase['id']}'),

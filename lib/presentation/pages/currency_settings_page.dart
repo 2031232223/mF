@@ -35,7 +35,7 @@ class _CurrencySettingsPageState extends State<CurrencySettingsPage> {
     await prefs.setDouble('usd_rate', _usdRate);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✅ Configuración guardada'), backgroundColor: Colors.green),
+        const SnackBar(content: Text('✅ Configuración guardada'), backgroundColor: Colors.black),
       );
     }
   }
@@ -101,7 +101,7 @@ class _CurrencySettingsPageState extends State<CurrencySettingsPage> {
                 onPressed: _saveSettings,
                 icon: const Icon(Icons.save),
                 label: const Text('Guardar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
               ),
             ),
           ],

@@ -59,11 +59,11 @@ class _SettingsPageState extends State<SettingsPage> {
       else if (value is bool) await prefs.setBool(key, value);
       else if (value is int) await prefs.setInt(key, value);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('✅ Guardado: $key'), backgroundColor: Colors.green, duration: const Duration(seconds: 2)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('✅ Guardado: $key'), backgroundColor: Colors.black, duration: const Duration(seconds: 2)));
       }
       _loadAllSettings();
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.black));
     }
   }
 
@@ -72,15 +72,15 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildCard({required IconData icon, required String title, required String subtitle, required VoidCallback? onTap, Color? iconColor}) {
-    return Card(margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), elevation: 2, child: ListTile(leading: CircleAvatar(backgroundColor: (iconColor ?? Colors.green).withOpacity(0.1), child: Icon(icon, color: iconColor ?? Colors.green)), title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.green)), subtitle: Text(subtitle, style: TextStyle(color: Colors.white)), trailing: const Icon(Icons.chevron_right, color: Colors.green), onTap: onTap,));
+    return Card(margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), elevation: 2, child: ListTile(leading: CircleAvatar(backgroundColor: (iconColor ?? Colors.green).withOpacity(0.1), child: Icon(icon, color: iconColor ?? Colors.green)), title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.green)), subtitle: Text(subtitle, style: TextStyle(color: Colors.green)), trailing: const Icon(Icons.chevron_right, color: Colors.green), onTap: onTap,));
   }
 
   Widget _buildSwitchCard({required IconData icon, required String title, required String subtitle, required bool value, required Function(bool) onChanged}) {
-    return Card(margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), elevation: 2, child: ListTile(leading: CircleAvatar(backgroundColor: Colors.green.withOpacity(0.1), child: Icon(icon, color: Colors.green)), title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.green)), subtitle: Text(subtitle, style: TextStyle(color: Colors.white)), trailing: Switch(value: value, onChanged: onChanged, activeColor: Colors.green),));
+    return Card(margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), elevation: 2, child: ListTile(leading: CircleAvatar(backgroundColor: Colors.black.withOpacity(0.1), child: Icon(icon, color: Colors.green)), title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.green)), subtitle: Text(subtitle, style: TextStyle(color: Colors.green)), trailing: Switch(value: value, onChanged: onChanged, activeColor: Colors.green),));
   }
 
   Widget _buildInputCard({required IconData icon, required String title, required String subtitle, required String currentValue, required VoidCallback onTap}) {
-    return Card(margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), elevation: 2, child: ListTile(leading: CircleAvatar(backgroundColor: Colors.green.withOpacity(0.1), child: Icon(icon, color: Colors.green)), title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.green)), subtitle: Text(subtitle, style: TextStyle(color: Colors.white)), trailing: Text(currentValue, style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600, fontSize: 12)), onTap: onTap,));
+    return Card(margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), elevation: 2, child: ListTile(leading: CircleAvatar(backgroundColor: Colors.black.withOpacity(0.1), child: Icon(icon, color: Colors.green)), title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.green)), subtitle: Text(subtitle, style: TextStyle(color: Colors.green)), trailing: Text(currentValue, style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600, fontSize: 12)), onTap: onTap,));
   }
 
   void _showInputDialog(String title, String currentValue, Function(String) onSave) {
@@ -90,12 +90,12 @@ class _SettingsPageState extends State<SettingsPage> {
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
                               ElevatedButton(
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
                                 onPressed: () => Navigator.pop(context, true),
                                 child: const Text('Sí', style: TextStyle(fontWeight: FontWeight.w600)),
                               ),
                               ElevatedButton(
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
                                 onPressed: () => Navigator.pop(context, false),
                                 child: const Text('No', style: TextStyle(fontWeight: FontWeight.w600)),
                               ),
@@ -115,19 +115,19 @@ class _SettingsPageState extends State<SettingsPage> {
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
                               ElevatedButton(
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
                                 onPressed: () => Navigator.pop(context, true),
                                 child: const Text('Sí', style: TextStyle(fontWeight: FontWeight.w600)),
                               ),
                               ElevatedButton(
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
                                 onPressed: () => Navigator.pop(context, false),
                                 child: const Text('No', style: TextStyle(fontWeight: FontWeight.w600)),
                               ),
                             ],
                           ),
                         ],)); }
-  Future<void> _exportToCsv() async { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('📤 Exportando...'), backgroundColor: Colors.green)); await Future.delayed(const Duration(seconds: 2)); if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Exportado'), backgroundColor: Colors.green)); }
+  Future<void> _exportToCsv() async { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('📤 Exportando...'), backgroundColor: Colors.black)); await Future.delayed(const Duration(seconds: 2)); if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Exportado'), backgroundColor: Colors.black)); }
   void _showAboutDialog() { showAboutDialog(context: context, applicationName: 'Nova ADEN', applicationVersion: '1.0.0', applicationIcon: const Icon(Icons.store, size: 40, color: Colors.green), children: const [Text('Sistema de Gestión\n\nDesarrollado con Flutter', style: TextStyle(color: Colors.white))],); }
   void _showNotesPage() { Navigator.push(context, MaterialPageRoute(builder: (_) => const NotesPage())); }
   void _showHelpFeedback() { Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpFeedbackPage())); }

@@ -51,7 +51,7 @@ class _BulkPricePageState extends State<BulkPricePage> {
   Future<void> _applyChanges() async {
     if (_selectedIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('⚠️ Seleccione productos'), backgroundColor: Colors.orange),
+        const SnackBar(content: Text('⚠️ Seleccione productos'), backgroundColor: Colors.black),
       );
       return;
     }
@@ -76,7 +76,7 @@ class _BulkPricePageState extends State<BulkPricePage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('✅ Precios actualizados en ${_selectedIds.length} productos'), 
-            backgroundColor: Colors.green,
+            backgroundColor: Colors.black,
           ),
         );
         _selectedIds.clear(); 
@@ -85,7 +85,7 @@ class _BulkPricePageState extends State<BulkPricePage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❌ $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('❌ $e'), backgroundColor: Colors.black),
         );
       }
     }
@@ -223,7 +223,7 @@ class _BulkPricePageState extends State<BulkPricePage> {
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ), 
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green, 
+                          backgroundColor: Colors.black, 
                           foregroundColor: Colors.white,
                         ),
                       ),

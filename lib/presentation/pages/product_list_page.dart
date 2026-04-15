@@ -38,7 +38,7 @@ class _ProductListPageState extends State<ProductListPage> {
       print('Error loading products: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('⚠️ Error: $e'), backgroundColor: Colors.orange),
+          SnackBar(content: Text('⚠️ Error: $e'), backgroundColor: Colors.black),
         );
       }
     } finally {
@@ -52,13 +52,13 @@ class _ProductListPageState extends State<ProductListPage> {
       await _loadProducts();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Producto eliminado'), backgroundColor: Colors.green),
+          const SnackBar(content: Text('✅ Producto eliminado'), backgroundColor: Colors.black),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.black),
         );
       }
     }
@@ -76,7 +76,7 @@ class _ProductListPageState extends State<ProductListPage> {
             children: [
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
+                  backgroundColor: Colors.black,
                   foregroundColor: Colors.white,
                 ),
                 onPressed: () {
@@ -87,7 +87,7 @@ class _ProductListPageState extends State<ProductListPage> {
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey,
+                  backgroundColor: Colors.black,
                   foregroundColor: Colors.white,
                 ),
                 onPressed: () => Navigator.pop(ctx),
@@ -153,7 +153,7 @@ class _ProductListPageState extends State<ProductListPage> {
                               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                               child: ListTile(
                                 leading: CircleAvatar(
-                                  backgroundColor: Colors.blue,
+                                  backgroundColor: Colors.black,
                                   child: const Icon(Icons.inventory_2, color: Colors.white),
                                 ),
                                 title: Text(p.nombre, style: const TextStyle(fontWeight: FontWeight.bold)),

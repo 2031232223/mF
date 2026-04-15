@@ -79,12 +79,12 @@ class _PurchaseListPageState extends State<PurchaseListPage> {
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
                               ElevatedButton(
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
                                 onPressed: () => Navigator.pop(context, true),
                                 child: const Text('Sí', style: TextStyle(fontWeight: FontWeight.w600)),
                               ),
                               ElevatedButton(
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
                                 onPressed: () => Navigator.pop(context, false),
                                 child: const Text('No', style: TextStyle(fontWeight: FontWeight.w600)),
                               ),
@@ -156,7 +156,7 @@ class _PurchaseListPageState extends State<PurchaseListPage> {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                   content: const Text('⚠️ Edición no disponible aún'),
-                  backgroundColor: Colors.orange,
+                  backgroundColor: Colors.black,
                 ));
               },
               icon: const Icon(Icons.edit, size: 20),

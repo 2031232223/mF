@@ -23,7 +23,7 @@ class _HelpFeedbackPageState extends State<HelpFeedbackPage> {
   Future<void> _sendFeedback() async {
     if (_feedbackController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('⚠️ Escribe tu mensaje'), backgroundColor: Colors.orange),
+        const SnackBar(content: Text('⚠️ Escribe tu mensaje'), backgroundColor: Colors.black),
       );
       return;
     }
@@ -55,14 +55,14 @@ class _HelpFeedbackPageState extends State<HelpFeedbackPage> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Feedback enviado'), backgroundColor: Colors.green),
+          const SnackBar(content: Text('✅ Feedback enviado'), backgroundColor: Colors.black),
         );
         _feedbackController.clear();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.black),
         );
       }
     }
@@ -144,7 +144,7 @@ class _HelpFeedbackPageState extends State<HelpFeedbackPage> {
               icon: const Icon(Icons.lightbulb),
               label: const Text('Ver Consejos Rápidos'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.amber,
+                backgroundColor: Colors.black,
                 foregroundColor: Colors.black,
               ),
             ),

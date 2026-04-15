@@ -32,7 +32,7 @@ class _InventoryAdjustmentPageState extends State<InventoryAdjustmentPage> {
 
   Future<void> _submit() async {
     if (_selectedProduct == null || _quantity <= 0 || _reason.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Complete todos los campos'), backgroundColor: Colors.orange));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Complete todos los campos'), backgroundColor: Colors.black));
       return;
     }
     setState(() => _loading = true);
@@ -50,13 +50,13 @@ class _InventoryAdjustmentPageState extends State<InventoryAdjustmentPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('✅ Ajuste ${_type == AdjustmentType.positive ? 'positivo' : 'negativo'} registrado'),
-          backgroundColor: Colors.green,
+          backgroundColor: Colors.black,
         ));
         _quantity = 1; _reason = ''; _notesController.clear();
         await _loadProducts();
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ $e'), backgroundColor: Colors.red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ $e'), backgroundColor: Colors.black));
     }
     setState(() => _loading = false);
   }

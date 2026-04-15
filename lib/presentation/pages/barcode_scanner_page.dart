@@ -54,7 +54,7 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('✅ Código escaneado: $barcode'),
-        backgroundColor: Colors.green,
+        backgroundColor: Colors.black,
         duration: const Duration(seconds: 1),
       ),
     );

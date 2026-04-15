@@ -91,7 +91,7 @@ class _ProductFormPageState extends State<ProductFormPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(widget.product == null ? '✅ Producto creado' : '✅ Producto actualizado'),
-            backgroundColor: Colors.green,
+            backgroundColor: Colors.black,
           ),
         );
         Navigator.pop(context, true);
@@ -99,7 +99,7 @@ class _ProductFormPageState extends State<ProductFormPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.black),
         );
       }
     } finally {
@@ -222,7 +222,7 @@ class _ProductFormPageState extends State<ProductFormPage> {
               height: 56,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
+                  backgroundColor: Colors.black,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 ),

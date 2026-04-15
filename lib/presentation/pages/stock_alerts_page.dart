@@ -32,7 +32,7 @@ class _StockAlertsPageState extends State<StockAlertsPage> {
     await prefs.setInt('stock_critico_default', _defaultStockCritico);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✅ Alertas configuradas'), backgroundColor: Colors.green),
+        const SnackBar(content: Text('✅ Alertas configuradas'), backgroundColor: Colors.black),
       );
     }
   }
@@ -75,7 +75,7 @@ class _StockAlertsPageState extends State<StockAlertsPage> {
                 onPressed: _saveSettings,
                 icon: const Icon(Icons.save),
                 label: const Text('GUARDAR ALERTAS', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
               ),
             ),
           ],

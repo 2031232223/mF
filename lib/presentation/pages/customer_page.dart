@@ -37,9 +37,9 @@ class _CustomerPageState extends State<CustomerPage> {
         await _repository.createCustomer(customer);
         _formKey.currentState!.reset();
         await _loadCustomers();
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Cliente registrado'), backgroundColor: Colors.green));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Cliente registrado'), backgroundColor: Colors.black));
       } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.black));
       }
     }
   }
@@ -59,9 +59,9 @@ class _CustomerPageState extends State<CustomerPage> {
             TextFormField(controller: _telefonoController, decoration: const InputDecoration(labelText: 'Teléfono', border: OutlineInputBorder()), validator: (v) => null, keyboardType: TextInputType.phone),
             const SizedBox(height: 16),
             Row(children: [
-              Expanded(child: ElevatedButton.icon(onPressed: _saveCustomer, icon: const Icon(Icons.add), label: const Text('AÑADIR'), style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14)))),
+              Expanded(child: ElevatedButton.icon(onPressed: _saveCustomer, icon: const Icon(Icons.add), label: const Text('AÑADIR'), style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14)))),
               const SizedBox(width: 12),
-              Expanded(child: ElevatedButton.icon(onPressed: () => _formKey.currentState!.reset(), icon: const Icon(Icons.clear), label: const Text('LIMPIAR'), style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[400], foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14)))),
+              Expanded(child: ElevatedButton.icon(onPressed: () => _formKey.currentState!.reset(), icon: const Icon(Icons.clear), label: const Text('LIMPIAR'), style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14)))),
             ]),
           ]),
         )),
@@ -71,7 +71,7 @@ class _CustomerPageState extends State<CustomerPage> {
           itemBuilder: (ctx, i) {
             final c = _customers[i];
             return Card(margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4), child: ListTile(
-              leading: const CircleAvatar(backgroundColor: Colors.blue, child: Icon(Icons.person, color: Colors.white)),
+              leading: const CircleAvatar(backgroundColor: Colors.black, child: Icon(Icons.person, color: Colors.white)),
               title: Text(c.nombre, style: const TextStyle(fontWeight: FontWeight.bold)),
               subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('CI: ${c.carnetIdentidad}'), Text('📞 ${c.telefono}')]),
             ));
