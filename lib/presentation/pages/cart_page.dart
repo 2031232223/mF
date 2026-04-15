@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/models/customer.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/repositories/customer_repository.dart';
-import 'pos_page.dart';
+import '../pos_page.dart';
 
 class CartPage extends StatefulWidget {
   final List<CartItem> cart;
@@ -22,12 +22,14 @@ class _CartPageState extends State<CartPage> {
   bool _isCredit = false;
   double _discount = 0.0;
   final TextEditingController _paymentController = TextEditingController();
+  final TextEditingController _discountController = TextEditingController(text: '0');
   bool _isLoading = false;
+  bool _discountEnabled = false;
 
   @override
   void initState() { super.initState(); _loadCustomers(); }
   @override
-  void dispose() { _paymentController.dispose(); super.dispose(); }
+  void dispose() { _paymentController.dispose(); _discountController.dispose(); super.dispose(); }
 
   Future<void> _loadCustomers() async {
     try { _customers = await _customerRepo.getAllCustomers(); if (mounted) setState(() {}); } catch (e) { print('Error: $e'); }
@@ -50,26 +52,29 @@ class _CartPageState extends State<CartPage> {
     setState(() => _isLoading = true);
     try {
       final db = await DatabaseHelper.instance.database;
-      final saleId = await db.insert('sales', {
-        'customer_id': _selectedCustomer!.id,
+      final saleId = await db.insert('ventas', {
+        'cliente_id': _selectedCustomer!.id,
+        'total': _subtotal,
         'total_cup': _subtotal,
-        'total_usd': widget.selectedCurrency == 'USD' ? _total : _subtotal / widget.exchangeRate,
-        'total_mlc': widget.selectedCurrency == 'MLC' ? _total : _subtotal / widget.exchangeRate,
-        'currency': widget.selectedCurrency,
-        'exchange_rate': widget.exchangeRate,
-        'discount': _discount,
-        'is_credit': _isCredit ? 1 : 0,
+        'fecha': DateTime.now().toIso8601String(),
+        'metodo_pago': 'Efectivo',
+        'moneda': widget.selectedCurrency,
+        'tasa_cambio': widget.exchangeRate,
+        'descuento': _discount,
+        'es_fiado': _isCredit ? 1 : 0,
+        'monto_pagado': _paid,
+        'monto_pendiente': _isCredit ? (_total - _paid) : 0,
         'created_at': DateTime.now().toIso8601String(),
       });
       for (final item in widget.cart) {
-        await db.insert('sale_items', {
-          'sale_id': saleId,
-          'product_id': item.productoId,
-          'quantity': item.cantidad,
-          'price_cup': item.precioCUP,
-          'subtotal_cup': item.subtotalCUP,
+        await db.insert('detalle_ventas', {
+          'venta_id': saleId,
+          'producto_id': item.productoId,
+          'cantidad': item.cantidad,
+          'precio_unitario': item.precioCUP,
+          'subtotal': item.subtotalCUP,
         });
-        await db.rawUpdate('UPDATE products SET stock_actual = stock_actual - ? WHERE id = ?', [item.cantidad, item.productoId]);
+        await db.rawUpdate('UPDATE productos SET stock_actual = stock_actual - ? WHERE id = ?', [item.cantidad, item.productoId]);
       }
       if (mounted) { 
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Venta registrada'), backgroundColor: Colors.green)); 
@@ -84,46 +89,59 @@ class _CartPageState extends State<CartPage> {
   }
 
   void _showCustomerSelector() {
-    showModalBottomSheet(context: context, backgroundColor: Colors.white, builder: (ctx) => Container(padding: const EdgeInsets.all(20), child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [Row(children: [const Text('Seleccionar Cliente', style: TextStyle(color: Colors.black87, fontSize: 18, fontWeight: FontWeight.w600)), const Spacer(), IconButton(icon: const Icon(Icons.close, color: Colors.grey), onPressed: () => Navigator.pop(ctx)),]), const SizedBox(height: 16), if (_customers.isEmpty) const Text('No hay clientes', style: TextStyle(color: Colors.grey)), Expanded(child: ListView.builder(shrinkWrap: true, itemCount: _customers.length, itemBuilder: (context, index) { final c = _customers[index]; return Card(color: Colors.white, margin: const EdgeInsets.only(bottom: 8), child: ListTile(leading: CircleAvatar(backgroundColor: Colors.blue, child: Text(c.nombre[0], style: const TextStyle(color: Colors.white))), title: Text(c.nombre, style: const TextStyle(fontWeight: FontWeight.w600)), subtitle: Text(c.telefono ?? '', style: TextStyle(color: Colors.grey[600])), onTap: () { setState(() => _selectedCustomer = c); Navigator.pop(ctx); },)); })),],)));
+    showModalBottomSheet(context: context, backgroundColor: Colors.grey[900], builder: (ctx) => Container(padding: const EdgeInsets.all(20), child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [Row(children: [const Text('Seleccionar Cliente', style: TextStyle(color: Colors.green, fontSize: 18, fontWeight: FontWeight.w600)), const Spacer(), IconButton(icon: const Icon(Icons.close, color: Colors.grey), onPressed: () => Navigator.pop(ctx)),]), const SizedBox(height: 16), if (_customers.isEmpty) const Text('No hay clientes', style: TextStyle(color: Colors.grey)), Expanded(child: ListView.builder(shrinkWrap: true, itemCount: _customers.length, itemBuilder: (context, index) { final c = _customers[index]; return Card(color: Colors.grey[850], margin: const EdgeInsets.only(bottom: 8), child: ListTile(leading: CircleAvatar(backgroundColor: Colors.green, child: Text(c.nombre[0], style: const TextStyle(color: Colors.white))), title: Text(c.nombre, style: const TextStyle(color: Colors.green)), subtitle: Text(c.telefono ?? '', style: TextStyle(color: Colors.grey[400])), onTap: () { setState(() => _selectedCustomer = c); Navigator.pop(ctx); },)); })),],)));
+  }
+
+  void _showDiscountDialog() {
+    showDialog(context: context, builder: (ctx) => AlertDialog(backgroundColor: Colors.grey[900], title: const Text('Descuento Global', style: TextStyle(color: Colors.green)), content: Column(mainAxisSize: MainAxisSize.min, children: [TextField(controller: _discountController, keyboardType: TextInputType.number, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Porcentaje (%)', labelStyle: TextStyle(color: Colors.grey), border: OutlineInputBorder())), const SizedBox(height: 16), Text('Descuento: \$${_discount.toStringAsFixed(2)}', style: const TextStyle(color: Colors.green, fontSize: 16, fontWeight: FontWeight.bold)),]), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.grey))), ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.green), onPressed: () { setState(() { _discount = (widget.totalCUP * double.tryParse(_discountController.text) ?? 0) / 100; _discountEnabled = double.tryParse(_discountController.text) != null && double.tryParse(_discountController.text)! > 0; }); Navigator.pop(ctx); }, child: const Text('Aplicar', style: TextStyle(color: Colors.white))),],));
+  }
+
+  void _showNewCustomerDialog() {
+    final nameController = TextEditingController();
+    final phoneController = TextEditingController();
+    showDialog(context: context, builder: (ctx) => AlertDialog(backgroundColor: Colors.grey[900], title: const Text('Nuevo Cliente', style: TextStyle(color: Colors.green)), content: Column(mainAxisSize: MainAxisSize.min, children: [TextField(controller: nameController, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Nombre', labelStyle: TextStyle(color: Colors.grey), border: OutlineInputBorder())), const SizedBox(height: 16), TextField(controller: phoneController, style: const TextStyle(color: Colors.white), keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Teléfono', labelStyle: TextStyle(color: Colors.grey), border: OutlineInputBorder())),]), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.grey))), ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.green), onPressed: () async { if (nameController.text.trim().isNotEmpty) { try { final db = await DatabaseHelper.instance.database; await db.insert('clientes', {'nombre': nameController.text.trim(), 'telefono': phoneController.text.trim(), 'es_habitual': 0, 'fecha_registro': DateTime.now().toIso8601String()}); if (mounted) { setState(() { _selectedCustomer = Customer(id: 0, nombre: nameController.text.trim(), telefono: phoneController.text.trim()); }); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Cliente registrado'), backgroundColor: Colors.green)); } Navigator.pop(ctx); } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red)); } } }, child: const Text('Guardar', style: TextStyle(color: Colors.white))),],));
+  }
+
+  String _getCurrencyIcon(String currency) {
+    switch (currency) {
+      case 'CUP': return '🇨🇺';
+      case 'USD': return '\$';
+      case 'MLC': return '💳';
+      default: return currency;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('Carrito', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+        title: const Text('Carrito', style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),
         backgroundColor: Colors.blue,
         elevation: 2,
         actions: [
-          DropdownButton<String>(
-            value: widget.selectedCurrency,
-            dropdownColor: Colors.blue[900],
-            underline: const SizedBox(),
-            items: ['CUP','USD','MLC'].map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(color: Colors.white)))).toList(),
-            onChanged: null,
-          ),
+          Padding(padding: const EdgeInsets.only(right: 16), child: DropdownButton<String>(value: widget.selectedCurrency, dropdownColor: Colors.grey[900], underline: const SizedBox(), items: ['CUP','USD','MLC'].map((c) => DropdownMenuItem(value: c, child: Row(children: [Text(_getCurrencyIcon(c), style: const TextStyle(fontSize: 16)), Text(c, style: const TextStyle(color: Colors.white))]))).toList(), onChanged: null)),
           IconButton(icon: const Icon(Icons.close, color: Colors.white), onPressed: () => Navigator.pop(context)),
         ],
       ),
       body: Column(children: [
         // Cliente
-        Container(padding: const EdgeInsets.all(16), color: Colors.grey[100], child: Row(children: [const Text('Cliente:', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black87)), const Spacer(), TextButton.icon(icon: const Icon(Icons.person_add, color: Colors.blue), label: const Text('Nuevo', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w600)), onPressed: () {},),])),
-        Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), color: Colors.grey[100], child: Card(color: Colors.white, child: ListTile(leading: CircleAvatar(backgroundColor: Colors.blue, child: Icon(_selectedCustomer == null ? Icons.person : Icons.check, color: Colors.white)), title: Text(_selectedCustomer?.nombre ?? 'Seleccionar cliente', style: const TextStyle(fontWeight: FontWeight.w600)), trailing: const Icon(Icons.chevron_right), onTap: _showCustomerSelector,))),
+        Container(padding: const EdgeInsets.all(16), color: Colors.black, child: Row(children: [const Text('Cliente:', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.green)), const Spacer(), TextButton.icon(icon: const Icon(Icons.person_add, color: Colors.green), label: const Text('Nuevo', style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600)), onPressed: _showNewCustomerDialog),])),
+        Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), color: Colors.black, child: Card(color: Colors.grey[900], child: ListTile(leading: CircleAvatar(backgroundColor: Colors.green, child: Icon(_selectedCustomer == null ? Icons.person : Icons.check, color: Colors.white)), title: Text(_selectedCustomer?.nombre ?? 'Seleccionar cliente', style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.green)), trailing: const Icon(Icons.chevron_right, color: Colors.green), onTap: _showCustomerSelector,))),
         
         // Cart Items
-        Expanded(child: ListView.builder(padding: const EdgeInsets.all(16), itemCount: widget.cart.length, itemBuilder: (context, index) { final item = widget.cart[index]; final price = widget.selectedCurrency == 'CUP' ? item.precioCUP : item.precioCUP / widget.exchangeRate; return Card(margin: const EdgeInsets.only(bottom: 12), color: Colors.white, elevation: 2, child: Padding(padding: const EdgeInsets.all(12), child: Row(children: [CircleAvatar(backgroundColor: Colors.blue, radius: 24, child: Text('${index+1}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(item.nombre, style: const TextStyle(fontWeight: FontWeight.w600)), Text('${price.toStringAsFixed(2)} c/u', style: TextStyle(color: Colors.grey[600], fontSize: 12)),])), Row(children: [IconButton(icon: const Icon(Icons.remove_circle, color: Colors.red), onPressed: () { if (item.cantidad > 1) setState(() => item.cantidad--); }), Text('${item.cantidad}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)), IconButton(icon: const Icon(Icons.add_circle, color: Colors.green), onPressed: () { if (item.cantidad < item.stockDisponible) setState(() => item.cantidad++); }), IconButton(icon: const Icon(Icons.delete_forever, color: Colors.red), onPressed: () { setState(() => widget.cart.removeAt(index)); }),],)],))); })),
+        Expanded(child: ListView.builder(padding: const EdgeInsets.all(16), itemCount: widget.cart.length, itemBuilder: (context, index) { final item = widget.cart[index]; final price = widget.selectedCurrency == 'CUP' ? item.precioCUP : item.precioCUP / widget.exchangeRate; return Card(margin: const EdgeInsets.only(bottom: 12), color: Colors.grey[900], elevation: 2, child: Padding(padding: const EdgeInsets.all(12), child: Row(children: [CircleAvatar(backgroundColor: Colors.blue, radius: 24, child: Text('${index+1}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(item.nombre, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white)), Text('${price.toStringAsFixed(2)} c/u', style: TextStyle(color: Colors.grey[400], fontSize: 12)),])), Row(children: [IconButton(icon: const Icon(Icons.remove_circle, color: Colors.red), onPressed: () { if (item.cantidad > 1) setState(() => item.cantidad--); }), Text('${item.cantidad}', style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white, fontSize: 16)), IconButton(icon: const Icon(Icons.add_circle, color: Colors.green), onPressed: () { if (item.cantidad < item.stockDisponible) setState(() => item.cantidad++); }), IconButton(icon: const Icon(Icons.delete_forever, color: Colors.red), onPressed: () { setState(() => widget.cart.removeAt(index)); }),],)],))); })),
         
         // Descuento
-        Container(padding: const EdgeInsets.all(16), color: Colors.grey[100], child: Card(color: Colors.grey[200], child: Padding(padding: const EdgeInsets.all(12), child: Row(children: [const Icon(Icons.local_offer, color: Colors.green), const SizedBox(width: 12), const Text('Descuento Global', style: TextStyle(fontWeight: FontWeight.w600)), const Spacer(), Switch(value: _discount > 0, onChanged: (v) { setState(() => _discount = v ? 10.0 : 0.0); }, activeColor: Colors.green,)]),))),
+        Container(padding: const EdgeInsets.all(16), color: Colors.black, child: Card(color: Colors.grey[900], child: Padding(padding: const EdgeInsets.all(12), child: Row(children: [const Icon(Icons.local_offer, color: Colors.green), const SizedBox(width: 12), const Text('Descuento Global', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.green)), const Spacer(), Row(children: [Text(_discount > 0 ? '\$${_discount.toStringAsFixed(2)}' : '0%', style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.w600)), const SizedBox(width: 8), Switch(value: _discountEnabled, onChanged: (v) { if (v) _showDiscountDialog(); else setState(() { _discount = 0; _discountEnabled = false; _discountController.text = '0'; }); }), activeColor: Colors.green,]),]),))),
         
         // Totals
-        Container(padding: const EdgeInsets.all(16), color: Colors.white, child: Column(children: [
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Subtotal:', style: TextStyle(color: Colors.grey)), Text('${_subtotal.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w600)),]),
+        Container(padding: const EdgeInsets.all(16), color: Colors.grey[900], child: Column(children: [
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Subtotal:', style: TextStyle(color: Colors.grey)), Text('${_subtotal.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white)),]),
           const SizedBox(height: 8),
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('TOTAL:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), Text('${_total.toStringAsFixed(2)} ${widget.selectedCurrency}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green)),]),
-          const Divider(height: 24),
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Pagado:', style: TextStyle(color: Colors.grey)), SizedBox(width: 150, child: TextField(controller: _paymentController, keyboardType: TextInputType.number, decoration: const InputDecoration(hintText: '0.00', border: InputBorder.none, contentPadding: EdgeInsets.symmetric(vertical: 8)), textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.w600),)),]),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('TOTAL:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green)), Text('${_total.toStringAsFixed(2)} ${widget.selectedCurrency}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green)),]),
+          const Divider(height: 24, color: Colors.grey),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Pagado:', style: TextStyle(color: Colors.grey)), SizedBox(width: 150, child: TextField(controller: _paymentController, keyboardType: TextInputType.number, decoration: const InputDecoration(hintText: '0.00', border: InputBorder.none, contentPadding: EdgeInsets.symmetric(vertical: 8)), textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.green),)),]),
           if (_paid < _total) Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Row(children: [Icon(Icons.warning, color: Colors.orange, size: 16), SizedBox(width: 4), Text('Faltante:', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600)),]), Text('${(_total - _paid).toStringAsFixed(2)}', style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),]),
           if (_paid >= _total && _paid > 0) Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Row(children: [Icon(Icons.check_circle, color: Colors.green, size: 16), SizedBox(width: 4), Text('Cambio:', style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),]), Text('${_change.toStringAsFixed(2)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),]),
         ])),
