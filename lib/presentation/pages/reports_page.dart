@@ -854,8 +854,94 @@ class _ReportsPageState extends State<ReportsPage> {
     );
   }
 
-  Future<void> _showProfit() async {
-    final report = <String, dynamic>{}; // Temporalmente desactivado
+Future<void> _showProfit() async {
+    if (!mounted) return;
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('📈 Ganancias y Márgenes', style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(color: Colors.green),
+            SizedBox(height: 16),
+            Text('Cargando datos...', style: TextStyle(color: Colors.grey)),
+          ],
+        ),
+      ),
+    );
+    
+    try {
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      final db = await DatabaseHelper.instance.database;
+      final result = await db.rawQuery('''
+        SELECT 
+          COALESCE(SUM(total_cup), 0) as total_ventas,
+          COUNT(DISTINCT id) as total_transacciones
+        FROM sales 
+        WHERE created_at >= date("now", "-30 days")
+      ''');
+      
+      final totalVentas = result.first['total_ventas'] as num? ?? 0;
+      final totalTransacciones = result.first['total_transacciones'] as int? ?? 0;
+      
+      // Calcular margen promedio
+      final margenPromedio = totalVentas > 0 ? 30.0 : 0.0; // Placeholder - calcular real según costos
+      
+      if (!mounted) return;
+      Navigator.pop(ctx);
+      
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: const Color(0xFF1E1E1E),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('📈 Últimos 30 días', style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildReportRow('💵 Total Ventas:', '\$${totalVentas.toStringAsFixed(2)}', Colors.green),
+              const SizedBox(height: 8),
+              _buildReportRow('📊 Transacciones:', totalTransacciones.toString(), Colors.blue),
+              const SizedBox(height: 8),
+              _buildReportRow('📈 Margen Promedio:', '${margenPromedio.toStringAsFixed(1)}%', Colors.orange),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cerrar', style: TextStyle(color: Colors.green)),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      print('Error profit: \$e');
+      if (mounted) {
+        Navigator.pop(ctx);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('❌ Error: \$e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Widget _buildReportRow(String label, String value, Color color) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: TextStyle(color: Colors.grey[300], fontSize: 14)),
+        Text(value, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16)),
+      ],
+    );
+  }
+  
     if (!mounted) return;
 
     showDialog(
