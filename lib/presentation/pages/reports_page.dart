@@ -889,7 +889,7 @@ class _ReportsPageState extends State<ReportsPage> {
               const SizedBox(height: 8),
               _buildReportRow('📈 Ganancia:', '\$${ganancia.toStringAsFixed(2)}', Colors.green),
               const SizedBox(height: 8),
-              _buildReportRow('📊 Margen:', '\${margen.toStringAsFixed(1)}%', Colors.orange),
+              _buildReportRow('📊 Margen:', '${margen.toStringAsFixed(1)}%', Colors.orange),
             ],
           ),
           actions: [
