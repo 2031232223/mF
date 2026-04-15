@@ -75,6 +75,16 @@ class _PosPageState extends State<PosPage> {
   double get _totalCUP => _cart.fold(0.0, (sum, item) => sum + (item.precioCUP * item.cantidad));
   double get _totalAmount => _selectedCurrency == 'CUP' ? _totalCUP : _totalCUP / _exchangeRate;
 
+  
+  String _getCurrencyFlag(String currency) {
+    switch (currency) {
+      case 'CUP': return '🇨🇺';
+      case 'MLC': return '💳';
+      case 'USD': return '\$';
+      default: return currency;
+    }
+  }
+
   void _openCart() {
     if (_cart.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Agrega productos')));

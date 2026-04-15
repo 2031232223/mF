@@ -34,7 +34,7 @@ class _SplashPageState extends State<SplashPage> {
             SizedBox(height: 20),
             Text('Nova ADEN', style: TextStyle(color: Colors.green, fontSize: 32, fontWeight: FontWeight.bold)),
             SizedBox(height: 10),
-            Text('Sistema de Gestión', style: TextStyle(color: Colors.grey, fontSize: 16)),
+            Text('Administrador de Negocios', style: TextStyle(color: Colors.grey, fontSize: 16)),
             SizedBox(height: 40),
             SizedBox(width: 40, height: 40, child: CircularProgressIndicator(color: Colors.green, strokeWidth: 3)),
           ],

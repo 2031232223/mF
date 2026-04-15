@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
     );
     
     return MaterialApp(
-      title: 'Nova Aden',
+      title: 'Nova ADEN - Administrador de Negocios',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
@@ -40,7 +40,7 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: const Color(0xFF121212),
         appBarTheme: const AppBarTheme(backgroundColor: Color(0xFF1E1E1E)),
       ),
-      themeMode: ThemeMode.dark,
+      themeMode: ThemeMode.system,
       home: const SplashPage(),
       routes: {
         '/dashboard': (context) => const DashboardPage(),

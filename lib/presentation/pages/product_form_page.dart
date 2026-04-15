@@ -17,7 +17,6 @@ class _ProductFormPageState extends State<ProductFormPage> {
   late TextEditingController _nombreController;
   late TextEditingController _codigoController;
   late TextEditingController _costoController;
-  late TextEditingController _margenController;
   late TextEditingController _precioController;
   late TextEditingController _stockController;
   late TextEditingController _stockMinimoController;
@@ -44,7 +43,6 @@ class _ProductFormPageState extends State<ProductFormPage> {
     _nombreController.dispose();
     _codigoController.dispose();
     _costoController.dispose();
-    _margenController.dispose();
     _precioController.dispose();
     _stockController.dispose();
     _stockMinimoController.dispose();
@@ -52,7 +50,7 @@ class _ProductFormPageState extends State<ProductFormPage> {
     super.dispose();
   }
 
-  Future<void> _save() async {
+  Future<void> _saveProduct() async {
     if (!_formKey.currentState!.validate()) return;
     
     setState(() => _loading = true);
@@ -62,164 +60,109 @@ class _ProductFormPageState extends State<ProductFormPage> {
         id: widget.product?.id ?? 0,
         nombre: _nombreController.text.trim(),
         codigo: _codigoController.text.trim(),
+        categoria: _categoriaController.text.trim(),
         costo: double.tryParse(_costoController.text) ?? 0.0,
-          
-        precioVenta: double.parse(_precioController.text),
+        precioVenta: double.tryParse(_precioController.text) ?? 0.0,
         stockActual: int.tryParse(_stockController.text) ?? 0,
         stockMinimo: int.tryParse(_stockMinimoController.text) ?? 5,
-        categoria: _categoriaController.text.trim().isEmpty ? null : _categoriaController.text.trim(),
         esFavorito: _esFavorito,
-        
-        unidadMedida: 'und',
       );
 
       if (widget.product == null) {
         await _repo.createProduct(product);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('✅ Producto creado'), backgroundColor: Colors.green),
-          );
-        }
       } else {
         await _repo.updateProduct(product);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('✅ Producto actualizado'), backgroundColor: Colors.green),
-          );
-        }
       }
-      
-      if (mounted) Navigator.pop(context, true);
-      
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(widget.product == null ? '✅ Producto creado' : '✅ Producto actualizado'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context, true);
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red),
         );
       }
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
-    
-    setState(() => _loading = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    final isEdit = widget.product != null;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.grey[100],
       appBar: AppBar(
-        title: Text(isEdit ? 'Editar Producto' : 'Nuevo Producto'),
-        centerTitle: true,
+        title: Text(widget.product == null ? 'Nuevo Producto' : 'Editar Producto',
+          style: TextStyle(color: isDark ? Colors.green : Colors.black, fontWeight: FontWeight.w600)),
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        elevation: 0,
       ),
-      body: _loading ? const Center(child: CircularProgressIndicator()) : Form(
+      body: Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            TextFormField(
-              controller: _nombreController,
-              decoration: const InputDecoration(labelText: 'Nombre *', border: OutlineInputBorder()),
-              validator: (v) => v!.isEmpty ? 'Requerido' : null,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _codigoController,
-              decoration: const InputDecoration(labelText: 'Código *', border: OutlineInputBorder()),
-              validator: (v) => v!.isEmpty ? 'Requerido' : null,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _categoriaController,
-              decoration: const InputDecoration(labelText: 'Categoría (opcional)', border: OutlineInputBorder()),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    children: [
-                      TextFormField(
-                        controller: _costoController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        decoration: const InputDecoration(labelText: 'Costo', border: OutlineInputBorder()),
-                      ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _margenController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'Margen de ganancia (%)', border: OutlineInputBorder()),
-                        onChanged: (val) {
-                          final costo = double.tryParse(_costoController.text) ?? 0;
-                          final margen = double.tryParse(val) ?? 0;
-                          if (costo > 0) {
-                            _precioController.text = (costo + (costo * (margen / 100))).toStringAsFixed(2);
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextFormField(
-                    controller: _precioController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(labelText: 'Precio Venta *', border: OutlineInputBorder()),
-                    validator: (v) => v!.isEmpty ? 'Requerido' : null,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _stockController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Stock Actual', border: OutlineInputBorder()),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextFormField(
-                    controller: _stockMinimoController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Stock Mínimo', border: OutlineInputBorder()),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Stock Crítico (alerta)', border: OutlineInputBorder()),
-            ),
+            _buildTextField(_nombreController, 'Nombre del producto', Icons.inventory_2, isDark),
+            _buildTextField(_codigoController, 'Código', Icons.qr_code, isDark),
+            _buildTextField(_categoriaController, 'Categoría', Icons.category, isDark),
             const SizedBox(height: 16),
-            SwitchListTile(
-              title: const Text('⭐ Marcar como favorito'),
-              subtitle: const Text('Aparecerá en lista de favoritos'),
-              value: _esFavorito,
-              onChanged: (v) => setState(() => _esFavorito = v),
-            ),
+            Row(children: [
+              Expanded(child: _buildTextField(_costoController, 'Costo', Icons.attach_money, isDark, keyboardType: TextInputType.number)),
+              const SizedBox(width: 16),
+              Expanded(child: _buildTextField(_precioController, 'Precio Venta', Icons.sell, isDark, keyboardType: TextInputType.number)),
+            ]),
+            const SizedBox(height: 16),
+            Row(children: [
+              Expanded(child: _buildTextField(_stockController, 'Stock Actual', Icons.inventory_2, isDark, keyboardType: TextInputType.number)),
+              const SizedBox(width: 16),
+              Expanded(child: _buildTextField(_stockMinimoController, 'Stock Mínimo', Icons.warning, isDark, keyboardType: TextInputType.number)),
+            ]),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: 56,
               child: ElevatedButton.icon(
-                onPressed: _save,
-                icon: const Icon(Icons.save),
-                label: Text(isEdit ? 'ACTUALIZAR PRODUCTO' : 'CREAR PRODUCTO', 
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.green,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
+                icon: _loading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.save, color: Colors.white),
+                label: Text(_loading ? 'Guardando...' : 'Guardar Producto', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                onPressed: _loading ? null : _saveProduct,
               ),
             ),
+            const SizedBox(height: 20),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String label, IconData icon, bool isDark, {TextInputType? keyboardType}) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(color: isDark ? Colors.green : Colors.black87),
+        prefixIcon: Icon(icon, color: isDark ? Colors.green : Colors.black87),
+        filled: true,
+        fillColor: isDark ? Colors.grey[900] : Colors.white,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? Colors.green : Colors.grey)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.green, width: 2)),
+      ),
+      validator: (v) => v!.trim().isEmpty ? 'Campo requerido' : null,
     );
   }
 }
