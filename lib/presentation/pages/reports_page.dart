@@ -129,7 +129,7 @@ class _ReportsPageState extends State<ReportsPage> {
         ),
         child: Row(
           children: [
-            CircleAvatar(backgroundColor: Colors.blue, child: Icon(icon, color: Colors.black87)),
+            CircleAvatar(backgroundColor: Colors.blue, child: Icon(icon, color: Colors.white)),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -399,7 +399,7 @@ class _ReportsPageState extends State<ReportsPage> {
                         backgroundColor: i < 3 ? Colors.amber : Colors.blue,
                         child: Text(
                           '${i + 1}',
-                          style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                         ),
                       ),
                       title: Text((top10[i]['nombre'] as String?) ?? 'Sin nombre'),
@@ -449,7 +449,7 @@ class _ReportsPageState extends State<ReportsPage> {
                     return ListTile(
                       leading: CircleAvatar(
                         backgroundColor: Colors.teal,
-                        child: const Icon(Icons.receipt_long, color: Colors.black87, size: 20),
+                        child: const Icon(Icons.receipt_long, color: Colors.white, size: 20),
                       ),
                       title: Text('Venta #${s['id']}'),
                       subtitle: Text('${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.parse(s['fecha'] as String))}'),
@@ -565,7 +565,7 @@ class _ReportsPageState extends State<ReportsPage> {
                     return ListTile(
                       leading: CircleAvatar(
                         backgroundColor: Colors.indigo,
-                        child: const Icon(Icons.store, color: Colors.black87),
+                        child: const Icon(Icons.store, color: Colors.white),
                       ),
                       title: Text(sup['nombre'] as String? ?? 'Sin proveedor'),
                       subtitle: Text('${sup['total_compras']} compras'),
@@ -715,7 +715,7 @@ class _ReportsPageState extends State<ReportsPage> {
                     return ListTile(
                       leading: CircleAvatar(
                         backgroundColor: isEntrada ? Colors.green : Colors.red,
-                        child: Icon(isEntrada ? Icons.add : Icons.remove, color: Colors.black87, size: 20),
+                        child: Icon(isEntrada ? Icons.add : Icons.remove, color: Colors.white, size: 20),
                       ),
                       title: Text(m['tipo'] as String),
                       subtitle: Text('${DateFormat('dd/MM/yyyy').format(DateTime.parse(m['fecha'] as String))}'),
@@ -854,68 +854,47 @@ class _ReportsPageState extends State<ReportsPage> {
     );
   }
 
-Future<void> _showProfit() async {
+  Future<void> _showProfit() async {
     if (!mounted) return;
     
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E1E),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('📈 Ganancias y Márgenes', style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator(color: Colors.green),
-            SizedBox(height: 16),
-            Text('Cargando datos...', style: TextStyle(color: Colors.grey)),
-          ],
-        ),
-      ),
-    );
-    
     try {
-      await Future.delayed(const Duration(milliseconds: 500));
-      
       final db = await DatabaseHelper.instance.database;
-      final result = await db.rawQuery('''
-        SELECT 
-          COALESCE(SUM(total_cup), 0) as total_ventas,
-          COUNT(DISTINCT id) as total_transacciones
-        FROM sales 
-        WHERE created_at >= date("now", "-30 days")
-      ''');
       
-      final totalVentas = result.first['total_ventas'] as num? ?? 0;
-      final totalTransacciones = result.first['total_transacciones'] as int? ?? 0;
+      // Calcular ventas últimos 30 días
+      final ventasResult = await db.rawQuery(
+        'SELECT COALESCE(SUM(total_cup), 0) as total FROM sales WHERE created_at >= date("now", "-30 days")'
+      );
+      final totalVentas = (ventasResult.first['total'] as num?)?.toDouble() ?? 0.0;
       
-      // Calcular margen promedio
-      final margenPromedio = totalVentas > 0 ? 30.0 : 0.0; // Placeholder - calcular real según costos
+      // Estimado de costos (70% de ventas - ajustar según tu lógica real)
+      final totalCostos = totalVentas * 0.7;
+      final ganancia = totalVentas - totalCostos;
+      final margen = totalVentas > 0 ? (ganancia / totalVentas) * 100 : 0.0;
       
       if (!mounted) return;
-      Navigator.pop(ctx);
       
       showDialog(
         context: context,
-        builder: (ctx) => AlertDialog(
-          backgroundColor: const Color(0xFF1E1E1E),
+        builder: (_) => AlertDialog(
+          backgroundColor: Colors.black,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('📈 Últimos 30 días', style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),
+          title: const Text('📈 Ganancias y Márgenes', style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildReportRow('💵 Total Ventas:', '\$${totalVentas.toStringAsFixed(2)}', Colors.green),
+              _buildReportRow('💵 Ingresos (30 días):', '\$${totalVentas.toStringAsFixed(2)}', Colors.green),
               const SizedBox(height: 8),
-              _buildReportRow('📊 Transacciones:', totalTransacciones.toString(), Colors.blue),
+              _buildReportRow('💰 Costos estimados:', '\$${totalCostos.toStringAsFixed(2)}', Colors.white),
               const SizedBox(height: 8),
-              _buildReportRow('📈 Margen Promedio:', '${margenPromedio.toStringAsFixed(1)}%', Colors.orange),
+              _buildReportRow('📈 Ganancia:', '\$${ganancia.toStringAsFixed(2)}', Colors.green),
+              const SizedBox(height: 8),
+              _buildReportRow('📊 Margen:', '\${margen.toStringAsFixed(1)}%', Colors.orange),
             ],
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(ctx),
+              onPressed: () => Navigator.pop(context),
               child: const Text('Cerrar', style: TextStyle(color: Colors.green)),
             ),
           ],
@@ -924,7 +903,6 @@ Future<void> _showProfit() async {
     } catch (e) {
       print('Error profit: \$e');
       if (mounted) {
-        Navigator.pop(ctx);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('❌ Error: \$e'), backgroundColor: Colors.red),
         );
@@ -936,35 +914,9 @@ Future<void> _showProfit() async {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: TextStyle(color: Colors.grey[300], fontSize: 14)),
+        Text(label, style: const TextStyle(color: Colors.white, fontSize: 14)),
         Text(value, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16)),
       ],
-    );
-  }
-  
-    if (!mounted) return;
-
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Rentabilidad'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('💵 Ingresos: \$${report['ingresos'].toStringAsFixed(2)}'),
-            Text('💰 Costos: \$${report['costos'].toStringAsFixed(2)}'),
-            Text('📈 Ganancia: \$${report['ganancia'].toStringAsFixed(2)}'),
-            Text('📊 Margen: ${report['margen'].toStringAsFixed(1)}%'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cerrar'),
-          ),
-        ],
-      ),
     );
   }
 
