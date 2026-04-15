@@ -98,7 +98,7 @@ class _PosPageState extends State<PosPage> {
     return Scaffold(
       backgroundColor: const Color(0xFF1E1E1E),
       appBar: AppBar(
-        title: const Text('Punto de Venta', style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),
+        title: const Text('Punto de Venta', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
         backgroundColor: const Color(0xFF1E1E1E),
         elevation: 0,
         actions: [
@@ -138,7 +138,7 @@ class _PosPageState extends State<PosPage> {
                     value: _selectedCurrency,
                     dropdownColor: const Color(0xFF1E1E1E),
                     underline: const SizedBox(),
-                    items: ['CUP', 'USD', 'MLC'].map((c) => DropdownMenuItem(value: c, child: Row(children: [const Text('🇨🇺 ', style: TextStyle(fontSize: 16)), Text(c, style: const TextStyle(color: Colors.white))]))).toList(),
+                    items: ['CUP', 'USD', 'MLC'].map((c) => DropdownMenuItem(value: c, child: Row(children: [Text(_getCurrencyIcon(c), style: const TextStyle(fontSize: 16)), Text(c, style: const TextStyle(color: Colors.white))]))).toList(),
                     onChanged: (v) { if (v != null) setState(() => _selectedCurrency = v); },
                   ),
                 ),
@@ -167,7 +167,7 @@ class _PosPageState extends State<PosPage> {
                               leading: CircleAvatar(backgroundColor: Colors.blue.withOpacity(0.2), radius: 28, child: const Icon(Icons.inventory_2, color: Colors.blue, size: 28)),
                               title: Text(p.nombre, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16)),
                               subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const SizedBox(height: 4), Text('Stock: ${p.stockActual}', style: TextStyle(color: Colors.grey[400])), Text('\$${price.toStringAsFixed(2)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 16)),]),
-                              trailing: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12)), onPressed: p.stockActual > 0 ? () => _addToCart(p) : null, child: Text(p.stockActual > 0 ? 'Agregar' : 'Agotado', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),),
+                              trailing: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12)), onPressed: p.stockActual > 0 ? () => _addToCart(p) : null, child: Text(p.stockActual > 0 ? 'Agregar' : 'Agotado', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),),
                             ),
                           );
                         },
@@ -182,7 +182,7 @@ class _PosPageState extends State<PosPage> {
               child: Row(
                 children: [
                   Expanded(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [Text('${_cart.length} producto${_cart.length > 1 ? 's' : ''}', style: TextStyle(color: Colors.grey[400], fontSize: 12)), Text('\$${_totalAmount.toStringAsFixed(2)} $_selectedCurrency', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 20)),])),
-                  ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), icon: const Icon(Icons.shopping_cart, color: Colors.white), label: const Text('Ver Carrito', style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600)), onPressed: _openCart),
+                  ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), icon: const Icon(Icons.shopping_cart, color: Colors.white), label: const Text('Ver Carrito', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)), onPressed: _openCart),
                 ],
               ),
             ),
