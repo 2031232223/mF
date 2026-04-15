@@ -1,5 +1,5 @@
 class Product {
-  final int id;
+  final int? id;
   final String nombre;
   final String? codigo;
   final String? categoria;
@@ -14,7 +14,7 @@ class Product {
   final DateTime? fechaActualizacion;
 
   Product({
-    required this.id,
+    this.id,
     required this.nombre,
     this.codigo,
     this.categoria,
@@ -31,7 +31,7 @@ class Product {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
+      if (id != null && id > 0) 'id': id,
       'nombre': nombre,
       'codigo': codigo,
       'categoria': categoria,
