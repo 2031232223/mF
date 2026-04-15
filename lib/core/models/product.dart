@@ -42,8 +42,8 @@ class Product {
       'unidad_medida': unidadMedida,
       'es_favorito': esFavorito ? 1 : 0,
       // 'esta_activo' removido
-      'fecha_registro': fechaRegistro?.toIso8601String(),
-      'fecha_actualizacion': fechaActualizacion?.toIso8601String(),
+      'created_at': fechaRegistro?.toIso8601String(),
+      'updated_at': fechaActualizacion?.toIso8601String(),
     };
   }
 
@@ -60,11 +60,11 @@ class Product {
       unidadMedida: map['unidad_medida'] as String? ?? 'unidad',
       esFavorito: (map['es_favorito'] as int?) == 1,
       // estaActivo removido
-      fechaRegistro: map['fecha_registro'] != null 
-          ? DateTime.tryParse(map['fecha_registro'] as String) 
+      fechaRegistro: map['created_at'] != null 
+          ? DateTime.tryParse(map['created_at'] as String) 
           : null,
-      fechaActualizacion: map['fecha_actualizacion'] != null 
-          ? DateTime.tryParse(map['fecha_actualizacion'] as String) 
+      fechaActualizacion: map['updated_at'] != null 
+          ? DateTime.tryParse(map['updated_at'] as String) 
           : null,
     );
   }
