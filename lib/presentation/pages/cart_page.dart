@@ -42,11 +42,11 @@ class _CartPageState extends State<CartPage> {
 
   Future<void> _confirmSale() async {
     if (_selectedCustomer == null) { 
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Selecciona un cliente'), backgroundColor: Colors.black)); 
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Selecciona un cliente'), backgroundColor: Colors.orange)); 
       return; 
     }
     if (_paid < _total && !_isCredit) { 
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Pago insuficiente'), backgroundColor: Colors.black)); 
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Pago insuficiente'), backgroundColor: Colors.orange)); 
       return; 
     }
     setState(() => _isLoading = true);
@@ -77,61 +77,29 @@ class _CartPageState extends State<CartPage> {
         await db.rawUpdate('UPDATE productos SET stock_actual = stock_actual - ? WHERE id = ?', [item.cantidad, item.productoId]);
       }
       if (mounted) { 
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Venta registrada'), backgroundColor: Colors.black)); 
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Venta registrada'), backgroundColor: Colors.green)); 
         widget.onSaleCompleted(); 
         Navigator.pop(context); 
       }
     } catch (e) { 
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Error: \$e'), backgroundColor: Colors.black)); 
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Error: \$e'), backgroundColor: Colors.red)); 
     } finally { 
       if (mounted) setState(() => _isLoading = false); 
     }
   }
 
   void _showCustomerSelector() {
-    showModalBottomSheet(context: context, backgroundColor: Colors.black, builder: (ctx) => Container(padding: const EdgeInsets.all(20), child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [Row(children: [const Text('Seleccionar Cliente', style: TextStyle(color: Colors.green, fontSize: 18, fontWeight: FontWeight.w600)), const Spacer(), IconButton(icon: const Icon(Icons.close, color: Colors.grey), onPressed: () => Navigator.pop(ctx)),]), const SizedBox(height: 16), if (_customers.isEmpty) const Text('No hay clientes', style: TextStyle(color: Colors.grey)), Expanded(child: ListView.builder(shrinkWrap: true, itemCount: _customers.length, itemBuilder: (context, index) { final c = _customers[index]; return Card(color: Colors.grey[850], margin: const EdgeInsets.only(bottom: 8), child: ListTile(leading: CircleAvatar(backgroundColor: Colors.black, child: Text(c.nombre[0], style: const TextStyle(color: Colors.white))), title: Text(c.nombre, style: const TextStyle(color: Colors.green)), subtitle: Text(c.telefono ?? '', style: TextStyle(color: Colors.grey[400])), onTap: () { setState(() => _selectedCustomer = c); Navigator.pop(ctx); },)); })),],)));
+    showModalBottomSheet(context: context, backgroundColor: Colors.grey[900], builder: (ctx) => Container(padding: const EdgeInsets.all(20), child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [Row(children: [const Text('Seleccionar Cliente', style: TextStyle(color: Colors.green, fontSize: 18, fontWeight: FontWeight.w600)), const Spacer(), IconButton(icon: const Icon(Icons.close, color: Colors.grey), onPressed: () => Navigator.pop(ctx)),]), const SizedBox(height: 16), if (_customers.isEmpty) const Text('No hay clientes', style: TextStyle(color: Colors.grey)), Expanded(child: ListView.builder(shrinkWrap: true, itemCount: _customers.length, itemBuilder: (context, index) { final c = _customers[index]; return Card(color: Colors.grey[850], margin: const EdgeInsets.only(bottom: 8), child: ListTile(leading: CircleAvatar(backgroundColor: Colors.green, child: Text(c.nombre[0], style: const TextStyle(color: Colors.white))), title: Text(c.nombre, style: const TextStyle(color: Colors.green)), subtitle: Text(c.telefono ?? '', style: TextStyle(color: Colors.grey[400])), onTap: () { setState(() => _selectedCustomer = c); Navigator.pop(ctx); },)); })),],)));
   }
 
   void _showDiscountDialog() {
-    showDialog(context: context, builder: (ctx) => AlertDialog(backgroundColor: Colors.black, title: const Text('Descuento Global', style: TextStyle(color: Colors.green)), content: Column(mainAxisSize: MainAxisSize.min, children: [TextField(controller: _discountController, keyboardType: TextInputType.number, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Porcentaje (%)', labelStyle: TextStyle(color: Colors.grey), border: OutlineInputBorder())), const SizedBox(height: 16), Text('Descuento: \$${_discount.toStringAsFixed(2)}', style: const TextStyle(color: Colors.green, fontSize: 16, fontWeight: FontWeight.bold)),]), actions: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
-                                onPressed: () => Navigator.pop(context, true),
-                                child: const Text('Sí', style: TextStyle(fontWeight: FontWeight.w600)),
-                              ),
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
-                                onPressed: () => Navigator.pop(context, false),
-                                child: const Text('No', style: TextStyle(fontWeight: FontWeight.w600)),
-                              ),
-                            ],
-                          ),
-                        ],));
+    showDialog(context: context, builder: (ctx) => AlertDialog(backgroundColor: Colors.grey[900], title: const Text('Descuento Global', style: TextStyle(color: Colors.green)), content: Column(mainAxisSize: MainAxisSize.min, children: [TextField(controller: _discountController, keyboardType: TextInputType.number, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Porcentaje (%)', labelStyle: TextStyle(color: Colors.grey), border: OutlineInputBorder())), const SizedBox(height: 16), Text('Descuento: \$${_discount.toStringAsFixed(2)}', style: const TextStyle(color: Colors.green, fontSize: 16, fontWeight: FontWeight.bold)),]), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.grey))), ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.green), onPressed: () { final pct = double.tryParse(_discountController.text) ?? 0.0; setState(() { _discount = (widget.totalCUP * pct) / 100.0; _discountEnabled = pct > 0; }); Navigator.pop(ctx); }, child: const Text('Aplicar', style: TextStyle(color: Colors.white))),],));
   }
 
   void _showNewCustomerDialog() {
     final nameController = TextEditingController();
     final phoneController = TextEditingController();
-    showDialog(context: context, builder: (ctx) => AlertDialog(backgroundColor: Colors.black, title: const Text('Nuevo Cliente', style: TextStyle(color: Colors.green)), content: Column(mainAxisSize: MainAxisSize.min, children: [TextField(controller: nameController, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Nombre', labelStyle: TextStyle(color: Colors.grey), border: OutlineInputBorder())), const SizedBox(height: 16), TextField(controller: phoneController, style: const TextStyle(color: Colors.white), keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Teléfono', labelStyle: TextStyle(color: Colors.grey), border: OutlineInputBorder())),]), actions: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
-                                onPressed: () => Navigator.pop(context, true),
-                                child: const Text('Sí', style: TextStyle(fontWeight: FontWeight.w600)),
-                              ),
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
-                                onPressed: () => Navigator.pop(context, false),
-                                child: const Text('No', style: TextStyle(fontWeight: FontWeight.w600)),
-                              ),
-                            ],
-                          ),
-                        ],));
+    showDialog(context: context, builder: (ctx) => AlertDialog(backgroundColor: Colors.grey[900], title: const Text('Nuevo Cliente', style: TextStyle(color: Colors.green)), content: Column(mainAxisSize: MainAxisSize.min, children: [TextField(controller: nameController, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Nombre', labelStyle: TextStyle(color: Colors.grey), border: OutlineInputBorder())), const SizedBox(height: 16), TextField(controller: phoneController, style: const TextStyle(color: Colors.white), keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Teléfono', labelStyle: TextStyle(color: Colors.grey), border: OutlineInputBorder())),]), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.grey))), ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.green), onPressed: () async { if (nameController.text.trim().isNotEmpty) { try { final db = await DatabaseHelper.instance.database; await db.insert('clientes', {'nombre': nameController.text.trim(), 'telefono': phoneController.text.trim(), 'es_habitual': 0, 'fecha_registro': DateTime.now().toIso8601String()}); if (mounted) { final newCust = Customer(id: 0, nombre: nameController.text.trim(), carnetIdentidad: '', telefono: phoneController.text.trim()); setState(() { _selectedCustomer = newCust; }); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Cliente registrado'), backgroundColor: Colors.green)); } Navigator.pop(ctx); } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Error: \$e'), backgroundColor: Colors.red)); } } }, child: const Text('Guardar', style: TextStyle(color: Colors.white))),],));
   }
 
   String _getCurrencyIcon(String currency) {
@@ -149,7 +117,7 @@ class _CartPageState extends State<CartPage> {
       backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text('Carrito', style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.blue,
         elevation: 2,
         actions: [
           Padding(padding: const EdgeInsets.only(right: 16), child: DropdownButton<String>(value: widget.selectedCurrency, dropdownColor: Colors.grey[900], underline: const SizedBox(), items: ['CUP','USD','MLC'].map((c) => DropdownMenuItem(value: c, child: Row(children: [Text(_getCurrencyIcon(c), style: const TextStyle(fontSize: 16)), Text(c, style: const TextStyle(color: Colors.white))]))).toList(), onChanged: null)),
@@ -158,8 +126,8 @@ class _CartPageState extends State<CartPage> {
       ),
       body: Column(children: [
         Container(padding: const EdgeInsets.all(16), color: Colors.black, child: Row(children: [const Text('Cliente:', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.green)), const Spacer(), TextButton.icon(icon: const Icon(Icons.person_add, color: Colors.green), label: const Text('Nuevo', style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600)), onPressed: _showNewCustomerDialog),])),
-        Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), color: Colors.black, child: Card(color: Colors.grey[900])), title: Text(_selectedCustomer?.nombre ?? 'Seleccionar cliente', style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.green)), trailing: const Icon(Icons.chevron_right, color: Colors.green), onTap: _showCustomerSelector,))),
-        Expanded(child: ListView.builder(padding: const EdgeInsets.all(16), itemCount: widget.cart.length, itemBuilder: (context, index) { final item = widget.cart[index]; final price = widget.selectedCurrency == 'CUP' ? item.precioCUP : item.precioCUP / widget.exchangeRate; return Card(margin: const EdgeInsets.only(bottom: 12), color: Colors.grey[900], elevation: 2, child: Padding(padding: const EdgeInsets.all(12), child: Row(children: [CircleAvatar(backgroundColor: Colors.black, radius: 24, child: Text('${index+1}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(item.nombre, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white)), Text('${price.toStringAsFixed(2)} c/u', style: TextStyle(color: Colors.grey[400], fontSize: 12)),])), Row(children: [IconButton(icon: const Icon(Icons.remove_circle, color: Colors.red), onPressed: () { if (item.cantidad > 1) setState(() => item.cantidad--); }), Text('${item.cantidad}', style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white, fontSize: 16)), IconButton(icon: const Icon(Icons.add_circle, color: Colors.green), onPressed: () { if (item.cantidad < item.stockDisponible) setState(() => item.cantidad++); }), IconButton(icon: const Icon(Icons.delete_forever, color: Colors.red), onPressed: () { setState(() => widget.cart.removeAt(index)); }),],)],))); })),
+        Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), color: Colors.black, child: Card(color: Colors.grey[900], child: ListTile(leading: CircleAvatar(backgroundColor: Colors.green, child: Icon(_selectedCustomer == null ? Icons.person : Icons.check, color: Colors.white)), title: Text(_selectedCustomer?.nombre ?? 'Seleccionar cliente', style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.green)), trailing: const Icon(Icons.chevron_right, color: Colors.green), onTap: _showCustomerSelector,))),
+        Expanded(child: ListView.builder(padding: const EdgeInsets.all(16), itemCount: widget.cart.length, itemBuilder: (context, index) { final item = widget.cart[index]; final price = widget.selectedCurrency == 'CUP' ? item.precioCUP : item.precioCUP / widget.exchangeRate; return Card(margin: const EdgeInsets.only(bottom: 12), color: Colors.grey[900], elevation: 2, child: Padding(padding: const EdgeInsets.all(12), child: Row(children: [CircleAvatar(backgroundColor: Colors.blue, radius: 24, child: Text('${index+1}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(item.nombre, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white)), Text('${price.toStringAsFixed(2)} c/u', style: TextStyle(color: Colors.grey[400], fontSize: 12)),])), Row(children: [IconButton(icon: const Icon(Icons.remove_circle, color: Colors.red), onPressed: () { if (item.cantidad > 1) setState(() => item.cantidad--); }), Text('${item.cantidad}', style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white, fontSize: 16)), IconButton(icon: const Icon(Icons.add_circle, color: Colors.green), onPressed: () { if (item.cantidad < item.stockDisponible) setState(() => item.cantidad++); }), IconButton(icon: const Icon(Icons.delete_forever, color: Colors.red), onPressed: () { setState(() => widget.cart.removeAt(index)); }),],)],))); })),
         Container(padding: const EdgeInsets.all(16), color: Colors.black, child: Card(color: Colors.grey[900], child: Padding(padding: const EdgeInsets.all(12), child: Row(children: [const Icon(Icons.local_offer, color: Colors.green), const SizedBox(width: 12), const Text('Descuento Global', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.green)), const Spacer(), Row(children: [Text(_discount > 0 ? '\$${_discount.toStringAsFixed(2)}' : '0%', style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.w600)), const SizedBox(width: 8), Switch(value: _discountEnabled, activeColor: Colors.green, onChanged: (v) { if (v) _showDiscountDialog(); else setState(() { _discount = 0; _discountEnabled = false; _discountController.text = '0'; }); }),]),]),))),
         Container(padding: const EdgeInsets.all(16), color: Colors.grey[900], child: Column(children: [
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Subtotal:', style: TextStyle(color: Colors.grey)), Text('${_subtotal.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white)),]),
@@ -170,7 +138,7 @@ class _CartPageState extends State<CartPage> {
           if (_paid < _total) Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Row(children: [Icon(Icons.warning, color: Colors.orange, size: 16), SizedBox(width: 4), Text('Faltante:', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600)),]), Text('${(_total - _paid).toStringAsFixed(2)}', style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),]),
           if (_paid >= _total && _paid > 0) Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Row(children: [Icon(Icons.check_circle, color: Colors.green, size: 16), SizedBox(width: 4), Text('Cambio:', style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),]), Text('${_change.toStringAsFixed(2)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),]),
         ])),
-        Padding(padding: const EdgeInsets.all(16), child: SizedBox(width: double.infinity, height: 56, child: ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), icon: _isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.check_circle, color: Colors.white, size: 24), label: Text(_isLoading ? 'Procesando...' : 'CONFIRMAR VENTA', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)), onPressed: _isLoading ? null : _confirmSale,)),),
+        Padding(padding: const EdgeInsets.all(16), child: SizedBox(width: double.infinity, height: 56, child: ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), icon: _isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.check_circle, color: Colors.white, size: 24), label: Text(_isLoading ? 'Procesando...' : 'CONFIRMAR VENTA', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)), onPressed: _isLoading ? null : _confirmSale,)),),
       ]),
     );
   }
