@@ -6,6 +6,7 @@ class CommonDialogs {
     required BuildContext context,
     required String title,
     required String content,
+    String? itemName, // Parámetro opcional para compatibilidad
   }) {
     return showDialog<bool>(
       context: context,
