@@ -68,7 +68,7 @@ class _PosPageState extends State<PosPage> {
       }
       setState(() => _cart[idx].cantidad++);
     } else {
-      setState(() => _cart.add(CartItem(productoId: product.id, nombre: product.nombre, precioCUP: product.precioVenta, cantidad: 1, stockDisponible: product.stockActual)));
+      setState(() => _cart.add(CartItem(productoId: product.id!, nombre: product.nombre, precioCUP: product.precioVenta, cantidad: 1, stockDisponible: product.stockActual)));
     }
   }
 

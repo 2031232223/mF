@@ -31,7 +31,7 @@ class Product {
 
   Map<String, dynamic> toMap() {
     return {
-      if (id != null && id > 0) 'id': id,
+      if (id != null && id! > 0) 'id': id,
       'nombre': nombre,
       'codigo': codigo,
       'categoria': categoria,
