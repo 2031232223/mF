@@ -12,7 +12,7 @@ class ProductRepository {
 
   Future<List<Product>> getAllProducts({bool onlyActive = true}) async {
     final db = await _dbHelper.database;
-    String where = onlyActive ? 'esta_activo = 1' : '';
+    String where = onlyActive ? '1=1' : '';
     final List<Map<String, dynamic>> maps = await db.query(
       'productos',
       where: where.isEmpty ? null : where,

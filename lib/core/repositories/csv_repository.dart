@@ -15,7 +15,7 @@ class CsvRepository {
       
       final buffer = StringBuffer();
       // Encabezados
-      buffer.writeln('id,nombre,codigo,categoria,costo,precio_venta,stock_actual,stock_minimo,unidad_medida,es_favorito,esta_activo');
+      buffer.writeln('id,nombre,codigo,categoria,costo,precio_venta,stock_actual,stock_minimo,unidad_medida,es_favorito');
       
       // Datos
       for (var p in products) {
@@ -164,7 +164,7 @@ class CsvRepository {
               'stock_minimo': int.tryParse(values[7]) ?? 5,
               'unidad_medida': values[8],
               'es_favorito': int.tryParse(values[9]) ?? 0,
-              'esta_activo': int.tryParse(values[10]) ?? 1,
+              
               'fecha_registro': DateTime.now().toIso8601String(),
             });
             importedCount++;
