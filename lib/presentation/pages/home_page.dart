@@ -5,6 +5,7 @@ import '../pages/inventory_page.dart';
 import '../pages/purchases_page.dart';
 import '../pages/reports_page.dart';
 import '../pages/config_page.dart';
+import '../pages/mermas_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -24,6 +25,7 @@ class _HomePageState extends State<HomePage> {
     const InventoryPage(),
     const PurchasesPage(),
     const ReportsPage(),
+    const MermasPage(),
     const ConfigPage(),
   ];
 
@@ -95,6 +97,7 @@ class _HomePageState extends State<HomePage> {
           BottomNavigationBarItem(icon: Icon(Icons.inventory_2), label: 'Inventario'),
           BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Compras'),
           BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Reportes'),
+          BottomNavigationBarItem(icon: Icon(Icons.delete_sweep, color: Colors.orange), label: 'Mermas'),
           BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Config'),
         ],      ),
     );
