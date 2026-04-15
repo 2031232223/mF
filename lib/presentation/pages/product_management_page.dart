@@ -270,35 +270,22 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
-            ElevatedButton(
-              onPressed: () async {
-                try {
-                  int affected = 0;
-                  if (method == 'percentage') {
-                    final percentage = double.tryParse(percentageCtrl.text) ?? 0;
-                    affected = await _productRepo.bulkPriceUpdate(
-                      percentage: percentage,
-                      categoria: scope == 'category' ? selectedCategory : null,
-                    );
-                  } else {
-                    final value = double.tryParse(valueCtrl.text) ?? 0;
-                    affected = await _productRepo.bulkPriceUpdateByValue(value: value);
-                  }
-                  if (mounted) {
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('✅ \$affected productos actualizados')),
-                    );
-                    _loadProducts();
-                  }
-                } catch (e) {
-                  print('Error: $e');
-                }
-              },
-              child: const Text('Aplicar'),
-            ),
-          ],
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text('Sí', style: TextStyle(fontWeight: FontWeight.w600)),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('No', style: TextStyle(fontWeight: FontWeight.w600)),
+                              ),
+                            ],
+                          ),
+                        ],
         ),
       ),
     );
@@ -312,9 +299,22 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
         title: const Text('Duplicar Producto'),
         content: Text('¿Duplicar "${product.nombre}"?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Duplicar')),
-        ],
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text('Sí', style: TextStyle(fontWeight: FontWeight.w600)),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('No', style: TextStyle(fontWeight: FontWeight.w600)),
+                              ),
+                            ],
+                          ),
+                        ],
       ),
     );
 
@@ -358,12 +358,22 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
             ? '¿Archivar "${product.nombre}"? No se mostrará en ventas.'
             : '¿Reactivar "${product.nombre}"?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(product.estaActivo ? 'Archivar' : 'Reactivar'),
-          ),
-        ],
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text('Sí', style: TextStyle(fontWeight: FontWeight.w600)),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('No', style: TextStyle(fontWeight: FontWeight.w600)),
+                              ),
+                            ],
+                          ),
+                        ],
       ),
     );
 

@@ -319,9 +319,22 @@ class _ConfigPageState extends State<ConfigPage> {
           title: Text('¿Crear respaldo?'),
           content: Text('¿Desea crear una copia de seguridad completa?'),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Cancelar')),
-            ElevatedButton(onPressed: () { Navigator.pop(ctx); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('📤 Creando copia de seguridad...'), backgroundColor: Colors.blue)); }, child: Text('Sí')),
-          ],
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text('Sí', style: TextStyle(fontWeight: FontWeight.w600)),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('No', style: TextStyle(fontWeight: FontWeight.w600)),
+                              ),
+                            ],
+                          ),
+                        ],
         ));
       },
     );
@@ -390,9 +403,22 @@ class _ConfigPageState extends State<ConfigPage> {
           TextField(keyboardType: TextInputType.number, decoration: InputDecoration(hintText: 'Tasa de cambio CUP/USD'), autofocus: true),
         ]),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Cancelar')),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx), child: Text('Guardar')),
-        ],
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text('Sí', style: TextStyle(fontWeight: FontWeight.w600)),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('No', style: TextStyle(fontWeight: FontWeight.w600)),
+                              ),
+                            ],
+                          ),
+                        ],
       ),
     );
   }

@@ -85,9 +85,23 @@ class _SettingsPageState extends State<SettingsPage> {
 
   void _showInputDialog(String title, String currentValue, Function(String) onSave) {
     final controller = TextEditingController(text: currentValue);
-    showDialog(context: context, builder: (ctx) => AlertDialog(backgroundColor: const Color(0xFF1E1E1E), title: Text(title, style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600)), content: TextField(controller: controller, style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600), decoration: const InputDecoration(hintText: 'Ingresa el valor', border: OutlineInputBorder(), hintStyle: TextStyle(color: Colors.white))), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.white))), ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
-            onPressed: () { onSave(controller.text); Navigator.pop(ctx); }, child: const Text('Guardar', style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600))),],));
+    showDialog(context: context, builder: (ctx) => AlertDialog(backgroundColor: const Color(0xFF1E1E1E), title: Text(title, style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600)), content: TextField(controller: controller, style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600), decoration: const InputDecoration(hintText: 'Ingresa el valor', border: OutlineInputBorder(), hintStyle: TextStyle(color: Colors.white))), actions: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text('Sí', style: TextStyle(fontWeight: FontWeight.w600)),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('No', style: TextStyle(fontWeight: FontWeight.w600)),
+                              ),
+                            ],
+                          ),
+                        ],));
   }
 
   void _editCompanyName() => _showInputDialog('Nombre de la Empresa', _companyName, (val) { if (val.trim().isNotEmpty) { setState(() => _companyName = val.trim()); _saveSetting('company_name', val.trim()); } });
@@ -96,7 +110,23 @@ class _SettingsPageState extends State<SettingsPage> {
   void _editStockReminderDays() => _showInputDialog('Días para recordatorio', _stockReminderDays.toString(), (val) { final days = int.tryParse(val) ?? 7; setState(() => _stockReminderDays = days.clamp(1, 30)); _saveSetting('stock_reminder_days', _stockReminderDays); });
   void _showCurrencySettings() { Navigator.push(context, MaterialPageRoute(builder: (_) => const CurrencySettingsPage())); }
   void _showBackupPage() { Navigator.push(context, MaterialPageRoute(builder: (_) => const BackupPage())); }
-  void _showRestoreDialog() { showDialog(context: context, builder: (ctx) => AlertDialog(backgroundColor: const Color(0xFF1E1E1E), title: const Text('Restaurar Base de Datos', style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600)), content: const Text('¿Estás seguro?', style: TextStyle(color: Colors.white)), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.white))), ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.red), onPressed: () { Navigator.pop(ctx); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('🔄 Restaurando...'), backgroundColor: Colors.green)); }, child: const Text('Restaurar', style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600))),],)); }
+  void _showRestoreDialog() { showDialog(context: context, builder: (ctx) => AlertDialog(backgroundColor: const Color(0xFF1E1E1E), title: const Text('Restaurar Base de Datos', style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600)), content: const Text('¿Estás seguro?', style: TextStyle(color: Colors.white)), actions: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text('Sí', style: TextStyle(fontWeight: FontWeight.w600)),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('No', style: TextStyle(fontWeight: FontWeight.w600)),
+                              ),
+                            ],
+                          ),
+                        ],)); }
   Future<void> _exportToCsv() async { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('📤 Exportando...'), backgroundColor: Colors.green)); await Future.delayed(const Duration(seconds: 2)); if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Exportado'), backgroundColor: Colors.green)); }
   void _showAboutDialog() { showAboutDialog(context: context, applicationName: 'Nova ADEN', applicationVersion: '1.0.0', applicationIcon: const Icon(Icons.store, size: 40, color: Colors.green), children: const [Text('Sistema de Gestión\n\nDesarrollado con Flutter', style: TextStyle(color: Colors.white))],); }
   void _showNotesPage() { Navigator.push(context, MaterialPageRoute(builder: (_) => const NotesPage())); }
