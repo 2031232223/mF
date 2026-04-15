@@ -92,7 +92,7 @@ class _PosPageState extends State<PosPage> {
         backgroundColor: const Color(0xFF1E1E1E),
         elevation: 0,
         actions: [
-          IconButton(icon: const Icon(Icons.qr_code_scanner, color: Colors.white), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.pause, color: Colors.white), onPressed: () {}),
           IconButton(icon: const Icon(Icons.refresh, color: Colors.white), onPressed: _loadProducts),
         ],
       ),
@@ -104,15 +104,16 @@ class _PosPageState extends State<PosPage> {
             child: Row(
               children: [
                 Expanded(
+                  flex: 2,
                   child: Container(
                     decoration: BoxDecoration(color: Colors.grey[900], borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey[800]!)),
                     child: TextField(
                       onChanged: (v) => setState(() => _searchQuery = v),
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
-                        hintText: 'Buscar producto...',
+                        hintText: 'Buscar por código o nombre...',
                         hintStyle: TextStyle(color: Colors.grey[600]),
-                        prefixIcon: const Icon(Icons.search, color: Colors.white),
+                        prefixIcon: const Icon(Icons.search, color: Colors.green),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                       ),

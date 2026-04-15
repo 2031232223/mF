@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/models/customer.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/repositories/customer_repository.dart';
-import '../pos_page.dart';
+import 'pos_page.dart';
 
 class CartPage extends StatefulWidget {
   final List<CartItem> cart;
