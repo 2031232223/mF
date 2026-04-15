@@ -26,6 +26,16 @@ class _PosPageState extends State<PosPage> {
     super.initState();
     _loadConfig();
     _loadProducts();
+
+  String _getCurrencyIcon(String currency) {
+    switch (currency) {
+      case 'CUP': return '🇨🇺';
+      case 'USD': return '$';
+      case 'MLC': return '💳';
+      default: return currency;
+    }
+  }
+
   }
 
   Future<void> _loadConfig() async {
