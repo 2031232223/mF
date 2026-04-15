@@ -12,7 +12,7 @@ class ProductRepository {
 
   Future<List<Product>> getAllProducts({bool onlyActive = true}) async {
     final db = await _dbHelper.database;
-    String where = onlyActive ? '1=1' : '';
+    String where = onlyActive ? 'esta_activo = 1' : '';
     final List<Map<String, dynamic>> maps = await db.query(
       'productos',
       where: where.isEmpty ? null : where,
@@ -52,7 +52,7 @@ class ProductRepository {
     final db = await _dbHelper.database;
     await db.update(
       'productos',
-      {'fecha_actualizacion': 'fecha_actualizacion': DateTime.now().toIso8601String()},
+      {'esta_activo': 0, 'fecha_actualizacion': DateTime.now().toIso8601String()},
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -63,7 +63,7 @@ class ProductRepository {
     final db = await _dbHelper.database;
     await db.update(
       'productos',
-      {'fecha_actualizacion': 'fecha_actualizacion': DateTime.now().toIso8601String()},
+      {'esta_activo': 1, 'fecha_actualizacion': DateTime.now().toIso8601String()},
       where: 'id = ?',
       whereArgs: [id],
     );

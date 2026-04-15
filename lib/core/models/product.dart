@@ -9,7 +9,7 @@ class Product {
   final int stockMinimo;
   final String? unidadMedida;
   final bool esFavorito;
-  // estaActivo removido
+  final bool estaActivo;
   final DateTime? fechaRegistro;
   final DateTime? fechaActualizacion;
 
@@ -24,7 +24,7 @@ class Product {
     this.stockMinimo = 5,
     this.unidadMedida = 'unidad',
     this.esFavorito = false,
-    // removido
+    this.estaActivo = true,
     this.fechaRegistro,
     this.fechaActualizacion,
   });
@@ -41,7 +41,7 @@ class Product {
       'stock_minimo': stockMinimo,
       'unidad_medida': unidadMedida,
       'es_favorito': esFavorito ? 1 : 0,
-      // removido
+      'esta_activo': estaActivo ? 1 : 0,
       'fecha_registro': fechaRegistro?.toIso8601String(),
       'fecha_actualizacion': fechaActualizacion?.toIso8601String(),
     };
@@ -59,7 +59,7 @@ class Product {
       stockMinimo: (map['stock_minimo'] as int?) ?? 5,
       unidadMedida: map['unidad_medida'] as String? ?? 'unidad',
       esFavorito: (map['es_favorito'] as int?) == 1,
-      // removido
+      estaActivo: (map['esta_activo'] as int?) != 0,
       fechaRegistro: map['fecha_registro'] != null 
           ? DateTime.tryParse(map['fecha_registro'] as String) 
           : null,
