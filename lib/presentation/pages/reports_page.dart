@@ -901,10 +901,10 @@ class _ReportsPageState extends State<ReportsPage> {
         ),
       );
     } catch (e) {
-      print('Error profit: \$e');
+      print('Error profit: ${e}');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❌ Error: \$e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('❌ Error: ${e}'), backgroundColor: Colors.red),
         );
       }
     }
