@@ -862,7 +862,7 @@ class _ReportsPageState extends State<ReportsPage> {
       
       // Calcular ventas últimos 30 días
       final ventasResult = await db.rawQuery(
-        'SELECT COALESCE(SUM(total_cup), 0) as total FROM sales WHERE created_at >= date("now", "-30 days")'
+        'SELECT COALESCE(SUM(total), 0) as total FROM ventas WHERE fecha >= date("now", "-30 days")'
       );
       final totalVentas = (ventasResult.first['total'] as num?)?.toDouble() ?? 0.0;
       
