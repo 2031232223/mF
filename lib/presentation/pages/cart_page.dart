@@ -42,11 +42,11 @@ class _CartPageState extends State<CartPage> {
 
   Future<void> _confirmSale() async {
     if (_selectedCustomer == null) { 
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Selecciona un cliente'), backgroundColor: Colors.orange)); 
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Selecciona un cliente')); 
       return; 
     }
     if (_paid < _total && !_isCredit) { 
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Pago insuficiente'), backgroundColor: Colors.orange)); 
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Pago insuficiente')); 
       return; 
     }
     setState(() => _isLoading = true);
@@ -77,12 +77,12 @@ class _CartPageState extends State<CartPage> {
         await db.rawUpdate('UPDATE productos SET stock_actual = stock_actual - ? WHERE id = ?', [item.cantidad, item.productoId]);
       }
       if (mounted) { 
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Venta registrada'), backgroundColor: Colors.green)); 
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Venta registrada')); 
         widget.onSaleCompleted(); 
         Navigator.pop(context); 
       }
     } catch (e) { 
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Error: \$e'), backgroundColor: Colors.red)); 
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Error: \$e')); 
     } finally { 
       if (mounted) setState(() => _isLoading = false); 
     }
@@ -99,7 +99,7 @@ class _CartPageState extends State<CartPage> {
   void _showNewCustomerDialog() {
     final nameController = TextEditingController();
     final phoneController = TextEditingController();
-    showDialog(context: context, builder: (ctx) => AlertDialog(backgroundColor: Colors.grey[900], title: const Text('Nuevo Cliente', style: TextStyle(color: Colors.green)), content: Column(mainAxisSize: MainAxisSize.min, children: [TextField(controller: nameController, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Nombre', labelStyle: TextStyle(color: Colors.grey), border: OutlineInputBorder())), const SizedBox(height: 16), TextField(controller: phoneController, style: const TextStyle(color: Colors.white), keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Teléfono', labelStyle: TextStyle(color: Colors.grey), border: OutlineInputBorder())),]), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.grey))), ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.green), onPressed: () async { if (nameController.text.trim().isNotEmpty) { try { final db = await DatabaseHelper.instance.database; await db.insert('clientes', {'nombre': nameController.text.trim(), 'telefono': phoneController.text.trim(), 'es_habitual': 0, 'fecha_registro': DateTime.now().toIso8601String()}); if (mounted) { final newCust = Customer(id: 0, nombre: nameController.text.trim(), carnetIdentidad: '', telefono: phoneController.text.trim()); setState(() { _selectedCustomer = newCust; }); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Cliente registrado'), backgroundColor: Colors.green)); } Navigator.pop(ctx); } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Error: \$e'), backgroundColor: Colors.red)); } } }, child: const Text('Guardar', style: TextStyle(color: Colors.white))),],));
+    showDialog(context: context, builder: (ctx) => AlertDialog(backgroundColor: Colors.grey[900], title: const Text('Nuevo Cliente', style: TextStyle(color: Colors.green)), content: Column(mainAxisSize: MainAxisSize.min, children: [TextField(controller: nameController, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Nombre', labelStyle: TextStyle(color: Colors.grey), border: OutlineInputBorder())), const SizedBox(height: 16), TextField(controller: phoneController, style: const TextStyle(color: Colors.white), keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Teléfono', labelStyle: TextStyle(color: Colors.grey), border: OutlineInputBorder())),]), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.grey))), ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.green), onPressed: () async { if (nameController.text.trim().isNotEmpty) { try { final db = await DatabaseHelper.instance.database; await db.insert('clientes', {'nombre': nameController.text.trim(), 'telefono': phoneController.text.trim(), 'es_habitual': 0, 'fecha_registro': DateTime.now().toIso8601String()}); if (mounted) { final newCust = Customer(id: 0, nombre: nameController.text.trim(), carnetIdentidad: '', telefono: phoneController.text.trim()); setState(() { _selectedCustomer = newCust; }); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Cliente registrado')); } Navigator.pop(ctx); } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Error: \$e')); } } }, child: const Text('Guardar', style: TextStyle(color: Colors.white))),],));
   }
 
   String _getCurrencyIcon(String currency) {
@@ -114,7 +114,7 @@ class _CartPageState extends State<CartPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.red,
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text('Carrito', style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),
         backgroundColor: Colors.blue,

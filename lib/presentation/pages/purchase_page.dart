@@ -41,7 +41,7 @@ class _PurchasePageState extends State<PurchasePage> {
     final suppliers = await _supplierRepo.getAllSuppliers();
     if (suppliers.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('⚠️ No hay proveedores'), backgroundColor: Colors.red),
+        const SnackBar(content: Text('⚠️ No hay proveedores'), backgroundColor: Colors.black),
       );
       return;
     }
@@ -85,7 +85,7 @@ class _PurchasePageState extends State<PurchasePage> {
       print('Error loading data: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('⚠️ Error: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('⚠️ Error: $e'), backgroundColor: Colors.black),
         );
       }
     } finally {
@@ -129,14 +129,14 @@ class _PurchasePageState extends State<PurchasePage> {
   Future<void> _confirmPurchase() async {
     if (_cart.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('⚠️ Agrega productos al carrito'), backgroundColor: Colors.red),
+        const SnackBar(content: Text('⚠️ Agrega productos al carrito'), backgroundColor: Colors.black),
       );
       return;
     }
     
     if (!_isQuickPurchase && _selectedSupplier == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('⚠️ Selecciona un proveedor'), backgroundColor: Colors.red),
+        const SnackBar(content: Text('⚠️ Selecciona un proveedor'), backgroundColor: Colors.black),
       );
       return;
     }
@@ -171,7 +171,7 @@ class _PurchasePageState extends State<PurchasePage> {
       }
       
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✅ Compra registrada'), backgroundColor: Colors.red),
+        const SnackBar(content: Text('✅ Compra registrada'), backgroundColor: Colors.black),
       );
       
       setState(() => _cart.clear());
@@ -179,7 +179,7 @@ class _PurchasePageState extends State<PurchasePage> {
       
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.black),
       );
     }
   }
@@ -325,7 +325,7 @@ class _PurchasePageState extends State<PurchasePage> {
                         margin: const EdgeInsets.only(bottom: 8),
                         child: ListTile(
                           leading: CircleAvatar(
-                            backgroundColor: Colors.red,
+                            backgroundColor: Colors.black,
                             child: const Icon(Icons.inventory_2, color: Colors.white),
                           ),
                           title: Text(
@@ -423,7 +423,7 @@ class _PurchasePageState extends State<PurchasePage> {
                             icon: const Icon(Icons.check_circle),
                             label: const Text('CONFIRMAR COMPRA', style: TextStyle(fontWeight: FontWeight.bold)),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
+                              backgroundColor: Colors.black,
                               foregroundColor: Colors.white,
                             ),
                           ),

@@ -129,7 +129,7 @@ class _ReportsPageState extends State<ReportsPage> {
         ),
         child: Row(
           children: [
-            CircleAvatar(backgroundColor: Colors.red, child: Icon(icon, color: Colors.white)),
+            CircleAvatar(backgroundColor: Colors.black, child: Icon(icon, color: Colors.white)),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -158,7 +158,7 @@ class _ReportsPageState extends State<ReportsPage> {
       await file.writeAsString(csv);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Exportado: productos.csv'), backgroundColor: Colors.red),
+          const SnackBar(content: Text('✅ Exportado: productos.csv'), backgroundColor: Colors.black),
         );
       }
     } catch (e) {
@@ -179,7 +179,7 @@ class _ReportsPageState extends State<ReportsPage> {
       await file.writeAsString(csv);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Exportado: ventas.csv'), backgroundColor: Colors.red),
+          const SnackBar(content: Text('✅ Exportado: ventas.csv'), backgroundColor: Colors.black),
         );
       }
     } catch (e) {
@@ -200,7 +200,7 @@ class _ReportsPageState extends State<ReportsPage> {
       await file.writeAsString(csv);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Exportado: top10.csv'), backgroundColor: Colors.red),
+          const SnackBar(content: Text('✅ Exportado: top10.csv'), backgroundColor: Colors.black),
         );
       }
     } catch (e) {
@@ -414,12 +414,12 @@ class _ReportsPageState extends State<ReportsPage> {
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
                               ElevatedButton(
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
                                 onPressed: () => Navigator.pop(context, true),
                                 child: const Text('Sí', style: TextStyle(fontWeight: FontWeight.w600)),
                               ),
                               ElevatedButton(
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
                                 onPressed: () => Navigator.pop(context, false),
                                 child: const Text('No', style: TextStyle(fontWeight: FontWeight.w600)),
                               ),
@@ -451,7 +451,7 @@ class _ReportsPageState extends State<ReportsPage> {
                     final s = sales[i];
                     return ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: Colors.red,
+                        backgroundColor: Colors.black,
                         child: const Icon(Icons.receipt_long, color: Colors.white, size: 20),
                       ),
                       title: Text('Venta #${s['id']}'),
@@ -567,7 +567,7 @@ class _ReportsPageState extends State<ReportsPage> {
                     final sup = suppliers[i];
                     return ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: Colors.red,
+                        backgroundColor: Colors.black,
                         child: const Icon(Icons.store, color: Colors.white),
                       ),
                       title: Text(sup['nombre'] as String? ?? 'Sin proveedor'),
@@ -879,7 +879,7 @@ class _ReportsPageState extends State<ReportsPage> {
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
-          backgroundColor: Colors.red,
+          backgroundColor: Colors.black,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: const Text('📈 Ganancias y Márgenes', style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),
           content: Column(
@@ -907,7 +907,7 @@ class _ReportsPageState extends State<ReportsPage> {
       print('Error profit: ${e}');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❌ Error: ${e}'), backgroundColor: Colors.red),
+          SnackBar(content: Text('❌ Error: ${e}'), backgroundColor: Colors.black),
         );
       }
     }

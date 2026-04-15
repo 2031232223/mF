@@ -77,7 +77,7 @@ class _InventoryAdjustmentsPageState extends State<InventoryAdjustmentsPage> {
 
       await db.rawUpdate('UPDATE productos SET stock_actual = ? WHERE id = ?', [newStock, _selectedProduct!.id]);
 
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Ajuste registrado y stock actualizado'), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Ajuste registrado y stock actualizado'), backgroundColor: Colors.black));
       _quantityCtrl.clear();
       _reasonCtrl.clear();
       _loadProducts();
@@ -130,7 +130,7 @@ class _InventoryAdjustmentsPageState extends State<InventoryAdjustmentsPage> {
                   decoration: InputDecoration(labelText: 'Motivo / Observaciones', border: const OutlineInputBorder(), filled: true, fillColor: Colors.grey[100]),
                 ),
                 const SizedBox(height: 24),
-                SizedBox(width: double.infinity, height: 50, child: ElevatedButton.icon(onPressed: _saveAdjustment, icon: const Icon(Icons.save), label: const Text('REGISTRAR AJUSTE', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)), style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white))),
+                SizedBox(width: double.infinity, height: 50, child: ElevatedButton.icon(onPressed: _saveAdjustment, icon: const Icon(Icons.save), label: const Text('REGISTRAR AJUSTE', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)), style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white))),
               ],
             ),
           ),

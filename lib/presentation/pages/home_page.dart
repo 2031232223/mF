@@ -97,7 +97,7 @@ class _HomePageState extends State<HomePage> {
           BottomNavigationBarItem(icon: Icon(Icons.inventory_2), label: 'Inventario'),
           BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Compras'),
           BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Reportes'),
-          BottomNavigationBarItem(icon: Icon(Icons.delete_sweep, color: Colors.orange), label: 'Mermas'),
+          BottomNavigationBarItem(icon: Icon(Icons.delete_sweep), label: 'Mermas'),
           BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Config'),
         ],      ),
     );

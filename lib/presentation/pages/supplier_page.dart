@@ -48,13 +48,13 @@ class _SupplierPageState extends State<SupplierPage> {
         Navigator.pop(context, nuevoProveedor);
         
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Proveedor guardado'), backgroundColor: Colors.red),
+          const SnackBar(content: Text('✅ Proveedor guardado'), backgroundColor: Colors.black),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.black),
         );
       }
     } finally {
@@ -67,7 +67,7 @@ class _SupplierPageState extends State<SupplierPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Registrar Proveedor'),
-        backgroundColor: Colors.red,
+        backgroundColor: Colors.black,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -109,7 +109,7 @@ class _SupplierPageState extends State<SupplierPage> {
               ElevatedButton(
                 onPressed: _isLoading ? null : _guardarProveedor,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
+                  backgroundColor: Colors.black,
                   padding: const EdgeInsets.all(16),
                   textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),

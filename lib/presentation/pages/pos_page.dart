@@ -57,13 +57,13 @@ class _PosPageState extends State<PosPage> {
 
   void _addToCart(Product product) {
     if (product.stockActual <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Sin stock'), backgroundColor: Colors.orange));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Sin stock'), backgroundColor: Colors.black));
       return;
     }
     final idx = _cart.indexWhere((item) => item.productoId == product.id);
     if (idx >= 0) {
       if (_cart[idx].cantidad >= product.stockActual) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Stock insuficiente'), backgroundColor: Colors.orange));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Stock insuficiente'), backgroundColor: Colors.black));
         return;
       }
       setState(() => _cart[idx].cantidad++);
@@ -96,10 +96,10 @@ class _PosPageState extends State<PosPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.orange,
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text('Punto de Venta', style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),
-        backgroundColor: Colors.orange,
+        backgroundColor: Colors.black,
         elevation: 0,
         actions: [
           IconButton(icon: const Icon(Icons.refresh, color: Colors.green), onPressed: _loadProducts),
@@ -160,10 +160,10 @@ class _PosPageState extends State<PosPage> {
                             elevation: 2,
                             child: ListTile(
                               contentPadding: const EdgeInsets.all(12),
-                              leading: CircleAvatar(backgroundColor: Colors.orange.withOpacity(0.2), radius: 28, child: const Icon(Icons.inventory_2, color: Colors.blue, size: 28)),
+                              leading: CircleAvatar(backgroundColor: Colors.black.withOpacity(0.2), radius: 28, child: const Icon(Icons.inventory_2, color: Colors.blue, size: 28)),
                               title: Text(p.nombre, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16)),
                               subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const SizedBox(height: 4), Text('Stock: ${p.stockActual}', style: TextStyle(color: Colors.grey[400])), Text('\$${price.toStringAsFixed(2)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 16)),]),
-                              trailing: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12)), onPressed: p.stockActual > 0 ? () => _addToCart(p) : null, child: Text(p.stockActual > 0 ? 'Agregar' : 'Agotado', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),),
+                              trailing: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12)), onPressed: p.stockActual > 0 ? () => _addToCart(p) : null, child: Text(p.stockActual > 0 ? 'Agregar' : 'Agotado', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),),
                             ),
                           );
                         },
@@ -176,7 +176,7 @@ class _PosPageState extends State<PosPage> {
               child: Row(
                 children: [
                   Expanded(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [Text('${_cart.length} producto${_cart.length > 1 ? 's' : ''}', style: TextStyle(color: Colors.grey[400], fontSize: 12)), Text('\$${_totalAmount.toStringAsFixed(2)} $_selectedCurrency', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 20)),])),
-                  ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), icon: const Icon(Icons.shopping_cart, color: Colors.white), label: const Text('Ver Carrito', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)), onPressed: _openCart),
+                  ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), icon: const Icon(Icons.shopping_cart, color: Colors.white), label: const Text('Ver Carrito', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)), onPressed: _openCart),
                 ],
               ),
             ),
