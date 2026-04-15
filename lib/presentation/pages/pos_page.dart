@@ -26,16 +26,6 @@ class _PosPageState extends State<PosPage> {
     super.initState();
     _loadConfig();
     _loadProducts();
-
-  String _getCurrencyIcon(String currency) {
-    switch (currency) {
-      case 'CUP': return '🇨🇺';
-      case 'USD': return '$';
-      case 'MLC': return '💳';
-      default: return currency;
-    }
-  }
-
   }
 
   Future<void> _loadConfig() async {
@@ -85,16 +75,6 @@ class _PosPageState extends State<PosPage> {
   double get _totalCUP => _cart.fold(0.0, (sum, item) => sum + (item.precioCUP * item.cantidad));
   double get _totalAmount => _selectedCurrency == 'CUP' ? _totalCUP : _totalCUP / _exchangeRate;
 
-  
-  String _getCurrencyFlag(String currency) {
-    switch (currency) {
-      case 'CUP': return '🇨🇺';
-      case 'MLC': return '💳';
-      case 'USD': return '\$';
-      default: return currency;
-    }
-  }
-
   void _openCart() {
     if (_cart.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Agrega productos')));
@@ -103,22 +83,30 @@ class _PosPageState extends State<PosPage> {
     Navigator.push(context, MaterialPageRoute(builder: (_) => CartPage(cart: _cart, selectedCurrency: _selectedCurrency, exchangeRate: _exchangeRate, totalCUP: _totalCUP, onSaleCompleted: () { setState(() => _cart.clear()); _loadProducts(); widget.onSaleCompleted?.call(); })));
   }
 
+  // ✅ FUNCIÓN AGREGADA: Iconos de moneda
+  String _getCurrencyIcon(String currency) {
+    switch (currency) {
+      case 'CUP': return '🇨🇺';
+      case 'USD': return '\$';
+      case 'MLC': return '💳';
+      default: return currency;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1E1E1E),
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('Punto de Venta', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-        backgroundColor: const Color(0xFF1E1E1E),
+        title: const Text('Punto de Venta', style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),
+        backgroundColor: Colors.black,
         elevation: 0,
         actions: [
-          IconButton(icon: const Icon(Icons.pause, color: Colors.white), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.refresh, color: Colors.white), onPressed: _loadProducts),
+          IconButton(icon: const Icon(Icons.refresh, color: Colors.green), onPressed: _loadProducts),
         ],
       ),
       body: Column(
         children: [
-          // Search Bar + Currency
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -146,7 +134,7 @@ class _PosPageState extends State<PosPage> {
                   decoration: BoxDecoration(color: Colors.grey[900], borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey[800]!)),
                   child: DropdownButton<String>(
                     value: _selectedCurrency,
-                    dropdownColor: const Color(0xFF1E1E1E),
+                    dropdownColor: Colors.grey[900],
                     underline: const SizedBox(),
                     items: ['CUP', 'USD', 'MLC'].map((c) => DropdownMenuItem(value: c, child: Row(children: [Text(_getCurrencyIcon(c), style: const TextStyle(fontSize: 16)), Text(c, style: const TextStyle(color: Colors.white))]))).toList(),
                     onChanged: (v) { if (v != null) setState(() => _selectedCurrency = v); },
@@ -155,11 +143,9 @@ class _PosPageState extends State<PosPage> {
               ],
             ),
           ),
-          
-          // Product List
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: Colors.blue))
+                ? const Center(child: CircularProgressIndicator(color: Colors.green))
                 : _filteredProducts.isEmpty
                     ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey[700]), const SizedBox(height: 16), Text('No hay productos', style: TextStyle(color: Colors.grey[600], fontSize: 16)),]))
                     : ListView.builder(
@@ -183,8 +169,6 @@ class _PosPageState extends State<PosPage> {
                         },
                       ),
           ),
-          
-          // Cart Button
           if (_cart.isNotEmpty)
             Container(
               padding: const EdgeInsets.all(16),
@@ -202,6 +186,7 @@ class _PosPageState extends State<PosPage> {
   }
 }
 
+// ✅ CLASE CartItem DEFINIDA AQUÍ para que cart_page.dart pueda importarla
 class CartItem {
   final int productoId;
   final String nombre;
