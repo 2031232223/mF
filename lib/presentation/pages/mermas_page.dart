@@ -55,7 +55,7 @@ class _MermasPageState extends State<MermasPage> {
     if (_cantidadController?.text.isEmpty == true ||
         _motivoSelecionado == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('⚠️ Complete todos los campos'), backgroundColor: Colors.black),
+        const SnackBar(content: Text('⚠️ Complete todos los campos'), backgroundColor: Colors.red),
       );
       return;
     }
@@ -63,7 +63,7 @@ class _MermasPageState extends State<MermasPage> {
     final cantidad = int.tryParse(_cantidadController!.text) ?? 0;
     if (cantidad <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('⚠️ Cantidad debe ser > 0'), backgroundColor: Colors.black),
+        const SnackBar(content: Text('⚠️ Cantidad debe ser > 0'), backgroundColor: Colors.red),
       );
       return;
     }
@@ -76,7 +76,7 @@ class _MermasPageState extends State<MermasPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('⚠️ Stock insuficiente (${product?.stockActual ?? 0})'),
-            backgroundColor: Colors.black,
+            backgroundColor: Colors.red,
           ),
         );
         return;
@@ -93,7 +93,7 @@ class _MermasPageState extends State<MermasPage> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Merma registrada exitosamente'), backgroundColor: Colors.black),
+          const SnackBar(content: Text('✅ Merma registrada exitosamente'), backgroundColor: Colors.red),
         );
         _clearForm();
         _loadProductos();
@@ -102,7 +102,7 @@ class _MermasPageState extends State<MermasPage> {
       print('Error registrando merma: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.black),
+          SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -185,7 +185,7 @@ class _MermasPageState extends State<MermasPage> {
             subtitle: Text('Stock: ${prod['stockActual']} | Cód: ${prod['codigo']}'),
             trailing: ElevatedButton(
               onPressed: () => _mostrarDialogoConfirmacion(prod['id'], prod['nombre']),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
               child: const Text('Eliminar'),
             ),
           ),

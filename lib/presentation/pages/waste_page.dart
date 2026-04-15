@@ -99,7 +99,7 @@ class _WastePageState extends State<WastePage> with SingleTickerProviderStateMix
 
       await db.rawUpdate('UPDATE productos SET stock_actual = stock_actual - ? WHERE id = ?', [qty, _selectedProduct!.id]);
 
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Merma registrada'), backgroundColor: Colors.black));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Merma registrada'), backgroundColor: Colors.red));
       _qtyCtrl.clear();
       _customReasonCtrl.clear();
       _loadData();
@@ -166,7 +166,7 @@ class _WastePageState extends State<WastePage> with SingleTickerProviderStateMix
             ),
           ],
           const SizedBox(height: 24),
-          SizedBox(width: double.infinity, height: 50, child: ElevatedButton.icon(onPressed: _registerWaste, icon: const Icon(Icons.delete_forever), label: const Text('REGISTRAR MERMA', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)), style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white))),
+          SizedBox(width: double.infinity, height: 50, child: ElevatedButton.icon(onPressed: _registerWaste, icon: const Icon(Icons.delete_forever), label: const Text('REGISTRAR MERMA', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)), style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white))),
         ],
       ),
     );
@@ -198,7 +198,7 @@ class _WastePageState extends State<WastePage> with SingleTickerProviderStateMix
                     return Card(
                       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       child: ListTile(
-                        leading: CircleAvatar(backgroundColor: Colors.black, child: const Icon(Icons.warning_amber, color: Colors.white)),
+                        leading: CircleAvatar(backgroundColor: Colors.red, child: const Icon(Icons.warning_amber, color: Colors.white)),
                         title: Text(w['producto_nombre'], style: const TextStyle(fontWeight: FontWeight.bold)),
                         subtitle: Text('${w['motivo']} • ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.parse(w['fecha']))}'),
                         trailing: Column(
