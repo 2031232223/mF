@@ -52,7 +52,7 @@ class ProductRepository {
     final db = await _dbHelper.database;
     await db.update(
       'productos',
-      {'esta_activo': 0, 'fecha_actualizacion': DateTime.now().toIso8601String()},
+      {'fecha_actualizacion': DateTime.now().toIso8601String()},
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -63,7 +63,7 @@ class ProductRepository {
     final db = await _dbHelper.database;
     await db.update(
       'productos',
-      {'esta_activo': 1, 'fecha_actualizacion': DateTime.now().toIso8601String()},
+      {'fecha_actualizacion': DateTime.now().toIso8601String()},
       where: 'id = ?',
       whereArgs: [id],
     );
