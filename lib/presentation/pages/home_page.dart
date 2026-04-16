@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/database/database_helper.dart';
 import '../pages/pos_page.dart';
+import '../pages/dashboard_page.dart';
 import '../pages/inventory_page.dart';
 import '../pages/purchases_page.dart';
 import '../pages/reports_page.dart';
@@ -21,6 +22,7 @@ class _HomePageState extends State<HomePage> {
   bool _isTransitioning = false;
 
   final List<Widget> _pages = [
+    const DashboardPage(),
     const PosPage(onSaleCompleted: _onSaleCompleted),
     const InventoryPage(),
     const PurchasesPage(),
@@ -93,6 +95,7 @@ class _HomePageState extends State<HomePage> {
         type: BottomNavigationBarType.fixed,
         selectedItemColor: Theme.of(context).primaryColor,
         items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Dashboard'),
           BottomNavigationBarItem(icon: Icon(Icons.receipt_long), label: 'POS'),
           BottomNavigationBarItem(icon: Icon(Icons.inventory_2), label: 'Inventario'),
           BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Compras'),
