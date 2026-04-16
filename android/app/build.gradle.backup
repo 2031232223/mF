@@ -46,8 +46,8 @@ android {
         release {
             signingConfig signingConfigs.release
             // DESACTIVAR TODO LO QUE PUEDA ROMPER LA APP
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled false
+            shrinkResources false
             debuggable false
             // Reglas vacías para evitar que R8 actúe
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
