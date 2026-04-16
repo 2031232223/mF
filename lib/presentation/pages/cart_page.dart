@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 import '../../core/models/customer.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/repositories/customer_repository.dart';
@@ -42,17 +45,124 @@ class _CartPageState extends State<CartPage> {
 
   Future<void> _confirmSale() async {
     if (_selectedCustomer == null) { 
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Selecciona un cliente'), backgroundColor: Colors.orange)); 
+      if (mounted) // Generar PDF si el usuario aceptó
+if (generarPdf == true) {
+  // Generar ticket PDF
+  final doc = pw.Document();
+  
+  // Obtener detalles de la venta
+  String itemsText = '';
+  for (var item in _cart) {
+    itemsText += '${item.nombre} x${item.cantidad} = \$${(item.precioCUP * item.cantidad).toStringAsFixed(2)}\n';
+  }
+  
+  doc.addPage(
+    pw.Page(
+      build: (pw.Context context) => pw.Center(
+        child: pw.Column(
+          mainAxisAlignment: pw.MainAxisAlignment.center,
+          children: [
+            pw.Text('TICKET DE VENTA', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 20),
+            pw.Text('Fecha: ${DateTime.now().toString().substring(0, 16)}', style: pw.TextStyle(fontSize: 14)),
+            pw.Text('Venta #\$saleId', style: pw.TextStyle(fontSize: 14)),
+            pw.SizedBox(height: 20),
+            pw.Divider(),
+            pw.SizedBox(height: 10),
+            pw.Text(itemsText, style: pw.TextStyle(fontSize: 12)),
+            pw.SizedBox(height: 10),
+            pw.Divider(),
+            pw.SizedBox(height: 10),
+            pw.Text('TOTAL: \$${_totalCUP.toStringAsFixed(2)}', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 30),
+            pw.Text('¡Gracias por su compra!', style: pw.TextStyle(fontSize: 14, fontStyle: pw.FontStyle.italic)),
+          ],
+        ),
+      ),
+    ),
+  );
+  
+  // Mostrar vista previa del PDF
+  await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => doc.save());
+}
+
+ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Selecciona un cliente'), backgroundColor: Colors.orange)); 
       return; 
     }
     if (_paid < _total && !_isCredit) { 
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Pago insuficiente'), backgroundColor: Colors.orange)); 
+      if (mounted) // Generar PDF si el usuario aceptó
+if (generarPdf == true) {
+  // Generar ticket PDF
+  final doc = pw.Document();
+  
+  // Obtener detalles de la venta
+  String itemsText = '';
+  for (var item in _cart) {
+    itemsText += '${item.nombre} x${item.cantidad} = \$${(item.precioCUP * item.cantidad).toStringAsFixed(2)}\n';
+  }
+  
+  doc.addPage(
+    pw.Page(
+      build: (pw.Context context) => pw.Center(
+        child: pw.Column(
+          mainAxisAlignment: pw.MainAxisAlignment.center,
+          children: [
+            pw.Text('TICKET DE VENTA', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 20),
+            pw.Text('Fecha: ${DateTime.now().toString().substring(0, 16)}', style: pw.TextStyle(fontSize: 14)),
+            pw.Text('Venta #\$saleId', style: pw.TextStyle(fontSize: 14)),
+            pw.SizedBox(height: 20),
+            pw.Divider(),
+            pw.SizedBox(height: 10),
+            pw.Text(itemsText, style: pw.TextStyle(fontSize: 12)),
+            pw.SizedBox(height: 10),
+            pw.Divider(),
+            pw.SizedBox(height: 10),
+            pw.Text('TOTAL: \$${_totalCUP.toStringAsFixed(2)}', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 30),
+            pw.Text('¡Gracias por su compra!', style: pw.TextStyle(fontSize: 14, fontStyle: pw.FontStyle.italic)),
+          ],
+        ),
+      ),
+    ),
+  );
+  
+  // Mostrar vista previa del PDF
+  await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => doc.save());
+}
+
+ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Pago insuficiente'), backgroundColor: Colors.orange)); 
       return; 
     }
     setState(() => _isLoading = true);
     try {
       final db = await DatabaseHelper.instance.database;
-      final saleId = await db.insert('ventas', {
+      // Preguntar si desea generar ticket PDF
+final generarPdf = await showDialog<bool>(
+  context: context,
+  barrierDismissible: false,
+  builder: (ctx) => AlertDialog(
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+    title: Row(children: [Icon(Icons.print, color: Colors.blue), SizedBox(width: 8), Text('Generar Ticket')]),
+    content: Text('¿Deseas generar el ticket en PDF?'),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(ctx, false),
+        child: Text('No, solo registrar', style: TextStyle(color: Colors.grey)),
+      ),
+      ElevatedButton.icon(
+        onPressed: () => Navigator.pop(ctx, true),
+        icon: Icon(Icons.picture_as_pdf, color: Colors.white),
+        label: Text('Sí, generar PDF', style: TextStyle(color: Colors.white)),
+        style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+      ),
+    ],
+  ),
+);
+
+if (generarPdf == null) return; // Usuario canceló
+
+final saleId = await db.insert('ventas', {
         'cliente_id': _selectedCustomer!.id,
         'total': _subtotal,
         'total_cup': _subtotal,
@@ -77,12 +187,94 @@ class _CartPageState extends State<CartPage> {
         await db.rawUpdate('UPDATE productos SET stock_actual = stock_actual - ? WHERE id = ?', [item.cantidad, item.productoId]);
       }
       if (mounted) { 
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Venta registrada'), backgroundColor: Colors.green)); 
+        // Generar PDF si el usuario aceptó
+if (generarPdf == true) {
+  // Generar ticket PDF
+  final doc = pw.Document();
+  
+  // Obtener detalles de la venta
+  String itemsText = '';
+  for (var item in _cart) {
+    itemsText += '${item.nombre} x${item.cantidad} = \$${(item.precioCUP * item.cantidad).toStringAsFixed(2)}\n';
+  }
+  
+  doc.addPage(
+    pw.Page(
+      build: (pw.Context context) => pw.Center(
+        child: pw.Column(
+          mainAxisAlignment: pw.MainAxisAlignment.center,
+          children: [
+            pw.Text('TICKET DE VENTA', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 20),
+            pw.Text('Fecha: ${DateTime.now().toString().substring(0, 16)}', style: pw.TextStyle(fontSize: 14)),
+            pw.Text('Venta #\$saleId', style: pw.TextStyle(fontSize: 14)),
+            pw.SizedBox(height: 20),
+            pw.Divider(),
+            pw.SizedBox(height: 10),
+            pw.Text(itemsText, style: pw.TextStyle(fontSize: 12)),
+            pw.SizedBox(height: 10),
+            pw.Divider(),
+            pw.SizedBox(height: 10),
+            pw.Text('TOTAL: \$${_totalCUP.toStringAsFixed(2)}', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 30),
+            pw.Text('¡Gracias por su compra!', style: pw.TextStyle(fontSize: 14, fontStyle: pw.FontStyle.italic)),
+          ],
+        ),
+      ),
+    ),
+  );
+  
+  // Mostrar vista previa del PDF
+  await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => doc.save());
+}
+
+ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Venta registrada'), backgroundColor: Colors.green)); 
         widget.onSaleCompleted(); 
         Navigator.pop(context); 
       }
     } catch (e) { 
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Error: \$e'), backgroundColor: Colors.red)); 
+      if (mounted) // Generar PDF si el usuario aceptó
+if (generarPdf == true) {
+  // Generar ticket PDF
+  final doc = pw.Document();
+  
+  // Obtener detalles de la venta
+  String itemsText = '';
+  for (var item in _cart) {
+    itemsText += '${item.nombre} x${item.cantidad} = \$${(item.precioCUP * item.cantidad).toStringAsFixed(2)}\n';
+  }
+  
+  doc.addPage(
+    pw.Page(
+      build: (pw.Context context) => pw.Center(
+        child: pw.Column(
+          mainAxisAlignment: pw.MainAxisAlignment.center,
+          children: [
+            pw.Text('TICKET DE VENTA', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 20),
+            pw.Text('Fecha: ${DateTime.now().toString().substring(0, 16)}', style: pw.TextStyle(fontSize: 14)),
+            pw.Text('Venta #\$saleId', style: pw.TextStyle(fontSize: 14)),
+            pw.SizedBox(height: 20),
+            pw.Divider(),
+            pw.SizedBox(height: 10),
+            pw.Text(itemsText, style: pw.TextStyle(fontSize: 12)),
+            pw.SizedBox(height: 10),
+            pw.Divider(),
+            pw.SizedBox(height: 10),
+            pw.Text('TOTAL: \$${_totalCUP.toStringAsFixed(2)}', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 30),
+            pw.Text('¡Gracias por su compra!', style: pw.TextStyle(fontSize: 14, fontStyle: pw.FontStyle.italic)),
+          ],
+        ),
+      ),
+    ),
+  );
+  
+  // Mostrar vista previa del PDF
+  await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => doc.save());
+}
+
+ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Error: \$e'), backgroundColor: Colors.red)); 
     } finally { 
       if (mounted) setState(() => _isLoading = false); 
     }
@@ -99,7 +291,89 @@ class _CartPageState extends State<CartPage> {
   void _showNewCustomerDialog() {
     final nameController = TextEditingController();
     final phoneController = TextEditingController();
-    showDialog(context: context, builder: (ctx) => AlertDialog(backgroundColor: Colors.grey[900], title: const Text('Nuevo Cliente', style: TextStyle(color: Colors.green)), content: Column(mainAxisSize: MainAxisSize.min, children: [TextField(controller: nameController, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Nombre', labelStyle: TextStyle(color: Colors.grey), border: OutlineInputBorder())), const SizedBox(height: 16), TextField(controller: phoneController, style: const TextStyle(color: Colors.white), keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Teléfono', labelStyle: TextStyle(color: Colors.grey), border: OutlineInputBorder())),]), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.grey))), ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.green), onPressed: () async { if (nameController.text.trim().isNotEmpty) { try { final db = await DatabaseHelper.instance.database; await db.insert('clientes', {'nombre': nameController.text.trim(), 'telefono': phoneController.text.trim(), 'es_habitual': 0, 'fecha_registro': DateTime.now().toIso8601String()}); if (mounted) { final newCust = Customer(id: 0, nombre: nameController.text.trim(), carnetIdentidad: '', telefono: phoneController.text.trim()); setState(() { _selectedCustomer = newCust; }); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Cliente registrado'), backgroundColor: Colors.green)); } Navigator.pop(ctx); } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Error: \$e'), backgroundColor: Colors.red)); } } }, child: const Text('Guardar', style: TextStyle(color: Colors.white))),],));
+    showDialog(context: context, builder: (ctx) => AlertDialog(backgroundColor: Colors.grey[900], title: const Text('Nuevo Cliente', style: TextStyle(color: Colors.green)), content: Column(mainAxisSize: MainAxisSize.min, children: [TextField(controller: nameController, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Nombre', labelStyle: TextStyle(color: Colors.grey), border: OutlineInputBorder())), const SizedBox(height: 16), TextField(controller: phoneController, style: const TextStyle(color: Colors.white), keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Teléfono', labelStyle: TextStyle(color: Colors.grey), border: OutlineInputBorder())),]), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.grey))), ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.green), onPressed: () async { if (nameController.text.trim().isNotEmpty) { try { final db = await DatabaseHelper.instance.database; await db.insert('clientes', {'nombre': nameController.text.trim(), 'telefono': phoneController.text.trim(), 'es_habitual': 0, 'fecha_registro': DateTime.now().toIso8601String()}); if (mounted) { final newCust = Customer(id: 0, nombre: nameController.text.trim(), carnetIdentidad: '', telefono: phoneController.text.trim()); setState(() { _selectedCustomer = newCust; }); // Generar PDF si el usuario aceptó
+if (generarPdf == true) {
+  // Generar ticket PDF
+  final doc = pw.Document();
+  
+  // Obtener detalles de la venta
+  String itemsText = '';
+  for (var item in _cart) {
+    itemsText += '${item.nombre} x${item.cantidad} = \$${(item.precioCUP * item.cantidad).toStringAsFixed(2)}\n';
+  }
+  
+  doc.addPage(
+    pw.Page(
+      build: (pw.Context context) => pw.Center(
+        child: pw.Column(
+          mainAxisAlignment: pw.MainAxisAlignment.center,
+          children: [
+            pw.Text('TICKET DE VENTA', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 20),
+            pw.Text('Fecha: ${DateTime.now().toString().substring(0, 16)}', style: pw.TextStyle(fontSize: 14)),
+            pw.Text('Venta #\$saleId', style: pw.TextStyle(fontSize: 14)),
+            pw.SizedBox(height: 20),
+            pw.Divider(),
+            pw.SizedBox(height: 10),
+            pw.Text(itemsText, style: pw.TextStyle(fontSize: 12)),
+            pw.SizedBox(height: 10),
+            pw.Divider(),
+            pw.SizedBox(height: 10),
+            pw.Text('TOTAL: \$${_totalCUP.toStringAsFixed(2)}', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 30),
+            pw.Text('¡Gracias por su compra!', style: pw.TextStyle(fontSize: 14, fontStyle: pw.FontStyle.italic)),
+          ],
+        ),
+      ),
+    ),
+  );
+  
+  // Mostrar vista previa del PDF
+  await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => doc.save());
+}
+
+ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Cliente registrado'), backgroundColor: Colors.green)); } Navigator.pop(ctx); } catch (e) { if (mounted) // Generar PDF si el usuario aceptó
+if (generarPdf == true) {
+  // Generar ticket PDF
+  final doc = pw.Document();
+  
+  // Obtener detalles de la venta
+  String itemsText = '';
+  for (var item in _cart) {
+    itemsText += '${item.nombre} x${item.cantidad} = \$${(item.precioCUP * item.cantidad).toStringAsFixed(2)}\n';
+  }
+  
+  doc.addPage(
+    pw.Page(
+      build: (pw.Context context) => pw.Center(
+        child: pw.Column(
+          mainAxisAlignment: pw.MainAxisAlignment.center,
+          children: [
+            pw.Text('TICKET DE VENTA', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 20),
+            pw.Text('Fecha: ${DateTime.now().toString().substring(0, 16)}', style: pw.TextStyle(fontSize: 14)),
+            pw.Text('Venta #\$saleId', style: pw.TextStyle(fontSize: 14)),
+            pw.SizedBox(height: 20),
+            pw.Divider(),
+            pw.SizedBox(height: 10),
+            pw.Text(itemsText, style: pw.TextStyle(fontSize: 12)),
+            pw.SizedBox(height: 10),
+            pw.Divider(),
+            pw.SizedBox(height: 10),
+            pw.Text('TOTAL: \$${_totalCUP.toStringAsFixed(2)}', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 30),
+            pw.Text('¡Gracias por su compra!', style: pw.TextStyle(fontSize: 14, fontStyle: pw.FontStyle.italic)),
+          ],
+        ),
+      ),
+    ),
+  );
+  
+  // Mostrar vista previa del PDF
+  await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => doc.save());
+}
+
+ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Error: \$e'), backgroundColor: Colors.red)); } } }, child: const Text('Guardar', style: TextStyle(color: Colors.white))),],));
   }
 
   String _getCurrencyIcon(String currency) {
