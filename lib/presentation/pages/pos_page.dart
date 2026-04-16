@@ -186,7 +186,7 @@ class _PosPageState extends State<PosPage> {
   }
 }
 
-// ✅ CLASE CartItem DEFINIDA AQUÍ para que cart_page.dart pueda importarla
+
 class CartItem {
   final int productoId;
   final String nombre;

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/database/database_helper.dart';
 import '../pages/pos_page.dart';
 import '../pages/dashboard_page.dart';
-import '../pages/inventory_page.dart';
+import '../pages/inventory_adjustment_page.dart';
 import '../pages/purchases_page.dart';
 import '../pages/reports_page.dart';
 import '../pages/config_page.dart';
@@ -24,7 +24,7 @@ class _HomePageState extends State<HomePage> {
   final List<Widget> _pages = [
     const DashboardPage(),
     const PosPage(onSaleCompleted: _onSaleCompleted),
-    const InventoryPage(),
+    const InventoryAdjustmentPage(),
     const PurchasesPage(),
     const ReportsPage(),
     const MermasPage(),
