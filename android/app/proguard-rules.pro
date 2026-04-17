@@ -31,7 +31,7 @@
 # Optimización de ofuscación
 -optimizationpasses 5
 -allowaccessmodification
--mergeinterfacesaggressive
+-mergeinterfaces
 -repackageclasses ''
 
 # Ignorar warnings
