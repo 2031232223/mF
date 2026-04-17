@@ -28,10 +28,9 @@
 # MultiDex
 -keep class androidx.multidex.** { *; }
 
-# Optimización de ofuscación
+# Optimización de ofuscación (compatible con R8)
 -optimizationpasses 5
 -allowaccessmodification
--mergeinterfaces
 -repackageclasses ''
 
 # Ignorar warnings
