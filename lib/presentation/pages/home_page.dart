@@ -37,27 +37,28 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _onTabChanged(int index) {
-    // ✅ Resetear estado previo
-    if (_isTransitioning) return;
-    setState(() => _isTransitioning = true);
-    
-    if (index != _currentIndex) {
-      // Forzar reset de DB entre transiciones importantes
-      if (index == 1  index == 2  index == 3) {
-        // Volver a Inventario/Compras/Reportes
-        Future.microtask(() => DatabaseHelper.instance.reset());
-      }
-      
-      setState(() => _currentIndex = index);
-      
-      // ✅ Dejar tiempo para cleanup
-      Future.delayed(const Duration(milliseconds: 100), () {        if (mounted) {
-          setState(() => _isTransitioning = false);
-        }
-      });
-    } else {
-      setState(() => _isTransitioning = false);
+  // Evitar múltiples taps rápidos
+  if (_isTransitioning) return;
+  
+  setState(() => _isTransitioning = true);
+  
+  if (index != _currentIndex) {
+    // Resetear conexión DB solo en módulos que lo requieran
+    if (index == 1 || index == 2 || index == 3) {
+      Future.microtask(() => DatabaseHelper.instance.reset());
     }
+    
+    setState(() => _currentIndex = index);
+    
+    // Permitir que la UI se actualice antes de quitar el overlay
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) {
+        setState(() => _isTransitioning = false);
+      }
+    });
+  } else {
+    setState(() => _isTransitioning = false);
+  }
   }
 
   @override
