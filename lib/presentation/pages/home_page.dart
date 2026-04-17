@@ -14,50 +14,47 @@ class HomePage extends StatefulWidget {
   @override
   State<HomePage> createState() => _HomePageState();
 }
+
 class _HomePageState extends State<HomePage> {
-  int _currentIndex = 0;
+  int _currentIndex = 0;  // ✅ Ahora 0 = POS (Dashboard eliminado)
   
-  // Variables globales para mantener estado limpio
   bool _isTransitioning = false;
 
+  // ✅ Lista de páginas SIN Dashboard (ahora 6 elementos)
   final List<Widget> _pages = [
-    const DashboardPage(),
-    const PosPage(onSaleCompleted: _onSaleCompleted),
-    const InventoryAdjustmentPage(),
-    const PurchasesPage(),
-    const ReportsPage(),
-    const MermasPage(),
-    const ConfigPage(),
+    const PosPage(onSaleCompleted: _onSaleCompleted),      // 0: POS
+    const InventoryAdjustmentPage(),                        // 1: Inventario
+    const PurchasesPage(),                                  // 2: Compras
+    const ReportsPage(),                                    // 3: Reportes
+    const MermasPage(),                                     // 4: Mermas ✅
+    const ConfigPage(),                                     // 5: Config
   ];
 
-  // ✅ Limpieza al cambiar de pestaña
   void _onSaleCompleted() {
     setState(() {});
   }
 
   void _onTabChanged(int index) {
-  // Evitar múltiples taps rápidos
-  if (_isTransitioning) return;
-  
-  setState(() => _isTransitioning = true);
-  
-  if (index != _currentIndex) {
-    // Resetear conexión DB solo en módulos que lo requieran
-    if (index == 1 || index == 2 || index == 3) {
-      Future.microtask(() => DatabaseHelper.instance.reset());
-    }
+    if (_isTransitioning) return;
     
-    setState(() => _currentIndex = index);
+    setState(() => _isTransitioning = true);
     
-    // Permitir que la UI se actualice antes de quitar el overlay
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (mounted) {
-        setState(() => _isTransitioning = false);
+    if (index != _currentIndex) {
+      // ✅ Ajustar índices: antes era 1||2||3, ahora es 0||1||2 (POS, Inventario, Compras)
+      if (index == 0 || index == 1 || index == 2) {
+        Future.microtask(() => DatabaseHelper.instance.reset());
       }
-    });
-  } else {
-    setState(() => _isTransitioning = false);
-  }
+      
+      setState(() => _currentIndex = index);
+      
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          setState(() => _isTransitioning = false);
+        }
+      });
+    } else {
+      setState(() => _isTransitioning = false);
+    }
   }
 
   @override
@@ -66,9 +63,8 @@ class _HomePageState extends State<HomePage> {
       body: IndexedStack(
         index: _currentIndex,
         children: _pages.map((page) {
-          // Agregar disposal listener a cada página
           return WillPopScope(
-            onWillPop: () async => false, // Deshabilitar back button
+            onWillPop: () async => false,
             child: Stack(
               children: [
                 page,
@@ -89,20 +85,22 @@ class _HomePageState extends State<HomePage> {
         }).toList(),
       ),
       
+      // ✅ BottomNavigationBar SIN Dashboard (ahora 6 ítems)
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: _onTabChanged,
         type: BottomNavigationBarType.fixed,
         selectedItemColor: Theme.of(context).primaryColor,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Dashboard'),
-          BottomNavigationBarItem(icon: Icon(Icons.receipt_long), label: 'POS'),
-          BottomNavigationBarItem(icon: Icon(Icons.inventory_2), label: 'Inventario'),
-          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Compras'),
-          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Reportes'),
-          BottomNavigationBarItem(icon: Icon(Icons.delete_sweep), label: 'Mermas'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Config'),
-        ],      ),
+          // ❌ Dashboard ELIMINADO
+          BottomNavigationBarItem(icon: Icon(Icons.receipt_long), label: 'POS'),        // 0
+          BottomNavigationBarItem(icon: Icon(Icons.inventory_2), label: 'Inventario'),  // 1
+          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Compras'),   // 2
+          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Reportes'),      // 3
+          BottomNavigationBarItem(icon: Icon(Icons.delete_sweep), label: 'Mermas'),     // 4 ✅
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Config'),         // 5
+        ],
+      ),
     );
   }
 }
