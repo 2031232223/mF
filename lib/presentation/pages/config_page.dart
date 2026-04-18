@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart';
 import '../../core/database/database_helper.dart';
-import '../../core/repositories/config_repository.dart';
 
 class ConfigPage extends StatefulWidget {
   const ConfigPage({super.key});
@@ -13,434 +11,230 @@ class ConfigPage extends StatefulWidget {
 class _ConfigPageState extends State<ConfigPage> {
   bool _isDarkMode = false;
   String _companyName = 'Nova ADEN';
-  double _taxRate = 0.0;
-  int _operationLockDays = 30;
-  int _stockAlertThreshold = 5;
-  bool _lowStockNotifications = true;
-  
-  TextEditingController _empresaController = TextEditingController();
-  TextEditingController _impuestoController = TextEditingController();
-  TextEditingController _bloquearController = TextEditingController();
-  TextEditingController _alertaController = TextEditingController();
-  
-  int _totalVentas = 0;
-  double _ventasTotal = 0.0;
-  int _totalProductos = 0;
-  int _clientesRegistrados = 0;
-  int _proveedoresRegistrados = 0;
-  String _versionApp = 'v1.0.0';
-  
-  bool _isLoading = false;
+  String _taxRate = '0.0';
+  String _currency = 'CUP';
+  String _exchangeRate = '1.00';
+  bool _stockAlert = false;
+  int _alertDays = 7;
 
   @override
   void initState() {
     super.initState();
-    _loadAllConfigValues();
+    _loadConfig();
   }
 
-  Future<void> _loadAllConfigValues() async {
-    setState(() => _isLoading = true);
+  Future<void> _loadConfig() async {
     try {
-      await _loadSavedSettings();
-      
       final db = await DatabaseHelper.instance.database;
-      final ventasCount = await db.rawQuery('SELECT COUNT(*) as total FROM ventas');
-      if (ventasCount.isNotEmpty) _totalVentas = ventasCount.first['total'] as int? ?? 0;
-      
-      final ventasTotal = await db.rawQuery('SELECT SUM(total) as total FROM ventas WHERE es_fiado = 0');
-      if (ventasTotal.isNotEmpty) _ventasTotal = (ventasTotal.first['total'] as num?)?.toDouble() ?? 0.0;
-      
-      final productosCount = await db.rawQuery('SELECT COUNT(*) as total FROM productos');
-      if (productosCount.isNotEmpty) _totalProductos = productosCount.first['total'] as int? ?? 0;
-      
-      final clientesCount = await db.rawQuery('SELECT COUNT(*) as total FROM clientes');
-      if (clientesCount.isNotEmpty) _clientesRegistrados = clientesCount.first['total'] as int? ?? 0;
-      
-      final proveedoresCount = await db.rawQuery('SELECT COUNT(*) as total FROM proveedores');
-      if (proveedoresCount.isNotEmpty) _proveedoresRegistrados = proveedoresCount.first['total'] as int? ?? 0;
+      final config = await db.query('config');
+      if (mounted) {
+        setState(() {
+          _companyName = config.firstWhere((c) => c['key'] == 'nombre_empresa', orElse: () => {'value': 'Nova ADEN'})['value'].toString();
+          _taxRate = config.firstWhere((c) => c['key'] == 'tasa_impuesto', orElse: () => {'value': '0.0'})['value'].toString();
+          _currency = config.firstWhere((c) => c['key'] == 'moneda_principal', orElse: () => {'value': 'CUP'})['value'].toString();
+          _exchangeRate = config.firstWhere((c) => c['key'] == 'tasa_cambio', orElse: () => {'value': '1.00'})['value'].toString();
+          _stockAlert = config.firstWhere((c) => c['key'] == 'alerta_stock', orElse: () => {'value': '0'})['value'] == '1';
+          _alertDays = int.tryParse(config.firstWhere((c) => c['key'] == 'dias_alerta', orElse: () => {'value': '7'})['value'].toString()) ?? 7;
+        });
+      }
     } catch (e) {
-      print('Error cargando configuración: $e');
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+      print('Error loading config: $e');
     }
-  }
-
-  Future<void> _loadSavedSettings() async {
-    final db = await DatabaseHelper.instance.database;
-    
-    final darkModeResult = await db.query('config', where: 'key = ?', whereArgs: ['modo_oscuro']);
-    if (darkModeResult.isNotEmpty) _isDarkMode = (darkModeResult.first['value'] as int? ?? 0) == 1;
-    
-    final nameResult = await db.query('config', where: 'key = ?', whereArgs: ['nombre_empresa']);
-    if (nameResult.isNotEmpty) _companyName = nameResult.first['value'] as String? ?? 'Nova ADEN';
-    _empresaController.text = _companyName;
-    
-    final taxResult = await db.query('config', where: 'key = ?', whereArgs: ['tasa_impuesto']);
-    if (taxResult.isNotEmpty) _taxRate = (taxResult.first['value'] as num?)?.toDouble() ?? 0.0;
-    _impuestoController.text = _taxRate.toStringAsFixed(1);
-    
-    final lockResult = await db.query('config', where: 'key = ?', whereArgs: ['dias_bloqueo']);
-    if (lockResult.isNotEmpty) _operationLockDays = (lockResult.first['value'] as int? ?? 30);
-    _bloquearController.text = _operationLockDays.toString();
-    
-    final alertResult = await db.query('config', where: 'key = ?', whereArgs: ['alerta_stock']);
-    if (alertResult.isNotEmpty) _stockAlertThreshold = (alertResult.first['value'] as int? ?? 5);
-    _alertaController.text = _stockAlertThreshold.toString();
-    
-    final notifResult = await db.query('config', where: 'key = ?', whereArgs: ['notificaciones']);
-    if (notifResult.isNotEmpty) _lowStockNotifications = (notifResult.first['value'] as int? ?? 1) == 1;
-  }
-
-  Future<void> _saveSetting(String key, dynamic value) async {
-    final db = await DatabaseHelper.instance.database;
-    await db.insert('config', {'key': key, 'value': value.toString(), 'updated_at': DateTime.now().toIso8601String()}, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.grey[100],
       appBar: AppBar(
-        title: const Text('Configuración'),
-        backgroundColor: Theme.of(context).primaryColor,
+        title: const Text('Configuración', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         elevation: 0,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          _buildSectionHeader(context, 'General'),
-          _buildThemeToggleCard(context),
-          _buildCurrencySection(context),
-          
-          SizedBox(height: 24),
-          
-          _buildSectionHeader(context, 'Reportes y Operaciones'),
-          SizedBox(height: 8),
-          _buildReportHeaderSection(context),
-          _buildTaxSection(context),
-          _buildOperationLockSection(context),
-          
-          SizedBox(height: 24),
-          
-          _buildSectionHeader(context, 'Inventario'),
-          _buildStockAlertSection(context),
-          
-          SizedBox(height: 24),
-          
-          _buildSectionHeader(context, 'Sistema'),
-          _buildNotificationsSection(context),
-          _buildBackupSection(context),
-          _buildDailyNotesSection(context),
-          
-          SizedBox(height: 24),
-          
-          _buildAboutSection(context),
-          
-          if (_isLoading)
-            Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator())),
-          else
-            _buildStatsSummary(context),
-        ]),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Tema Claro/Oscuro
+            _buildSection('🎨 APARIENCIA', isDark),
+            _buildTile(
+              icon: isDark ? Icons.dark_mode : Icons.light_mode,
+              title: 'Modo Oscuro',
+              subtitle: isDark ? 'Tema oscuro activado' : 'Tema claro activado',
+              isDark: isDark,
+              trailing: Switch(
+                value: _isDarkMode,
+                activeColor: Colors.blue,
+                onChanged: (v) {
+                  setState(() => _isDarkMode = v);
+                  // Aquí iría la lógica para cambiar el tema global
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(v ? 'Modo oscuro activado' : 'Modo claro activado')),
+                  );
+                },
+              ),
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Empresa
+            _buildSection('🏢 EMPRESA', isDark),
+            _buildEditableTile('Nombre de la Empresa', _companyName, isDark, (v) => _companyName = v),
+            _buildEditableTile('Tasa de Impuesto (%)', _taxRate, isDark, (v) => _taxRate = v, keyboardType: TextInputType.number),
+            
+            const SizedBox(height: 24),
+            
+            // Moneda
+            _buildSection('💵 MONEDA', isDark),
+            _buildDropdownTile('Moneda Principal', _currency, ['CUP', 'USD', 'MLC'], isDark, (v) => _currency = v!),
+            _buildEditableTile('Tasa de Cambio', _exchangeRate, isDark, (v) => _exchangeRate = v, keyboardType: TextInputType.number),
+            
+            const SizedBox(height: 24),
+            
+            // Inventario
+            _buildSection('📦 INVENTARIO', isDark),
+            _buildTile(
+              icon: Icons.warning,
+              title: 'Recordatorio de Stock',
+              subtitle: 'Alertar cuando stock sea bajo',
+              isDark: isDark,
+              trailing: Switch(
+                value: _stockAlert,
+                activeColor: Colors.orange,
+                onChanged: (v) => setState(() => _stockAlert = v),
+              ),
+            ),
+            _buildEditableTile('Días para Alerta', '$_alertDays', isDark, (v) => _alertDays = int.tryParse(v) ?? 7, keyboardType: TextInputType.number),
+            
+            const SizedBox(height: 24),
+            
+            // Acerca de
+            _buildSection('ℹ️ ACERCA DE', isDark),
+            _buildInfoTile('Versión', '1.0.0', isDark),
+            _buildInfoTile('Desarrollador', 'Nova ADEN Team', isDark),
+            _buildInfoTile('Año', '2026', isDark),
+            
+            const SizedBox(height: 32),
+            
+            // Botón Guardar
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                icon: const Icon(Icons.save, color: Colors.white),
+                label: const Text('GUARDAR CONFIGURACIÓN', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                onPressed: _saveConfig,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title) {
-    if (title.isEmpty) return SizedBox.shrink();
-    final theme = Theme.of(context);
-    return Row(children: [
-      Container(width: 4, height: 24, decoration: BoxDecoration(color: theme.primaryColor, borderRadius: BorderRadius.circular(2))),
-      SizedBox(width: 8),
-      Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: theme.primaryColor)),
-    ]);
-  }
-
-  Widget _buildThemeToggleCard(BuildContext context) {
-    return Card(child: SwitchListTile(
-      secondary: Icon(_isDarkMode ? Icons.dark_mode : Icons.light_mode, color: _isDarkMode ? Colors.orange : Colors.cyan),
-      title: Text('Modo Claro/Oscuro'),
-      subtitle: Text('Cambiar entre temas instantáneamente'),
-      value: _isDarkMode,
-      onChanged: (value) { setState(() => _isDarkMode = value); _saveSetting('modo_oscuro', value ? 1 : 0); },
-    ));
-  }
-
-  Widget _buildCurrencySection(BuildContext context) {
-    return ListTile(
-      leading: Icon(Icons.attach_money, color: Theme.of(context).colorScheme.secondary),
-      title: Text('Monedas y Tasas'),
-      subtitle: Text('Configurar CUP, MLC, USD'),
-      trailing: Icon(Icons.arrow_forward_ios, size: 16),
-      onTap: () => _showCurrencyDialog(context),
-    );
-  }
-
-  Widget _buildReportHeaderSection(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(child: Padding(padding: EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [
-        Icon(Icons.text_fields, color: theme.colorScheme.secondary),
-        SizedBox(width: 8),
-        Text('Cabecera de Reportes', style: TextStyle(fontWeight: FontWeight.bold)),
-            color: Colors.green,
-            color: Colors.green,
-      ]),
-      Divider(height: 16),
-      TextField(
-        controller: TextEditingController(text: _companyName),
-        decoration: InputDecoration(hintText: 'Texto del reporte (ej: Nova ADEN)', border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
-        onChanged: (val) => _empresaController.text = val,
-      ),
-      SizedBox(height: 12),
-      ElevatedButton.icon(
-        icon: Icon(Icons.save),
-        label: Text('Guardar Configuración'),
-        onPressed: () {
-          setState(() => _companyName = _empresaController.text);
-          _saveSetting('nombre_empresa', _companyName);
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Guardado correctamente'), backgroundColor: Colors.black));
-        },
-      ),
-    ])));
-  }
-
-  Widget _buildTaxSection(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(child: Padding(padding: EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [
-        Icon(Icons.local_offer, color: theme.colorScheme.secondary),
-        SizedBox(width: 8),
-        Text('Impuesto %', style: TextStyle(fontWeight: FontWeight.bold)),
-            color: Colors.green,
-            color: Colors.green,
-      ]),
-      Divider(height: 16),
-      Row(children: [
-        Expanded(child: TextField(
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(hintText: 'Tasa de impuesto en %'),
-          onChanged: (val) => _impuestoController.text = val,
-          controller: TextEditingController(text: _taxRate.toStringAsFixed(1)),
-        )),
-        SizedBox(width: 8),
-        Text('%'),
-      ]),
-      SizedBox(height: 12),
-      ElevatedButton.icon(
-        icon: Icon(Icons.check),
-        label: Text('Aplicar Impuestos'),
-        onPressed: () {
-          setState(() => _taxRate = double.tryParse(_impuestoController.text) ?? 0.0);
-          _saveSetting('tasa_impuesto', _taxRate);
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Impuestos actualizados'), backgroundColor: Colors.black));
-        },
-      ),
-    ])));
-  }
-
-  Widget _buildOperationLockSection(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(child: Padding(padding: EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [
-        Icon(Icons.lock_clock, color: Colors.orange),
-        SizedBox(width: 8),
-        Text('Bloquear operaciones >', style: TextStyle(fontWeight: FontWeight.bold)),
-            color: Colors.green,
-            color: Colors.green,
-      ]),
-      Divider(height: 16),
-      Row(children: [
-        Expanded(child: TextField(
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(hintText: 'Días para bloqueo'),
-          onChanged: (val) => _bloquearController.text = val,
-          controller: TextEditingController(text: _operationLockDays.toString()),
-        )),
-        SizedBox(width: 8),
-        Text('días'),
-      ]),
-      SizedBox(height: 12),
-      OutlinedButton.icon(
-        icon: Icon(Icons.timer),
-        label: Text('Activar Bloqueo'),
-        onPressed: () {
-          setState(() => _operationLockDays = int.tryParse(_bloquearController.text) ?? 30);
-          _saveSetting('dias_bloqueo', _operationLockDays);
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Bloqueo configurado'), backgroundColor: Colors.black));
-        },
-      ),
-    ])));
-  }
-
-  Widget _buildStockAlertSection(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(child: Padding(padding: EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [
-        Icon(Icons.warning_amber_rounded, color: Colors.red),
-        SizedBox(width: 8),
-        Text('Alerta de Stock Crítico', style: TextStyle(fontWeight: FontWeight.bold)),
-            color: Colors.green,
-            color: Colors.green,
-      ]),
-      Divider(height: 16),
-      Row(children: [
-        Expanded(child: TextField(
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(hintText: 'Umbral de alerta'),
-          onChanged: (val) => _alertaController.text = val,
-          controller: TextEditingController(text: _stockAlertThreshold.toString()),
-        )),
-        SizedBox(width: 8),
-        Text('unid.'),
-      ]),
-      SizedBox(height: 12),
-      OutlinedButton.icon(
-        icon: Icon(Icons.notifications_active),
-        label: Text('Guardar Umbral'),
-        onPressed: () {
-          setState(() => _stockAlertThreshold = int.tryParse(_alertaController.text) ?? 5);
-          _saveSetting('alerta_stock', _stockAlertThreshold);
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✓ Umbral establecido'), backgroundColor: Colors.black));
-        },
-      ),
-    ])));
-  }
-
-  Widget _buildNotificationsSection(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(child: SwitchListTile(
-      secondary: Icon(Icons.notifications, color: theme.colorScheme.secondary),
-      title: Text('Notificaciones'),
-      subtitle: Text('Alertas de stock bajo activadas'),
-      value: _lowStockNotifications,
-      onChanged: (value) { setState(() => _lowStockNotifications = value); _saveSetting('notificaciones', value ? 1 : 0); },
-    ));
-  }
-
-  Widget _buildBackupSection(BuildContext context) {
-    return ListTile(
-      leading: Icon(Icons.cloud_upload, color: Theme.of(context).colorScheme.secondary),
-      title: Text('Respaldos'),
-      subtitle: Text('Crear o restaurar copias'),
-      trailing: Icon(Icons.arrow_forward_ios, size: 16),
-      onTap: () {
-        showDialog(context: context, builder: (ctx) => AlertDialog(
-          title: Text('¿Crear respaldo?'),
-          content: Text('¿Desea crear una copia de seguridad completa?'),
-          actions: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
-                                onPressed: () => Navigator.pop(context, true),
-                                child: const Text('Sí', style: TextStyle(fontWeight: FontWeight.w600)),
-                              ),
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
-                                onPressed: () => Navigator.pop(context, false),
-                                child: const Text('No', style: TextStyle(fontWeight: FontWeight.w600)),
-                              ),
-                            ],
-                          ),
-                        ],
-        ));
-      },
-    );
-  }
-
-  Widget _buildDailyNotesSection(BuildContext context) {
-    return Card(child: ListTile(
-      leading: Icon(Icons.note_add, color: Theme.of(context).colorScheme.secondary),
-      title: Text('Notas Diarias'),
-      subtitle: Text('Registrar notas del día'),
-      trailing: Icon(Icons.arrow_forward_ios, size: 16),
-      onTap: () => Navigator.pushNamed(context, '/notes'),
-    ));
-  }
-
-  Widget _buildAboutSection(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(child: Padding(padding: EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
-      CircleAvatar(radius: 40, backgroundColor: theme.colorScheme.primary, child: Icon(Icons.business, size: 48, color: Colors.white)),
-      SizedBox(height: 16),
-      Text('nova-ADEN', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            color: Colors.green,
-            color: Colors.green,
-      SizedBox(height: 8),
-      Text('Sistema de Gestión Comercial v${_versionApp}', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
-      Divider(height: 24),
-      ListTile(leading: Icon(Icons.code, color: theme.colorScheme.secondary, size: 20), title: Text('Versión'), subtitle: Text(_versionApp)),
-      ListTile(leading: Icon(Icons.storage, color: theme.colorScheme.secondary, size: 20), title: Text('Base de Datos'), subtitle: Text('SQLite v6 - Sin corrupción')),
-      ListTile(leading: Icon(Icons.person, color: theme.colorScheme.secondary, size: 20), title: Text('Autor'), subtitle: Text('2031232223')),
-      ListTile(leading: Icon(Icons.event, color: theme.colorScheme.secondary, size: 20), title: Text('Fecha de lanzamiento'), subtitle: Text('Febrero 2026')),
-      Divider(height: 24),
-      Text('© 2026 nova-ADEN - Todos los derechos reservados', style: TextStyle(fontSize: 12, color: Colors.grey[500]), textAlign: TextAlign.center),
-    ])));
-  }
-
-  Widget _buildStatsSummary(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(child: Padding(padding: EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('Estadísticas del Sistema', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            color: Colors.green,
-            color: Colors.green,
-      Divider(height: 16),
-      Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-        _buildStatItem(context, '💼 Ventas', '${_totalVentas}'),
-        _buildStatItem(context, '📦 Productos', '${_totalProductos}'),
-        _buildStatItem(context, '👤 Clientes', '${_clientesRegistrados}'),
-        _buildStatItem(context, '🏪 Proveedores', '${_proveedoresRegistrados}'),
-      ]),
-    ])));
-  }
-
-  Widget _buildStatItem(BuildContext context, String label, String value) {
-    final theme = Theme.of(context);
-    return Column(children: [
-      Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
-      Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-    ]);
-  }
-
-  void _showCurrencyDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Configurar Monedas'),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          ListTile(leading: Icon(Icons.money), title: Text('CUB'), subtitle: Text('Moneda base'), tileColor: Colors.blue[50], enabled: false),
-          ListTile(leading: Icon(Icons.account_balance_wallet), title: Text('MLC'), subtitle: Text('Moneda internacional'), tileColor: Colors.blue[50], enabled: false),
-          ListTile(leading: Icon(Icons.currency_bitcoin), title: Text('USD'), subtitle: Text('Divisa extranjera'), tileColor: Colors.blue[50], enabled: false),
-          SizedBox(height: 12),
-          TextField(keyboardType: TextInputType.number, decoration: InputDecoration(hintText: 'Tasa de cambio CUP/USD'), autofocus: true),
-        ]),
-        actions: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
-                                onPressed: () => Navigator.pop(context, true),
-                                child: const Text('Sí', style: TextStyle(fontWeight: FontWeight.w600)),
-                              ),
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
-                                onPressed: () => Navigator.pop(context, false),
-                                child: const Text('No', style: TextStyle(fontWeight: FontWeight.w600)),
-                              ),
-                            ],
-                          ),
-                        ],
+  Widget _buildSection(String title, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: isDark ? Colors.white : Colors.black87,
+        ),
       ),
     );
   }
 
-  @override
-  void dispose() {
-    _empresaController.dispose();
-    _impuestoController.dispose();
-    _bloquearController.dispose();
-    _alertaController.dispose();
-    super.dispose();
+  Widget _buildTile({required IconData icon, required String title, required String subtitle, required bool isDark, Widget? trailing}) {
+    return Card(
+      color: isDark ? Colors.grey[900] : Colors.white,
+      child: ListTile(
+        leading: Icon(icon, color: Colors.blue),
+        title: Text(title, style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.w600)),
+        subtitle: Text(subtitle, style: TextStyle(color: Colors.grey[400])),
+        trailing: trailing,
+      ),
+    );
+  }
+
+  Widget _buildEditableTile(String title, String value, bool isDark, Function(String) onChanged, {TextInputType? keyboardType}) {
+    return Card(
+      color: isDark ? Colors.grey[900] : Colors.white,
+      child: ListTile(
+        leading: const Icon(Icons.edit, color: Colors.blue),
+        title: Text(title, style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.w600)),
+        subtitle: TextField(
+          onChanged: onChanged,
+          keyboardType: keyboardType,
+          style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+          decoration: InputDecoration(
+            hintText: value,
+            hintStyle: TextStyle(color: Colors.grey[500]),
+            border: InputBorder.none,
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDropdownTile(String title, String value, List<String> options, bool isDark, Function(String?) onChanged) {
+    return Card(
+      color: isDark ? Colors.grey[900] : Colors.white,
+      child: ListTile(
+        leading: const Icon(Icons.attach_money, color: Colors.blue),
+        title: Text(title, style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.w600)),
+        trailing: DropdownButton<String>(
+          value: value,
+          dropdownColor: isDark ? Colors.grey[900] : Colors.white,
+          style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+          items: options.map((o) => DropdownMenuItem(value: o, child: Text(o))).toList(),
+          onChanged: onChanged,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoTile(String title, String value, bool isDark) {
+    return Card(
+      color: isDark ? Colors.grey[900] : Colors.white,
+      child: ListTile(
+        leading: const Icon(Icons.info, color: Colors.blue),
+        title: Text(title, style: TextStyle(color: isDark ? Colors.white : Colors.black87)),
+        trailing: Text(value, style: TextStyle(color: Colors.grey[400])),
+      ),
+    );
+  }
+
+  Future<void> _saveConfig() async {
+    try {
+      final db = await DatabaseHelper.instance.database;
+      await db.update('config', {'value': _companyName}, where: "key = 'nombre_empresa'");
+      await db.update('config', {'value': _taxRate}, where: "key = 'tasa_impuesto'");
+      await db.update('config', {'value': _currency}, where: "key = 'moneda_principal'");
+      await db.update('config', {'value': _exchangeRate}, where: "key = 'tasa_cambio'");
+      await db.update('config', {'value': _stockAlert ? '1' : '0'}, where: "key = 'alerta_stock'");
+      await db.update('config', {'value': '$_alertDays'}, where: "key = 'dias_alerta'");
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('✅ Configuración guardada'), backgroundColor: Colors.green),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('❌ Error: ${e.toString()}'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 }
