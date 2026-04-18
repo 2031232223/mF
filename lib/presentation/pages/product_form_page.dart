@@ -72,7 +72,7 @@ class _ProductFormPageState extends State<ProductFormPage> {
       final product = Product(
         id: widget.product?.id,
         nombre: _nombreController.text.trim(),
-        codigo: _codigoController.text.trim(),
+        codigo: _codigoController.text.trim().isEmpty ? null : _codigoController.text.trim(),
         categoria: _categoriaController.text.trim().isEmpty ? 'General' : _categoriaController.text.trim(),
         costo: double.tryParse(_costoController.text) ?? 0.0,
         precioVenta: double.tryParse(_precioController.text) ?? 0.0,
@@ -91,7 +91,7 @@ class _ProductFormPageState extends State<ProductFormPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(widget.product == null ? '✅ Producto creado' : '✅ Producto actualizado'),
-            backgroundColor: Colors.black,
+            backgroundColor: Colors.green,
           ),
         );
         Navigator.pop(context, true);

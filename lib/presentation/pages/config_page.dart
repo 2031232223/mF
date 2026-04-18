@@ -182,6 +182,7 @@ class _ConfigPageState extends State<ConfigPage> {
         SizedBox(width: 8),
         Text('Cabecera de Reportes', style: TextStyle(fontWeight: FontWeight.bold)),
             color: Colors.green,
+            color: Colors.green,
       ]),
       Divider(height: 16),
       TextField(
@@ -209,6 +210,7 @@ class _ConfigPageState extends State<ConfigPage> {
         Icon(Icons.local_offer, color: theme.colorScheme.secondary),
         SizedBox(width: 8),
         Text('Impuesto %', style: TextStyle(fontWeight: FontWeight.bold)),
+            color: Colors.green,
             color: Colors.green,
       ]),
       Divider(height: 16),
@@ -243,6 +245,7 @@ class _ConfigPageState extends State<ConfigPage> {
         SizedBox(width: 8),
         Text('Bloquear operaciones >', style: TextStyle(fontWeight: FontWeight.bold)),
             color: Colors.green,
+            color: Colors.green,
       ]),
       Divider(height: 16),
       Row(children: [
@@ -275,6 +278,7 @@ class _ConfigPageState extends State<ConfigPage> {
         Icon(Icons.warning_amber_rounded, color: Colors.red),
         SizedBox(width: 8),
         Text('Alerta de Stock Crítico', style: TextStyle(fontWeight: FontWeight.bold)),
+            color: Colors.green,
             color: Colors.green,
       ]),
       Divider(height: 16),
@@ -361,6 +365,7 @@ class _ConfigPageState extends State<ConfigPage> {
       SizedBox(height: 16),
       Text('nova-ADEN', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             color: Colors.green,
+            color: Colors.green,
       SizedBox(height: 8),
       Text('Sistema de Gestión Comercial v${_versionApp}', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
       Divider(height: 24),
@@ -377,6 +382,7 @@ class _ConfigPageState extends State<ConfigPage> {
     final theme = Theme.of(context);
     return Card(child: Padding(padding: EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text('Estadísticas del Sistema', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            color: Colors.green,
             color: Colors.green,
       Divider(height: 16),
       Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
