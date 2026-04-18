@@ -70,7 +70,7 @@ class _ProductFormPageState extends State<ProductFormPage> {
     
     try {
       final product = Product(
-        id: widget.product?.id ?? 0,
+        id: widget.product?.id,
         nombre: _nombreController.text.trim(),
         codigo: _codigoController.text.trim(),
         categoria: _categoriaController.text.trim().isEmpty ? 'General' : _categoriaController.text.trim(),
