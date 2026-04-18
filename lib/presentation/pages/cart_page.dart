@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+
 import '../../core/models/customer.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/repositories/customer_repository.dart';
@@ -80,6 +86,8 @@ class _CartPageState extends State<CartPage> {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Venta registrada'), backgroundColor: Colors.green)); 
         widget.onSaleCompleted(); 
         Navigator.pop(context); 
+        // Generar ticket PDF
+        await _generatePdfTicket();
       }
     } catch (e) { 
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Error: \$e'), backgroundColor: Colors.red)); 
@@ -100,6 +108,148 @@ class _CartPageState extends State<CartPage> {
     final nameController = TextEditingController();
     final phoneController = TextEditingController();
     showDialog(context: context, builder: (ctx) => AlertDialog(backgroundColor: Colors.grey[900], title: const Text('Nuevo Cliente', style: TextStyle(color: Colors.green)), content: Column(mainAxisSize: MainAxisSize.min, children: [TextField(controller: nameController, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Nombre', labelStyle: TextStyle(color: Colors.grey), border: OutlineInputBorder())), const SizedBox(height: 16), TextField(controller: phoneController, style: const TextStyle(color: Colors.white), keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Teléfono', labelStyle: TextStyle(color: Colors.grey), border: OutlineInputBorder())),]), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.grey))), ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.green), onPressed: () async { if (nameController.text.trim().isNotEmpty) { try { final db = await DatabaseHelper.instance.database; await db.insert('clientes', {'nombre': nameController.text.trim(), 'telefono': phoneController.text.trim(), 'es_habitual': 0, 'fecha_registro': DateTime.now().toIso8601String()}); if (mounted) { final newCust = Customer(id: 0, nombre: nameController.text.trim(), carnetIdentidad: '', telefono: phoneController.text.trim()); setState(() { _selectedCustomer = newCust; }); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Cliente registrado'), backgroundColor: Colors.green)); } Navigator.pop(ctx); } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Error: \$e'), backgroundColor: Colors.red)); } } }, child: const Text('Guardar', style: TextStyle(color: Colors.white))),],));
+  }
+
+
+  Future<void> _generatePdfTicket() async {
+    final pdf = pw.Document();
+    final now = DateTime.now();
+    
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.roll80,
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Center(
+                child: pw.Text('NOVA-ADEN', 
+                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 18)),
+              ),
+              pw.Center(
+                child: pw.Text('Ticket de Venta', 
+                  style: pw.TextStyle(fontSize: 12)),
+              ),
+              pw.SizedBox(height: 10),
+              pw.Text('Fecha: ${now.toString().substring(0, 16)}', 
+                style: pw.TextStyle(fontSize: 10)),
+              pw.Text('Cliente: ${_selectedCustomer?.nombre ?? 'N/A'}', 
+                style: pw.TextStyle(fontSize: 10)),
+              pw.Text('Moneda: ${widget.selectedCurrency}', 
+                style: pw.TextStyle(fontSize: 10)),
+              pw.Divider(),
+              pw.SizedBox(height: 5),
+              ...widget.cart.map((item) {
+                final price = widget.selectedCurrency == 'CUP' 
+                  ? item.precioCUP 
+                  : item.precioCUP / widget.exchangeRate;
+                final subtotal = price * item.cantidad;
+                return pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text('${item.cantidad}x ${item.nombre}', 
+                      style: pw.TextStyle(fontSize: 9)),
+                    pw.Text('${subtotal.toStringAsFixed(2)}', 
+                      style: pw.TextStyle(fontSize: 9)),
+                  ],
+                );
+              }),
+              pw.SizedBox(height: 5),
+              pw.Divider(),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('SUBTOTAL:', 
+                    style: pw.TextStyle(fontSize: 10)),
+                  pw.Text('${_subtotal.toStringAsFixed(2)}', 
+                    style: pw.TextStyle(fontSize: 10)),
+                ],
+              ),
+              if (_discount > 0)
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text('DESCUENTO:', 
+                      style: pw.TextStyle(fontSize: 10)),
+                    pw.Text('-\$${_discount.toStringAsFixed(2)}', 
+                      style: pw.TextStyle(fontSize: 10, color: PdfColors.orange)),
+                  ],
+                ),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('TOTAL:', 
+                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14)),
+                  pw.Text('${_total.toStringAsFixed(2)} ${widget.selectedCurrency}', 
+                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14)),
+                ],
+              ),
+              pw.SizedBox(height: 5),
+              pw.Divider(),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('Pagado:', 
+                    style: pw.TextStyle(fontSize: 10)),
+                  pw.Text('${_paid.toStringAsFixed(2)}', 
+                    style: pw.TextStyle(fontSize: 10)),
+                ],
+              ),
+              if (_change > 0)
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text('Cambio:', 
+                      style: pw.TextStyle(fontSize: 10)),
+                    pw.Text('${_change.toStringAsFixed(2)}', 
+                      style: pw.TextStyle(fontSize: 10)),
+                  ],
+                ),
+              pw.SizedBox(height: 15),
+              pw.Center(
+                child: pw.Text('¡Gracias por su compra!', 
+                  style: pw.TextStyle(fontSize: 10, fontStyle: pw.FontStyle.italic)),
+              ),
+              pw.SizedBox(height: 5),
+              pw.Center(
+                child: pw.Text('Nova-ADEN - Sistema de Gestión', 
+                  style: pw.TextStyle(fontSize: 8)),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    // Guardar PDF en almacenamiento externo
+    try {
+      final directory = await getExternalStorageDirectory();
+      final novaDir = Directory('\${directory!.parent.path}/Nova-ADEN/Tickets');
+      await novaDir.create(recursive: true);
+      
+      final filePath = '\${novaDir.path}/Ticket-\${now.millisecondsSinceEpoch}.pdf';
+      final file = File(filePath);
+      await file.writeAsBytes(await pdf.save());
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✅ Ticket guardado en: \$filePath'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error al guardar PDF: \$e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   String _getCurrencyIcon(String currency) {
@@ -138,6 +288,53 @@ class _CartPageState extends State<CartPage> {
           if (_paid < _total) Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Row(children: [Icon(Icons.warning, color: Colors.orange, size: 16), SizedBox(width: 4), Text('Faltante:', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600)),]), Text('${(_total - _paid).toStringAsFixed(2)}', style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),]),
           if (_paid >= _total && _paid > 0) Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Row(children: [Icon(Icons.check_circle, color: Colors.green, size: 16), SizedBox(width: 4), Text('Cambio:', style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),]), Text('${_change.toStringAsFixed(2)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),]),
         ])),
+
+        // Botón Cancelar Venta
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              icon: const Icon(Icons.cancel, color: Colors.white, size: 20),
+              label: const Text('CANCELAR VENTA', 
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    backgroundColor: Colors.grey[900],
+                    title: const Text('Cancelar Venta', style: TextStyle(color: Colors.red)),
+                    content: const Text('¿Estás seguro de cancelar esta venta? Se vaciará el carrito.', 
+                      style: TextStyle(color: Colors.white)),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: const Text('No', style: TextStyle(color: Colors.grey)),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                        onPressed: () {
+                          Navigator.pop(ctx); // Cierra diálogo
+                          Navigator.pop(context, false); // Regresa a POS sin vender
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Venta cancelada'), backgroundColor: Colors.red),
+                          );
+                        },
+                        child: const Text('Sí, cancelar', style: TextStyle(color: Colors.white)),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
         Padding(padding: const EdgeInsets.all(16), child: SizedBox(width: double.infinity, height: 56, child: ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), icon: _isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.check_circle, color: Colors.white, size: 24), label: Text(_isLoading ? 'Procesando...' : 'CONFIRMAR VENTA', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)), onPressed: _isLoading ? null : _confirmSale,)),),
       ]),
     );
