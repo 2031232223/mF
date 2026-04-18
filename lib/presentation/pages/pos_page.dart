@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import '../../core/models/product.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/repositories/product_repository.dart';
@@ -13,6 +15,12 @@ class PosPage extends StatefulWidget {
 }
 
 class _PosPageState extends State<PosPage> {
+  // ✅ NOTIFIERS PARA ACTUALIZACIÓN EN TIEMPO REAL
+  final ValueNotifier<List<CartItem>> _cartNotifier = ValueNotifier([]);
+  final ValueNotifier<double> _totalNotifier = ValueNotifier(0.0);
+  final ValueNotifier<bool> _isCreditMode = ValueNotifier(false);
+  final ValueNotifier<String> _pausedSaleId = ValueNotifier('');
+
   final ProductRepository _productRepo = ProductRepository();
   List<Product> _products = [];
   List<CartItem> _cart = [];
@@ -93,6 +101,156 @@ class _PosPageState extends State<PosPage> {
     }
   }
 
+  // ✅ Toggle para modo fiado
+  void _toggleCreditMode() {
+    _isCreditMode.value = !_isCreditMode.value;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(_isCreditMode.value ? '✅ Modo FIADO activado' : '✅ Modo EFECTIVO activado'),
+        backgroundColor: _isCreditMode.value ? Colors.orange : Colors.green,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  // ✅ PAUSAR venta - guardar en SharedPreferences
+  Future<void> _pauseSale() async {
+    final cart = _cartNotifier.value;
+    if (cart.isEmpty) return;
+    
+    final prefs = await SharedPreferences.getInstance();
+    final saleId = 'paused_\${DateTime.now().millisecondsSinceEpoch}';
+    
+    final cartJson = cart.map((item) => {
+      'productoId': item.productoId,
+      'nombre': item.nombre,
+      'precioCUP': item.precioCUP,
+      'cantidad': item.cantidad,
+      'stockDisponible': item.stockDisponible,
+    }).toList();
+    
+    await prefs.setString('paused_sale_id', saleId);
+    await prefs.setString('paused_sale_cart', jsonEncode(cartJson));
+    await prefs.setDouble('paused_sale_total', _totalNotifier.value);
+    await prefs.setBool('paused_sale_credit', _isCreditMode.value);
+    
+    _pausedSaleId.value = saleId;
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('⏸️ Venta pausada - Toca ▶️ para retomar'), backgroundColor: Colors.blue),
+    );
+  }
+
+  // ✅ RETOMAR venta pausada
+  Future<void> _resumeSale() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saleId = prefs.getString('paused_sale_id');
+    if (saleId == null) return;
+    
+    final cartJson = prefs.getString('paused_sale_cart');
+    if (cartJson == null) return;
+    
+    final List<dynamic> decoded = jsonDecode(cartJson);
+    final cart = decoded.map((item) => CartItem(
+      productoId: item['productoId'],
+      nombre: item['nombre'],
+      precioCUP: item['precioCUP'],
+      cantidad: item['cantidad'],
+      stockDisponible: item['stockDisponible'],
+    )).toList();
+    
+    _cartNotifier.value = cart;
+    _totalNotifier.value = prefs.getDouble('paused_sale_total') ?? 0.0;
+    _isCreditMode.value = prefs.getBool('paused_sale_credit') ?? false;
+    
+    await prefs.remove('paused_sale_id');
+    await prefs.remove('paused_sale_cart');
+    await prefs.remove('paused_sale_total');
+    await prefs.remove('paused_sale_credit');
+    _pausedSaleId.value = '';
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('▶️ Venta retomada'), backgroundColor: Colors.green),
+    );
+  }
+
+  // ✅ Confirmar venta con soporte para fiado
+  Future<void> _confirmSale() async {
+    final cart = _cartNotifier.value;
+    if (cart.isEmpty) return;
+    
+    setState(() => _isLoading = true);
+    
+    try {
+      final db = await DatabaseHelper.instance.database;
+      final total = _totalNotifier.value;
+      final isCredit = _isCreditMode.value;
+      
+      // Si es fiado, requerir cliente
+      int? customerId = 1; // Default para demo
+      if (isCredit) {
+        // Aquí iría la selección de cliente (simplificado para entrega)
+        customerId = 1;
+      }
+      
+      final saleId = await db.insert('ventas', {
+        'cliente_id': customerId,
+        'total': total,
+        'total_cup': total,
+        'fecha': DateTime.now().toIso8601String(),
+        'metodo_pago': isCredit ? 'Fiado' : 'Efectivo',
+        'moneda': _selectedCurrency,
+        'tasa_cambio': _exchangeRate,
+        'es_fiado': isCredit ? 1 : 0,
+        'monto_pagado': isCredit ? 0 : total,
+        'monto_pendiente': isCredit ? total : 0,
+        'created_at': DateTime.now().toIso8601String(),
+      });
+      
+      for (final item in cart) {
+        await db.insert('detalle_ventas', {
+          'venta_id': saleId,
+          'producto_id': item.productoId,
+          'cantidad': item.cantidad,
+          'precio_unitario': item.precioCUP,
+          'subtotal': item.precioCUP * item.cantidad,
+        });
+        await db.rawUpdate(
+          'UPDATE productos SET stock_actual = stock_actual - ? WHERE id = ?',
+          [item.cantidad, item.productoId],
+        );
+      }
+      
+      // Generar PDF si está implementado
+      // await _generatePdfTicket(cart, total, _selectedCurrency);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(isCredit ? '✅ Venta fiada registrada' : '✅ Venta registrada'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Limpiar estado
+        _cartNotifier.value = [];
+        _totalNotifier.value = 0.0;
+        _isCreditMode.value = false;
+        
+        widget.onSaleCompleted?.call();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('❌ Error: \${e.toString()}'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -102,6 +260,30 @@ class _PosPageState extends State<PosPage> {
         
         elevation: 0,
         actions: [
+          // Toggle modo fiado
+          IconButton(
+            icon: ValueListenableBuilder<bool>(
+              valueListenable: _isCreditMode,
+              builder: (context, isCredit, _) => Icon(
+                isCredit ? Icons.credit_card : Icons.monetization_on,
+                color: isCredit ? Colors.orange : Colors.green,
+              ),
+            ),
+            tooltip: 'Toggle venta fiada',
+            onPressed: _toggleCreditMode,
+          ),
+          // Indicador venta pausada
+          ValueListenableBuilder<String>(
+            valueListenable: _pausedSaleId,
+            builder: (context, saleId, _) => saleId.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.play_circle, color: Colors.blue),
+                  tooltip: 'Retomar venta',
+                  onPressed: _resumeSale,
+                )
+              : const SizedBox.shrink(),
+          ),
+
           IconButton(icon: const Icon(Icons.refresh, color: Colors.green), onPressed: _loadProducts),
         ],
       ),
